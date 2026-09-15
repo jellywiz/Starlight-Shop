@@ -1,0 +1,81 @@
+{
+  "name": "starlight-jewellery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Starlight Jewellery catalogue website and admin panel (Next.js + Payload CMS)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/dev.ts",
+    "dev:next": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "db:start": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/db.ts start",
+    "db:reset": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/db.ts reset",
+    "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" next build",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "migrate": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration payload migrate",
+    "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration payload migrate:create",
+    "migrate:status": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration payload migrate:status",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "owner:create": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration tsx scripts/create-owner.ts",
+    "owner:reset-password": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration tsx scripts/reset-owner-password.ts",
+    "seed:dev": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/seed-dev.ts",
+    "backup:storage": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/backup-storage.ts",
+    "brand:assets": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/brand-assets.ts",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm run test:unit && pnpm run test:int",
+    "test:unit": "cross-env NODE_OPTIONS=--no-deprecation vitest run --project unit",
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --project int",
+    "test:e2e": "cross-env NODE_OPTIONS=--no-deprecation playwright test",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1131.0",
+    "@payloadcms/db-postgres": "3.89.0",
+    "@payloadcms/next": "3.89.0",
+    "@payloadcms/storage-s3": "3.89.0",
+    "@payloadcms/ui": "3.89.0",
+    "cross-env": "10.1.0",
+    "dotenv": "17.4.2",
+    "file-type": "21.3.4",
+    "graphql": "16.14.2",
+    "next": "16.3.5",
+    "payload": "3.89.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.20.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "embedded-postgres": "17.10.0-beta.17",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
+    "prettier": "3.9.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@embedded-postgres/darwin-arm64",
+      "@embedded-postgres/darwin-x64",
+      "@embedded-postgres/linux-arm64",
+      "@embedded-postgres/linux-x64",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}

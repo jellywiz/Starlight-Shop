@@ -1,0 +1,39 @@
+/* Admin panel adjustments for Starlight Jewellery. */
+
+/* Password reset by email is not available in the free baseline (spec section 12):
+   hide the "Forgot password?" link. Recovery is the maintainer script. */
+.login__form > a[href$='/forgot'],
+.login__form > a[href*='/forgot?'] {
+  display: none;
+}
+
+/* Custom whole-dinar amount fields (price and delivery fee) */
+.dinar-field__input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dinar-field__input input {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-input-bg);
+  color: var(--theme-elevation-800);
+}
+.dinar-field__currency {
+  font-weight: 600;
+  color: var(--theme-elevation-600);
+}
+.dinar-field__stored {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--theme-elevation-500);
+}
+.dinar-field__error {
+  color: var(--theme-error-500);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,38 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# local data (embedded Postgres, dev uploads)
+/.data/
+/media/
+
+# env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# backups are stored outside the repository
+/backups/
+
+# transfer bundles written by the Claude session
+/.claude-transfer/
+/Claude outputs/

@@ -1,0 +1,125 @@
+# Operations and owner guide
+
+## Daily owner guide (admin at `/admin`)
+
+**Add a product.** Products → Create new. Choose the category (create and activate it first
+under Categories if missing), enter the name and description in the language selected at
+the top right of the page, then switch the locale selector to fill Sorani, Arabic and
+English. Under Price and availability enter the price in whole Iraqi dinars (e.g. `25000`,
+no decimals), tick **Available** if the piece can be ordered, and under Photos upload the
+pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover)
+and give each photo an alt text in all three languages under Media. **Save Draft** at any
+time; drafts are private. **Publish** makes the product public — if anything is missing, the
+error lists exactly which fields and languages. Use the preview button (arrow icon next to
+Save Draft) to see the latest draft on the site as an administrator, then check the public
+page and the Instagram action.
+
+**Change a price or availability.** Open the product, change the value, then Publish. Save
+Draft alone does not change the public page. A fresh page load shows the new value.
+
+**Hide a product.** Use the ⋮ menu → Unpublish. Unavailable products stay visible with an
+"Unavailable" label; only Unpublish removes a product from the site. Deleting is possible
+but keeps the images; prefer Unpublish.
+
+**Change the slug of a published product** only if needed; the old address redirects
+automatically (Redirects collection).
+
+**Categories.** Categories → Create new: enter the name in all three languages, choose the
+position (sort order) and tick Active. Only active categories with at least one published
+product appear in the website's navigation and filters; empty categories can be kept for
+later. Renaming updates the public label on the next request. A category used by published
+products cannot be deactivated, and one used by any product (including drafts) cannot be
+deleted — the error shows the product count; reassign those products first.
+
+**Delivery fees.** Delivery cities → Create new: enter the city name in Sorani, Arabic and
+English, the delivery fee in whole dinars (e.g. `5000`) and the position, then tick Active
+and Save. The city appears in the home page selector on the next request — no
+redeployment. To change a fee, edit the city and Save. To stop showing a city, untick
+Active (or delete it after confirming). A fee of `0` must be confirmed with the "free
+delivery" checkbox before the city can be activated; the site then shows "Free delivery".
+Fees are information only: they are never added to product prices and no total is shown.
+
+**Shop settings.** Administration → Shop settings: public name, optional logo replacement,
+the Instagram profile URL (must be an HTTPS `instagram.com` address; the handle shown on the
+site is taken from it), the introduction text in all three languages and the default
+language. Test the public Instagram link on a phone and on a desktop after saving.
+
+**Difference between products and everything else.** Products have drafts: nothing changes
+publicly until Publish. Categories, delivery cities and shop settings have no drafts: Save
+is live on the next page request.
+
+## Weekly checks (owner or maintainer)
+
+- Netlify → Usage: stay below 70 % of the monthly credits (300 on Free). Production
+  deploys cost 15 credits each.
+- Supabase → Project home: database size, storage size, egress. Watch for the
+  "project paused" notice: free projects pause after a week of low activity. Resume from
+  the dashboard, then check the public site, the delivery selector and an admin save.
+- After a large editing session (including city-fee changes): run a backup (below).
+
+If Netlify credits run out the site pauses until the monthly reset or an upgrade. If
+Supabase pauses, the site shows the "catalogue temporarily unavailable" message with the
+Instagram fallback, and the contact page keeps working with the built-in Instagram
+destination.
+
+## Backups (no automatic backups on the free plans)
+
+Requirements on the maintainer's Mac: `brew install libpq` (adds `pg_dump`/`pg_restore`;
+add `/opt/homebrew/opt/libpq/bin` to `PATH`) and a `.env` containing
+`DATABASE_MIGRATION_URI` and the `S3_*` values.
+
+```bash
+./scripts/backup.sh
+```
+
+Creates `backups/<timestamp>/db.dump` (schema `starlight`, custom format: products,
+categories, delivery cities, settings and administrator records) and
+`backups/<timestamp>/storage/` (every image plus `manifest.json`). Move the folder to an
+encrypted, owner-controlled location outside the repository. Keep the last seven session
+backups and one monthly copy. The dump contains administrator password hashes: treat it as
+confidential.
+
+### Restore (always into an isolated project first)
+
+1. Create a scratch Supabase project (or a local database) and an empty bucket.
+2. Database:
+
+   ```bash
+   pg_restore --no-owner --no-privileges --dbname "$SCRATCH_SESSION_POOLER_URI" backups/<timestamp>/db.dump
+   ```
+
+3. Images: upload `backups/<timestamp>/storage/**` to the scratch bucket keeping the same
+   object keys (the `products/` prefix is part of the key), e.g. with the Supabase dashboard
+   or `aws s3 sync` pointed at the S3 endpoint.
+4. Point a preview deploy at the scratch project, sign in, verify product, category and
+   city counts, fees, image samples and a search. Only then switch production configuration.
+
+Object identifiers are preserved, so restored records reconnect to their files.
+
+## Password recovery
+
+Email delivery is not configured, so "Forgot password" is hidden and disabled. The
+maintainer resets a password with database access:
+
+```bash
+OWNER_EMAIL=owner@example.com pnpm owner:reset-password
+```
+
+Never edit password hashes by hand. Before changing the administrator email or rotating
+credentials, make sure this recovery path (a maintainer with `DATABASE_MIGRATION_URI`)
+still works.
+
+## Incident notes
+
+- **Catalogue unavailable page**: database or storage unreachable. Check Supabase status
+  and whether the project is paused; the Instagram fallback and static logo keep working.
+- **Delivery fees show "could not load"**: same cause; the section offers Try again and
+  Instagram and never shows a zero fee by mistake.
+- **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: resize the photo
+  before uploading (any phone gallery app can export a smaller copy).
+- **Publish refuses with missing languages**: switch the locale selector and fill the
+  listed fields; photos need alt text in all three languages under Media.
+- **City cannot be activated**: fill all three names and a valid whole-dinar fee; a zero
+  fee needs the free-delivery confirmation.
+- **Locked document**: another session is editing the same record; Payload warns about
+  conflicting edits. Wait or take over the lock deliberately.

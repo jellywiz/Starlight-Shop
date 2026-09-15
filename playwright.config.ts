@@ -1,0 +1,32 @@
+import { defineConfig, devices } from '@playwright/test'
+
+/**
+ * Browser journeys (spec section 16). Expects a running site at BASE_URL (default
+ * http://localhost:3000) with the development seed applied:
+ *   pnpm build && pnpm start   (in one terminal, with the local database running)
+ *   pnpm seed:dev --owner      (once)
+ *   pnpm test:e2e
+ */
+export default defineConfig({
+  testDir: './tests/e2e',
+  testMatch: /.*\.e2e\.ts$/,
+  timeout: 90_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: false,
+  workers: 1,
+  retries: 0,
+  reporter: [['list']],
+  use: {
+    baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    // Optional: point at an already installed Chromium instead of `playwright install`.
+    launchOptions: process.env.PLAYWRIGHT_CHROME_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROME_PATH }
+      : undefined,
+  },
+  projects: [
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', use: { ...devices['Pixel 7'] } },
+  ],
+})

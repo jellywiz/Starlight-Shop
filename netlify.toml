@@ -1,0 +1,25 @@
+# Netlify configuration (spec sections 13 and 14).
+#
+# Next.js is detected automatically and deployed with Netlify's OpenNext-based adapter;
+# the admin panel, REST API and dynamic pages run as serverless functions.
+#
+# Database migrations are NOT run here on purpose: preview and production builds must
+# never mutate the database. The maintainer applies committed migrations from their
+# machine with `pnpm migrate` (DATABASE_MIGRATION_URI) before promoting a deploy.
+
+[build]
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # Fails the build if any S3 variable is missing, so a deploy can never fall back to
+  # local disk storage.
+  REQUIRE_S3_STORAGE = "true"
+
+# Long-lived caching for versioned brand assets; everything dynamic is no-store already.
+[[headers]]
+  for = "/brand/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"

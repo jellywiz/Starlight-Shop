@@ -1,0 +1,51 @@
+# Acceptance tests (spec section 16)
+
+Passing this matrix is the completion criterion for the first release. "Automated" lists
+the test that covers the behaviour locally; "Launch evidence" is what the developer records
+on the deployed site (screenshot, log line or URL) and the owner reviews.
+
+| ID | Test | Automated coverage | Launch evidence (to record) |
+| --- | --- | --- | --- |
+| A01 | Inspect all public pages: Starlight identity; no cart, checkout, phone, WhatsApp or external shop link | `tests/e2e/public.e2e.ts` (root test asserts identity and the absence of shopping/phone/WhatsApp UI) | Screenshots of home, catalogue, product and contact in ckb/ar/en |
+| A02 | Publish a complete product: six business fields; whole-IQD price shared across languages | `tests/int/publishing.test.ts`, `tests/e2e/admin.e2e.ts` | Product URL in three languages |
+| A03 | Toggle availability: item stays public with the correct label | `tests/int/publishing.test.ts` | Before/after screenshots |
+| A04 | Save incomplete draft: saves privately; publication identifies missing translations/fields | `tests/int/publishing.test.ts` | Screenshot of the publish error listing locales |
+| A05 | Edit a published item as draft: previous published revision remains public until Publish | `tests/int/publishing.test.ts`, `tests/e2e/admin.e2e.ts` | Screenshot pair |
+| A06 | Unpublish: lists, detail routes and direct public APIs exclude it | `tests/int/publishing.test.ts` (list, findByID) | `curl` of `/api/products/<id>` returning 404 |
+| A07 | Search translated names/descriptions: normalization, ranking and all-token matching | `tests/unit/normalize.test.ts`, `tests/unit/ranking.test.ts`, `tests/int/catalog.test.ts` | Owner-reviewed search checklist with real names |
+| A08 | Combine category, price, availability: AND; inclusive price boundaries; delivery choice has no effect | `tests/int/catalog.test.ts`, `tests/e2e/public.e2e.ts` (delivery selector leaves prices unchanged) | Screenshot of a combined filter URL |
+| A09 | Sort and paginate: stable results, 24 per page, no duplicates, correct count | `tests/int/catalog.test.ts` | Screenshot of page 2 with count |
+| A10 | Switch language: product/filter state retained; Sorani/Arabic RTL; readable IQD amounts | `tests/e2e/public.e2e.ts` | Screenshots of `/ckb`, `/ar`, `/en` product page |
+| A11 | Open Instagram and copy product URL: correct profile and canonical link; no automated message | `tests/e2e/public.e2e.ts` (href, rel/target, clipboard content) | Phone and desktop test: the profile opens, Message works |
+| A12 | Create, rename and remove category: admin-managed list; reassignment protects referenced products | `tests/int/publishing.test.ts` | Screenshot of the refusal message with the product count |
+| A13 | Anonymous writes and private reads denied for every API, collection, user and version surface | `tests/int/publishing.test.ts`, `tests/int/cities.test.ts` | `curl -X POST /api/products` → 403; `GET /api/users` → 403; `/api/graphql` → 404 |
+| A14 | Invalid image upload: type/size validation rejects the file without broken publication | `tests/int/publishing.test.ts` | Screenshot of the rejection message |
+| A15 | Change product price and refresh: latest published whole-dinar amount appears | `tests/e2e/admin.e2e.ts` | Response headers show `Cache-Control: no-store` on catalogue pages |
+| A16 | Database or image failure: explicit retry/fallback or image placeholder; no false availability | Manual: stop the local database while `pnpm start` runs → `/en/products` and the home delivery section show the unavailable states with the Instagram fallback | Screenshot with the database paused |
+| A17 | Restore isolated backup: products, categories, city fees, images and admin login work | Manual (docs/operations.md restore procedure) | Notes with record counts before/after |
+| A18 | Keyboard, mobile and translation review: gallery, filters and city selector usable; no clipping | Manual + `tests/e2e/public.e2e.ts` mobile project (menu, filter dialog, city selector) | Owner sign-off on docs/translations-review.md |
+| A19 | Deploy and roll back: known-good deploy works; migration compatibility verified | Manual (Netlify "Publish deploy") | Deploy IDs used |
+| A20 | Inspect indexing and secrets: published URLs only; no draft/user leaks or browser secrets | `robots.ts`, `sitemap.ts`; manual grep of `.next/static` for `PAYLOAD_SECRET`/`S3_` | `sitemap.xml` and `robots.txt` captures |
+| A21 | Add and update delivery city: three localized names and saved fee appear on a fresh Home request | `tests/int/cities.test.ts`, `tests/e2e/admin.e2e.ts` | Screenshot of the city in the selector in three languages |
+| A22 | Select delivery city: fee shown in the homepage section; no product-price change or order total | `tests/e2e/public.e2e.ts` | Screenshot of the fee line next to unchanged prices |
+| A23 | Zero, negative, fractional or missing fee: intentional zero displays free; other invalid values rejected | `tests/int/cities.test.ts` | Screenshots of the admin refusals and the "Free delivery" line |
+| A24 | Deactivate, delete or duplicate city: hidden cities disappear; stale selection clears; duplicates rejected | `tests/int/cities.test.ts`, `tests/e2e/public.e2e.ts` (`?city=` of an unknown city) | Screenshot of the "no longer listed" message |
+| A25 | No cities or delivery query failure: distinct empty/error messages and Instagram fallback; never false free delivery | `tests/int/cities.test.ts` (empty list vs. failure), manual database stop for the failure state | Screenshots of both states |
+
+## Automated test commands
+
+```bash
+pnpm test:unit     # 30 tests: whole-dinar parsing/formatting, normalization table, ranking, URL parameter validation
+pnpm test:int      # 25 tests on a throwaway PostgreSQL: publication rules, access, search, filters, categories, cities, redirects, uploads
+pnpm build && pnpm start &&  pnpm seed:dev --owner
+PLAYWRIGHT_CHROME_PATH=... pnpm test:e2e   # 20 browser journeys (desktop + mobile)
+```
+
+## Non-functional checks before launch (spec section 11)
+
+- Lighthouse on a mid-range phone profile for home, catalogue and product: LCP ≤ 2.5 s, CLS ≤ 0.1,
+  INP ≤ 200 ms are targets, not guarantees; record the numbers.
+- Test with 100 realistic records: catalogue queries stay bounded (one query + one count per page,
+  category joins only; the city list is one query).
+- 200 % zoom, reduced-motion (sparkles must be still), widths 320–1440 px: no horizontal scrolling
+  on the home, catalogue and product pages.
