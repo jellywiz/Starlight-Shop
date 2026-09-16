@@ -20,8 +20,6 @@ import {
   testPayload,
 } from './helpers'
 
-const ALT = { ckb: 'وێنە', ar: 'صورة', en: 'Photo' }
-
 function query(locale: string, qs: string) {
   const parsed = parseCatalogParams(locale, new URLSearchParams(qs))
   if (!parsed.ok) {
@@ -63,7 +61,10 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
       sortOrder: 4,
       isActive: false,
     })
-    const media = await createMedia(payload, { alt: ALT })
+    // Shared photo without a description: the site falls back to the product name.
+    const media = await createMedia(payload)
+    // A described photo: the single description is used in every language.
+    const described = await createMedia(payload, { alt: 'Silver ring on a white background' })
 
     const fixtures = [
       {
@@ -143,7 +144,7 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
           names: f.names,
           descriptions: f.descriptions,
           category: f.category,
-          photos: [media.id],
+          photos: [f.key === 'cheap' ? described.id : media.id],
           priceIqd: f.price,
           isAvailable: f.available,
           featured: f.featured,
@@ -190,6 +191,21 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
     const ar = await listProducts(query('ar', 'q=Star%20necklace'))
     expect(ar.items[0].name).toBe('قلادة نجمة')
     expect(ar.items[0].category.name).toBe('قلائد')
+  })
+
+  it('describes photos with the product name in the active language unless a description was given', async () => {
+    const ckb = await listProducts(query('ckb', 'q=Star%20necklace'))
+    expect(ckb.items[0].cover?.alt).toBe('ملوانکەی ئەستێرە')
+    const en = await listProducts(query('en', 'q=Star%20necklace'))
+    expect(en.items[0].cover?.alt).toBe('Star necklace')
+    const detail = await getProductBySlug(slugs.star, 'ar')
+    expect(detail?.photos[0]?.alt).toBe('قلادة نجمة')
+
+    // One optional description, shared by all languages.
+    for (const locale of ['ckb', 'ar', 'en'] as const) {
+      const ring = await getProductBySlug(slugs.cheap, locale)
+      expect(ring?.photos[0]?.alt).toBe('Silver ring on a white background')
+    }
   })
 
   it('finds products by any translation of names and descriptions (A07)', async () => {

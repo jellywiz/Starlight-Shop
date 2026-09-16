@@ -14,7 +14,7 @@ import {
   testPayload,
 } from './helpers'
 
-const FULL_ALT = { ckb: 'وێنەی ملوانکە', ar: 'صورة القلادة', en: 'Necklace photo' }
+const ALT = 'Necklace photo'
 
 describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)', () => {
   let categoryId: number
@@ -29,7 +29,7 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       { ckb: 'ملوانکە', ar: 'قلائد', en: 'Necklaces' },
       'necklaces',
     )
-    const media = await createMedia(payload, { alt: FULL_ALT })
+    const media = await createMedia(payload, { alt: ALT })
     categoryId = category.id
     mediaId = media.id
   })
@@ -547,13 +547,13 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     )
     expect(rejected).toMatch(/JPEG, PNG and WebP/)
 
-    const media = await createMedia(payload, { alt: FULL_ALT, width: 1600, height: 1200 })
+    const media = await createMedia(payload, { alt: ALT, width: 1600, height: 1200 })
     expect(media.filename).toMatch(/^[0-9a-f]{24}\.jpg$/)
     expect(media.sizes?.w320?.width).toBe(320)
     expect(media.sizes?.w640?.width).toBe(640)
     expect(media.sizes?.w1280?.width).toBe(1280)
 
-    const small = await createMedia(payload, { alt: FULL_ALT, width: 500, height: 400 })
+    const small = await createMedia(payload, { width: 500, height: 400 })
     expect(small.sizes?.w320?.width).toBe(320)
     expect(small.sizes?.w640?.url ?? null).toBeNull()
     expect(small.sizes?.w1280?.url ?? null).toBeNull()

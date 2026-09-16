@@ -60,30 +60,18 @@ export async function makeImage(width = 800, height = 600, color = '#482044'): P
 
 export type LocalizedText = Record<'ckb' | 'ar' | 'en', string>
 
+/** Uploads a generated JPEG. The description is optional and shared by all languages. */
 export async function createMedia(
   payload: Payload,
-  opts: { alt: Record<'ckb' | 'ar' | 'en', string | null>; width?: number; height?: number },
+  opts: { alt?: string; width?: number; height?: number } = {},
 ) {
   const data = await makeImage(opts.width ?? 800, opts.height ?? 600)
-  const media = await payload.create({
+  return payload.create({
     collection: 'media',
-    data: { altText: opts.alt.ckb ?? undefined },
+    data: { altText: opts.alt },
     file: { data, mimetype: 'image/jpeg', name: 'photo.jpg', size: data.length },
-    locale: 'ckb',
     overrideAccess: true,
   })
-  for (const locale of ['ar', 'en'] as const) {
-    if (opts.alt[locale]) {
-      await payload.update({
-        collection: 'media',
-        id: media.id,
-        data: { altText: opts.alt[locale] },
-        locale,
-        overrideAccess: true,
-      })
-    }
-  }
-  return media
 }
 
 /** Creates a category with all three names and activates it (unless `isActive: false`). */

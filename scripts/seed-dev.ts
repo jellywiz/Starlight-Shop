@@ -226,25 +226,12 @@ async function main() {
     const photoIds: number[] = []
     for (let i = 1; i <= 2; i += 1) {
       const data = await sampleImage(product.color, `${product.name.en} ${i}`)
+      // The first photo carries an optional description; the second relies on the fallback
+      // (the product name in the page's language), as most real uploads will.
       const media = await payload.create({
         collection: 'media',
-        data: { altText: `${product.name.ckb} — وێنەی ${i}` },
+        data: { altText: i === 1 ? `${product.name.en} on a white background` : undefined },
         file: { data, mimetype: 'image/jpeg', name: 'sample.jpg', size: data.length },
-        locale: 'ckb',
-        overrideAccess: true,
-      })
-      await payload.update({
-        collection: 'media',
-        id: media.id,
-        data: { altText: `${product.name.ar} — صورة ${i}` },
-        locale: 'ar',
-        overrideAccess: true,
-      })
-      await payload.update({
-        collection: 'media',
-        id: media.id,
-        data: { altText: `${product.name.en} — photo ${i}` },
-        locale: 'en',
         overrideAccess: true,
       })
       photoIds.push(media.id)

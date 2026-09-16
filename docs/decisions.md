@@ -53,6 +53,13 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Image descriptions are one optional text per image, shared by all languages** (owner
+  decision, 2026-09-16; the spec asked for alt text in all three languages). The public
+  site uses the product name in the page's language when the description is empty, and
+  the shop name for the logo, so every image still has language-correct alt text.
+  Publishing no longer checks descriptions. The migration keeps `media_locales` in place
+  because migrations run before the new code is deployed and the previous build still
+  reads it; drop that table in the next schema migration.
 - **Delivery cities** are the Payload collection `cities` (labelled "Delivery cities") so
   that the public fixed-projection endpoint can live at `GET /api/delivery-cities` without
   colliding with Payload's generated `/api/<collection>` routes. Public reads (generated or

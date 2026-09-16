@@ -113,7 +113,7 @@ export const Products: CollectionConfig = {
               maxRows: LIMITS.photosMax,
               admin: {
                 description:
-                  'Drag to reorder. The first image is the cover. Each image needs alt text in all three languages (edit under Media).',
+                  'Drag to reorder. The first image is the cover. Photos are shared by all three languages, so each image is uploaded once.',
               },
             },
           ],

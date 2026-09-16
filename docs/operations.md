@@ -7,8 +7,10 @@ under Categories if missing), enter the name and description in the language sel
 the top right of the page, then switch the locale selector to fill Sorani, Arabic and
 English. Under Price and availability enter the price in whole Iraqi dinars (e.g. `25000`,
 no decimals), tick **Available** if the piece can be ordered, and under Photos upload the
-pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover)
-and give each photo an alt text in all three languages under Media. **Save Draft** at any
+pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover).
+Each picture is uploaded once and shared by all three languages; the optional "Image
+description" under Media is a single text for all languages, and when it is empty the site
+uses the product name in the page's language. **Save Draft** at any
 time; drafts are private. **Publish** makes the product public — if anything is missing, the
 error lists exactly which fields and languages. Use the preview button (arrow icon next to
 Save Draft) to see the latest draft on the site as an administrator, then check the public
@@ -118,7 +120,7 @@ still works.
 - **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: resize the photo
   before uploading (any phone gallery app can export a smaller copy).
 - **Publish refuses with missing languages**: switch the locale selector and fill the
-  listed fields; photos need alt text in all three languages under Media.
+  listed fields (name and description are the only per-language product fields).
 - **City cannot be activated**: fill all three names and a valid whole-dinar fee; a zero
   fee needs the free-delivery confirmation.
 - **Locked document**: another session is editing the same record; Payload warns about

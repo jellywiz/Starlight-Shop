@@ -15,6 +15,20 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/admin(\/)?$/)
 }
 
+/**
+ * Clicks a save button and waits for the admin's PATCH request to succeed. Waiting for the
+ * toast alone races: an earlier toast can still be on screen (sonner pauses its timer while
+ * the admin tab is in the background), so the next public read could run before the save.
+ */
+async function saveWith(page: Page, button: string, collection: string) {
+  const saved = page.waitForResponse(
+    (r) => r.request().method() === 'PATCH' && r.url().includes(`/api/${collection}/`),
+  )
+  await page.getByRole('button', { name: button }).click()
+  expect((await saved).ok()).toBe(true)
+  await expect(page.getByText(/successfully/i).first()).toBeVisible()
+}
+
 test.describe('admin journeys (A02, A05, A15, A21)', () => {
   test.skip(({ isMobile }) => isMobile, 'Admin editing is verified on desktop.')
 
@@ -34,8 +48,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     // (the Publish button stays disabled while nothing has changed).
     if ((await price.inputValue()) !== '32000') {
       await price.fill('32000')
-      await page.getByRole('button', { name: 'Publish changes' }).click()
-      await expect(page.getByText(/successfully/i).first()).toBeVisible()
+      await saveWith(page, 'Publish changes', 'products')
       await page.reload()
       await page.getByRole('button', { name: 'Price and availability' }).click()
     }
@@ -50,8 +63,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     // Save a draft with a new price: the public page must keep the published price (A05).
     await price.fill('34,000')
     await expect(page.getByText('Shown on the website as IQD 34,000')).toBeVisible()
-    await page.getByRole('button', { name: 'Save Draft' }).click()
-    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await saveWith(page, 'Save Draft', 'products')
     await expect(page.getByText('Changed', { exact: true })).toBeVisible()
 
     const publicPage = await page.context().newPage()
@@ -59,16 +71,14 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(publicPage.getByText('IQD 32,000')).toBeVisible()
 
     // Publish: a fresh request shows the new price (A15).
-    await page.getByRole('button', { name: 'Publish changes' }).click()
-    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await saveWith(page, 'Publish changes', 'products')
     await expect(page.getByText('Published', { exact: true })).toBeVisible()
     await publicPage.reload()
     await expect(publicPage.getByText('IQD 34,000')).toBeVisible()
 
     // Restore the sample price for repeatable runs.
     await price.fill('32000')
-    await page.getByRole('button', { name: 'Publish changes' }).click()
-    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await saveWith(page, 'Publish changes', 'products')
     await publicPage.reload()
     await expect(publicPage.getByText('IQD 32,000')).toBeVisible()
     await publicPage.close()
@@ -83,12 +93,10 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     if ((await fee.inputValue()) === '5500') {
       // Left over from an interrupted run: put the sample fee back first.
       await fee.fill('5000')
-      await page.getByRole('button', { name: 'Save' }).click()
-      await expect(page.getByText(/successfully/i).first()).toBeVisible()
+      await saveWith(page, 'Save', 'cities')
     }
     await fee.fill('5500')
-    await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await saveWith(page, 'Save', 'cities')
 
     const publicPage = await page.context().newPage()
     await publicPage.goto('/en')
@@ -98,8 +106,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
 
     // Restore the sample fee for repeatable runs.
     await fee.fill('5000')
-    await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await saveWith(page, 'Save', 'cities')
   })
 
   test('an oversized photo is refused with the reason shown in the toast', async ({ page }) => {

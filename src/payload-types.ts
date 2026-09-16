@@ -150,7 +150,7 @@ export interface Product {
    */
   description: string;
   /**
-   * Drag to reorder. The first image is the cover. Each image needs alt text in all three languages (edit under Media).
+   * Drag to reorder. The first image is the cover. Photos are shared by all three languages, so each image is uploaded once.
    */
   photos?: (number | Media)[] | null;
   /**
@@ -240,7 +240,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * Product photos and the shop logo. JPEG, PNG or WebP up to 3 MB and 20 megapixels. Fill the alt text in all three languages.
+ * Product photos and the shop logo. Upload each image once: the same file is used in all three languages. JPEG, PNG or WebP up to 3 MB and 20 megapixels.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -248,7 +248,7 @@ export interface User {
 export interface Media {
   id: number;
   /**
-   * Describe the image for screen readers and search engines, e.g. "Silver star necklace on a white background".
+   * Optional, one text for all languages: a short description for screen readers and search engines, e.g. "Silver star necklace on a white background". Leave it empty and the product name is used automatically.
    */
   altText?: string | null;
   prefix?: string | null;

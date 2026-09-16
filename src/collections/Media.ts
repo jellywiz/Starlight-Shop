@@ -169,7 +169,7 @@ export const Media: CollectionConfig = {
     group: 'Catalog',
     defaultColumns: ['filename', 'altText', 'width', 'height', 'updatedAt'],
     description:
-      'Product photos and the shop logo. JPEG, PNG or WebP up to 3 MB and 20 megapixels. Fill the alt text in all three languages.',
+      'Product photos and the shop logo. Upload each image once: the same file is used in all three languages. JPEG, PNG or WebP up to 3 MB and 20 megapixels.',
   },
   access: {
     read: anyone,
@@ -224,13 +224,16 @@ export const Media: CollectionConfig = {
   },
   fields: [
     {
+      // One optional description shared by all languages (owner decision, see
+      // docs/decisions.md). When empty, the site uses the product name in the page's
+      // language, or the shop name for the logo.
       name: 'altText',
       type: 'text',
-      localized: true,
+      label: 'Image description (optional)',
       maxLength: 200,
       admin: {
         description:
-          'Describe the image for screen readers and search engines, e.g. "Silver star necklace on a white background".',
+          'Optional, one text for all languages: a short description for screen readers and search engines, e.g. "Silver star necklace on a white background". Leave it empty and the product name is used automatically.',
       },
     },
   ],

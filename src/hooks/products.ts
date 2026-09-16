@@ -31,7 +31,6 @@ export const LIMITS = {
   description: 5000,
   photosMin: 1,
   photosMax: 8,
-  altText: 200,
 } as const
 
 type AnyDoc = Record<string, unknown>
@@ -136,28 +135,19 @@ async function publicationErrors(args: {
       message: `Add between ${LIMITS.photosMin} and ${LIMITS.photosMax} photos. The first photo is the cover.`,
     })
   } else {
+    // Every photo must still exist. Image descriptions are optional: the site falls back
+    // to the product name in the page's language (docs/decisions.md).
     const media = await req.payload.find({
       collection: 'media',
       where: { id: { in: photoIds } },
-      locale: 'all',
       depth: 0,
       pagination: false,
       overrideAccess: true,
     })
-    const byId = new Map(media.docs.map((m) => [String(m.id), m]))
+    const existing = new Set(media.docs.map((m) => String(m.id)))
     photoIds.forEach((photoId, index) => {
-      const m = byId.get(String(photoId))
-      if (!m) {
+      if (!existing.has(String(photoId))) {
         errors.push({ path: 'photos', message: `Photo ${index + 1} no longer exists.` })
-        return
-      }
-      const alt = m.altText as unknown as LocaleMap
-      const missing = missingLocales(alt, { maxLength: LIMITS.altText })
-      if (missing.length > 0) {
-        errors.push({
-          path: 'photos',
-          message: `Photo ${index + 1} (${m.filename}) is missing alt text in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')}. Edit the image in Media.`,
-        })
       }
     })
   }
