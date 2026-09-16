@@ -74,7 +74,7 @@ export async function createMedia(
   })
 }
 
-/** Creates a category with all three names and activates it (unless `isActive: false`). */
+/** Creates a category with all three names on one save; active unless `isActive: false`. */
 export async function createCategory(
   payload: Payload,
   names: LocalizedText,
@@ -82,34 +82,14 @@ export async function createCategory(
   extra: Partial<Category> = {},
 ) {
   const { isActive = true, ...rest } = extra
-  const category = await payload.create({
+  return payload.create({
     collection: 'categories',
-    data: { name: names.en, slug, ...rest, isActive: false },
-    locale: 'en',
+    data: { name: names, slug, ...rest, isActive },
     overrideAccess: true,
   })
-  for (const locale of ['ckb', 'ar'] as const) {
-    await payload.update({
-      collection: 'categories',
-      id: category.id,
-      data: { name: names[locale] },
-      locale,
-      overrideAccess: true,
-    })
-  }
-  if (isActive) {
-    return payload.update({
-      collection: 'categories',
-      id: category.id,
-      data: { isActive: true },
-      locale: 'en',
-      overrideAccess: true,
-    })
-  }
-  return category
 }
 
-/** Creates a delivery city with all three names; activates it unless `isActive: false`. */
+/** Creates a delivery city with all three names on one save; active unless `isActive: false`. */
 export async function createCity(
   payload: Payload,
   names: LocalizedText,
@@ -117,37 +97,17 @@ export async function createCity(
   extra: Partial<City> = {},
 ) {
   const { isActive = true, ...rest } = extra
-  const city = await payload.create({
+  return payload.create({
     collection: 'cities',
     data: {
-      name: names.en,
+      name: names,
       ...(feeIqd === null ? {} : { feeIqd }),
       freeDeliveryConfirmed: feeIqd === 0,
       ...rest,
-      isActive: false,
+      isActive,
     },
-    locale: 'en',
     overrideAccess: true,
   })
-  for (const locale of ['ckb', 'ar'] as const) {
-    await payload.update({
-      collection: 'cities',
-      id: city.id,
-      data: { name: names[locale] },
-      locale,
-      overrideAccess: true,
-    })
-  }
-  if (isActive) {
-    return payload.update({
-      collection: 'cities',
-      id: city.id,
-      data: { isActive: true },
-      locale: 'en',
-      overrideAccess: true,
-    })
-  }
-  return city
 }
 
 export type ProductFixture = {
@@ -162,8 +122,8 @@ export type ProductFixture = {
 }
 
 /**
- * Creates a product with all three translations. Saved as a draft first (one locale per
- * request, like the admin does), then optionally published.
+ * Creates a product with all three translations on one save. Saved as a draft first
+ * (like the admin's Save Draft), then optionally published.
  */
 export async function createProduct(
   payload: Payload,
@@ -178,8 +138,8 @@ export async function createProduct(
   const created = await payload.create({
     collection: 'products',
     data: {
-      name: fixture.names.en,
-      description: descriptions.en,
+      name: fixture.names,
+      description: descriptions,
       category: fixture.category,
       photos: fixture.photos,
       priceIqd: fixture.priceIqd,
@@ -188,30 +148,14 @@ export async function createProduct(
       ...(fixture.slug ? { slug: fixture.slug } : {}),
       _status: 'draft',
     },
-    locale: 'en',
     draft: true,
     overrideAccess: true,
   })
-  for (const locale of ['ckb', 'ar'] as const) {
-    await payload.update({
-      collection: 'products',
-      id: created.id,
-      data: {
-        name: fixture.names[locale],
-        description: descriptions[locale],
-        _status: 'draft',
-      },
-      locale,
-      draft: true,
-      overrideAccess: true,
-    })
-  }
   if (options.publish) {
     return payload.update({
       collection: 'products',
       id: created.id,
       data: { _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -219,7 +163,6 @@ export async function createProduct(
   return payload.findByID({
     collection: 'products',
     id: created.id,
-    locale: 'en',
     draft: true,
     overrideAccess: true,
   })

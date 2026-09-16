@@ -2,8 +2,16 @@ import type { CollectionConfig } from 'payload'
 import { APIError, ValidationError } from 'payload'
 
 import { activeOrOwner, ownerOnly } from '@/access'
-import { mergeLocalizedField, missingLocales, readAllLocales } from '@/hooks/localized'
-import { LOCALE_LABELS, requestLocale } from '@/hooks/products'
+import { translatedField } from '@/fields/translated'
+import {
+  type Translations,
+  adminTitleFrom,
+  mergeTranslations,
+  missingLocales,
+  trimTranslations,
+} from '@/hooks/localized'
+import { LOCALE_LABELS } from '@/hooks/products'
+import { LOCALES } from '@/i18n/config'
 import { MAX_IQD, isValidIqd } from '@/lib/catalog/dinar'
 import { normalizeForSearch } from '@/lib/catalog/normalize'
 
@@ -21,8 +29,9 @@ export const DeliveryCities: CollectionConfig = {
   labels: { singular: 'Delivery city', plural: 'Delivery cities' },
   admin: {
     group: 'Catalog',
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'feeIqd', 'sortOrder', 'isActive', 'updatedAt'],
+    useAsTitle: 'adminTitle',
+    defaultColumns: ['adminTitle', 'feeIqd', 'sortOrder', 'isActive', 'updatedAt'],
+    listSearchableFields: ['adminTitle'],
     description:
       'Cities and their delivery fees in whole Iraqi dinars. Fees are information only; they are never added to product prices. Only active cities appear on the website.',
   },
@@ -39,43 +48,50 @@ export const DeliveryCities: CollectionConfig = {
         if (!data) {
           return data
         }
-        if (typeof data.name === 'string') {
-          data.name = data.name.trim().replace(/\s+/g, ' ')
-        }
+        trimTranslations(data.name)
         return data
       },
     ],
     beforeChange: [
       async ({ data, originalDoc, req }) => {
         const id = originalDoc?.id
-        const locale = requestLocale(req)
+        const names = mergeTranslations(originalDoc?.name, data.name)
+        data.adminTitle = adminTitleFrom(names, 'Untitled city')
 
-        // Normalized name for the language being saved; duplicates are rejected per
-        // language (and by a database unique index).
-        if (typeof data.name === 'string' && data.name.length > 0) {
-          const normalized = normalizeForSearch(data.name)
-          data.normalizedName = normalized
+        // Normalized names per language; duplicates are rejected per language here and
+        // by a database unique index.
+        const normalizedNames: Translations = {}
+        for (const locale of LOCALES) {
+          const value = names[locale]
+          normalizedNames[locale] =
+            typeof value === 'string' && value.length > 0 ? normalizeForSearch(value) : null
+        }
+        data.normalizedName = normalizedNames
+        for (const locale of LOCALES) {
+          const normalized = normalizedNames[locale]
+          if (!normalized) {
+            continue
+          }
           const duplicate = await req.payload.find({
             collection: 'cities',
             where: {
               and: [
-                { normalizedName: { equals: normalized } },
+                { [`normalizedName.${locale}`]: { equals: normalized } },
                 ...(id !== undefined ? [{ id: { not_equals: id } }] : []),
               ],
             },
-            locale,
-            fallbackLocale: false,
             depth: 0,
             limit: 1,
             overrideAccess: true,
           })
           if (duplicate.totalDocs > 0) {
+            const other = duplicate.docs[0].name?.[locale] ?? duplicate.docs[0].adminTitle
             throw new ValidationError({
               collection: 'cities',
               errors: [
                 {
-                  path: 'name',
-                  message: `A city named "${duplicate.docs[0].name}" already exists in ${LOCALE_LABELS[locale]}. Edit that city instead.`,
+                  path: `name.${locale}`,
+                  message: `A city named "${other}" already exists in ${LOCALE_LABELS[locale]}. Edit that city instead.`,
                 },
               ],
               req,
@@ -85,13 +101,11 @@ export const DeliveryCities: CollectionConfig = {
 
         const active = data.isActive === true
         if (active) {
-          const existing = id !== undefined ? await readAllLocales(req, 'cities', id) : null
-          const names = mergeLocalizedField(existing?.name, data.name, locale)
           const reasons: string[] = []
           const missing = missingLocales(names, { maxLength: CITY_NAME_MAX })
           if (missing.length > 0) {
             reasons.push(
-              `the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')} (switch the language selector at the top right, enter it and Save)`,
+              `the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')} (fill it in above)`,
             )
           }
           const fee = data.feeIqd !== undefined ? data.feeIqd : originalDoc?.feeIqd
@@ -129,17 +143,13 @@ export const DeliveryCities: CollectionConfig = {
     ],
   },
   fields: [
-    {
+    translatedField({
       name: 'name',
-      type: 'text',
-      localized: true,
-      required: true,
+      label: 'Name',
       maxLength: CITY_NAME_MAX,
-      admin: {
-        description:
-          'City name in the language selected at the top of the page (1 to 100 characters). All three languages are required before activation.',
-      },
-    },
+      description:
+        'The city name in each language (1 to 100 characters). All three are needed before the city can be activated.',
+    }),
     {
       name: 'feeIqd',
       type: 'number',
@@ -195,16 +205,26 @@ export const DeliveryCities: CollectionConfig = {
       admin: { position: 'sidebar', readOnly: true },
     },
     {
-      name: 'normalizedName',
+      // List/picker title: "English name · Kurdish name" (see adminTitleFrom).
+      name: 'adminTitle',
       type: 'text',
-      localized: true,
+      label: 'Title',
       index: true,
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true },
+    },
+    {
+      // Search-normalized copy of each name, for the per-language duplicate check and
+      // the unique indexes created in payload.config.ts.
+      name: 'normalizedName',
+      type: 'group',
       access: {
         read: ({ req }) => Boolean(req.user),
         create: () => false,
         update: () => false,
       },
       admin: { hidden: true },
+      fields: LOCALES.map((locale) => ({ name: locale, type: 'text' as const, index: true })),
     },
   ],
 }

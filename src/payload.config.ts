@@ -16,7 +16,6 @@ import { Users } from '@/collections/Users'
 import { catalogEndpoint } from '@/endpoints/catalog'
 import { deliveryCitiesEndpoint } from '@/endpoints/deliveryCities'
 import { ShopSettings } from '@/globals/ShopSettings'
-import { LOCALES, LOCALE_META, DEFAULT_LOCALE } from '@/i18n/config'
 import { SCHEMA_NAME } from '@/lib/db'
 import { databaseUri, env, payloadSecret, s3Settings, siteUrl } from '@/lib/env'
 
@@ -50,16 +49,8 @@ export default buildConfig({
   },
   collections: [Products, Categories, DeliveryCities, Media, Redirects, Users],
   globals: [ShopSettings],
-  localization: {
-    locales: LOCALES.map((code) => ({
-      code,
-      label: LOCALE_META[code].label,
-      rtl: LOCALE_META[code].dir === 'rtl',
-    })),
-    defaultLocale: DEFAULT_LOCALE,
-    // Explicit locale reads with fallback disabled (spec section 4).
-    fallback: false,
-  },
+  // Content translations are explicit per-language fields on one form (src/fields/translated.ts),
+  // not Payload locales, so the admin has no locale switcher (docs/decisions.md).
   // The admin interface starts in English; content locales are separate (spec section 4).
   i18n: {
     fallbackLanguage: 'en',
@@ -92,11 +83,16 @@ export default buildConfig({
         // Unique normalized delivery-city name per language at database level (spec
         // section 6 "City delivery data"); the hook gives the friendly message first.
         extendTable({
-          table: schema.tables.cities_locales,
+          table: schema.tables.cities,
           extraConfig: (table) => ({
-            cities_locales_name_unique: uniqueIndex('cities_locales_name_unique').on(
-              table._locale,
-              table.normalizedName,
+            cities_normalized_name_ckb_unique: uniqueIndex('cities_normalized_name_ckb_unique').on(
+              table.normalizedName_ckb,
+            ),
+            cities_normalized_name_ar_unique: uniqueIndex('cities_normalized_name_ar_unique').on(
+              table.normalizedName_ar,
+            ),
+            cities_normalized_name_en_unique: uniqueIndex('cities_normalized_name_en_unique').on(
+              table.normalizedName_en,
             ),
           }),
         })

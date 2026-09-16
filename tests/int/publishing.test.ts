@@ -50,20 +50,20 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     const draft = await payload.create({
       collection: 'products',
       data: {
-        name: '  Star   necklace ',
+        name: { en: '  Star   necklace ' },
         category: categoryId,
         photos: [mediaId],
         priceIqd: 25000,
         isAvailable: true,
-        description: 'English only description',
+        description: { en: 'English only description' },
         _status: 'draft',
       },
-      locale: 'en',
       draft: true,
       overrideAccess: true,
     })
     expect(draft.slug).toBe('star-necklace')
-    expect(draft.name).toBe('Star necklace')
+    expect(draft.name?.en).toBe('Star necklace')
+    expect(draft.adminTitle).toBe('Star necklace')
 
     const owner = await ownerUser(payload)
     const hidden = await payload.findByID({
@@ -100,13 +100,12 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
         collection: 'products',
         id: draft.id,
         data: { _status: 'published' },
-        locale: 'en',
         overrideAccess: true,
       }),
     )
-    expect(messages).toMatch(/name: .*Sorani Kurdish/)
-    expect(messages).toMatch(/name: .*Arabic/)
-    expect(messages).toMatch(/description: .*Arabic/)
+    expect(messages).toMatch(/name\.ckb: .*Sorani Kurdish/)
+    expect(messages).toMatch(/name\.ar: .*Arabic/)
+    expect(messages).toMatch(/description\.ar: .*Arabic/)
     expect(messages).not.toMatch(/photos/)
   })
 
@@ -127,31 +126,33 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     expect(first.slug).toBe('beaded-bracelet')
     expect(second.slug).toBe('beaded-bracelet-2')
 
-    // A first save in Sorani has no English name yet: the slug waits for one.
+    // A first save with only the Kurdish name has no English name yet: the slug waits.
     const kurdishFirst = await payload.create({
       collection: 'products',
       data: {
-        name: 'گوارە',
-        description: 'وەسف',
+        name: { ckb: 'گوارە' },
+        description: { ckb: 'وەسف' },
         category: categoryId,
         priceIqd: 9000,
         isAvailable: false,
         _status: 'draft',
       },
-      locale: 'ckb',
       draft: true,
       overrideAccess: true,
     })
     expect(kurdishFirst.slug ?? null).toBeNull()
+    expect(kurdishFirst.adminTitle).toBe('گوارە')
     const withEnglish = await payload.update({
       collection: 'products',
       id: kurdishFirst.id,
-      data: { name: 'Stud earrings', description: 'Small studs', _status: 'draft' },
-      locale: 'en',
+      data: { name: { en: 'Stud earrings' }, description: { en: 'Small studs' }, _status: 'draft' },
       draft: true,
       overrideAccess: true,
     })
     expect(withEnglish.slug).toBe('stud-earrings')
+    // A partial update keeps the other languages and refreshes the admin title.
+    expect(withEnglish.name).toMatchObject({ ckb: 'گوارە', en: 'Stud earrings' })
+    expect(withEnglish.adminTitle).toBe('Stud earrings · گوارە')
   })
 
   it('publishes a complete product and serves the last published revision while a draft exists (A02, A05, A06, A15)', async () => {
@@ -169,36 +170,31 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     expect(product._status).toBe('published')
     expect(product.publishedAt).toBeTruthy()
 
-    // Public read in each locale: six business fields, shared whole-dinar price.
-    for (const [locale, expected] of [
-      ['ckb', 'ملوانکەی مانگ'],
-      ['ar', 'قلادة هلال'],
-      ['en', 'Moon necklace'],
-    ] as const) {
-      const result = await payload.find({
-        collection: 'products',
-        where: { slug: { equals: product.slug } },
-        locale,
-        fallbackLocale: false,
-        overrideAccess: false,
-        draft: false,
-        depth: 1,
-      })
-      expect(result.totalDocs).toBe(1)
-      expect(result.docs[0].name).toBe(expected)
-      expect(result.docs[0].priceIqd).toBe(32000)
-      // Internal fields never reach anonymous readers.
-      expect(result.docs[0]).not.toHaveProperty('searchText')
-      expect(result.docs[0]).not.toHaveProperty('normalizedName')
-      expect(result.docs[0]).not.toHaveProperty('updatedBy')
-    }
+    // Public read: six business fields with every language, shared whole-dinar price.
+    const result = await payload.find({
+      collection: 'products',
+      where: { slug: { equals: product.slug } },
+      overrideAccess: false,
+      draft: false,
+      depth: 1,
+    })
+    expect(result.totalDocs).toBe(1)
+    expect(result.docs[0].name).toEqual({
+      ckb: 'ملوانکەی مانگ',
+      ar: 'قلادة هلال',
+      en: 'Moon necklace',
+    })
+    expect(result.docs[0].priceIqd).toBe(32000)
+    // Internal fields never reach anonymous readers.
+    expect(result.docs[0]).not.toHaveProperty('searchText')
+    expect(result.docs[0]).not.toHaveProperty('normalizedName')
+    expect(result.docs[0]).not.toHaveProperty('updatedBy')
 
     // Draft edit of a published item keeps the public price until Publish.
     await payload.update({
       collection: 'products',
       id: product.id,
       data: { priceIqd: 35000, _status: 'draft' },
-      locale: 'en',
       draft: true,
       overrideAccess: true,
     })
@@ -207,7 +203,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       id: product.id,
       overrideAccess: false,
       draft: false,
-      locale: 'en',
     })
     expect(stillPublished.priceIqd).toBe(32000)
     expect(stillPublished._status).toBe('published')
@@ -217,7 +212,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       id: product.id,
       overrideAccess: true,
       draft: true,
-      locale: 'en',
     })
     expect(latestDraft.priceIqd).toBe(35000)
 
@@ -226,7 +220,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -235,7 +228,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       id: product.id,
       overrideAccess: false,
       draft: false,
-      locale: 'en',
     })
     expect(republished.priceIqd).toBe(35000)
 
@@ -244,7 +236,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { isAvailable: false, _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -253,7 +244,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       id: product.id,
       overrideAccess: false,
       draft: false,
-      locale: 'en',
     })
     expect(unavailable.isAvailable).toBe(false)
 
@@ -262,7 +252,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { _status: 'draft' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -290,14 +279,13 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
         payload.create({
           collection: 'products',
           data: {
-            name: 'Bad price',
+            name: { en: 'Bad price' },
             category: categoryId,
             priceIqd,
             isAvailable: true,
-            description: 'x',
+            description: { en: 'x' },
             _status: 'draft',
           },
-          locale: 'en',
           draft: true,
           overrideAccess: true,
         }),
@@ -322,7 +310,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { slug: 'twisted-silver-ring', _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -341,7 +328,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { slug: oldSlug, _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -365,11 +351,11 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       payload.create({
         collection: 'products',
         data: {
-          name: 'Hacked',
+          name: { en: 'Hacked' },
           category: categoryId,
           priceIqd: 1,
           isAvailable: true,
-          description: 'x',
+          description: { en: 'x' },
         },
         overrideAccess: false,
       }),
@@ -388,14 +374,14 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     await expect(
       payload.create({
         collection: 'cities',
-        data: { name: 'Hacked city', feeIqd: 0, isActive: true },
+        data: { name: { en: 'Hacked city' }, feeIqd: 0, isActive: true },
         overrideAccess: false,
       }),
     ).rejects.toThrow()
     await expect(
       payload.create({
         collection: 'categories',
-        data: { name: 'Hacked category', slug: 'hacked' },
+        data: { name: { en: 'Hacked category' }, slug: 'hacked' },
         overrideAccess: false,
       }),
     ).rejects.toThrow()
@@ -465,7 +451,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { _status: 'draft' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -485,7 +470,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
         collection: 'products',
         id: product.id,
         data: { _status: 'published' },
-        locale: 'en',
         draft: false,
         overrideAccess: true,
       }),
@@ -497,7 +481,6 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
       collection: 'products',
       id: product.id,
       data: { category: categoryId, _status: 'draft' },
-      locale: 'en',
       draft: true,
       overrideAccess: true,
     })
@@ -508,16 +491,15 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     const payload = await testPayload()
     const partial = await payload.create({
       collection: 'categories',
-      data: { name: 'Brooches', slug: 'brooches', isActive: false },
-      locale: 'en',
+      data: { name: { en: 'Brooches' }, slug: 'brooches', isActive: false },
       overrideAccess: true,
     })
+    expect(partial.adminTitle).toBe('Brooches')
     const messages = await expectFailure(() =>
       payload.update({
         collection: 'categories',
         id: partial.id,
         data: { isActive: true },
-        locale: 'en',
         overrideAccess: true,
       }),
     )

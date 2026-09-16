@@ -13,7 +13,7 @@ Supabase runs 17). Exact versions are in `package.json` and `pnpm-lock.yaml`.
 ## Converted from the Dler Camera build
 
 The Starlight site reuses the infrastructure of the earlier Dler Camera implementation
-(Payload/Next setup, security hooks, media pipeline, search normalization, localization
+(Payload/Next setup, security hooks, media pipeline, search normalization, translation
 helpers, tests, deployment layout) and replaces the shop model. Because nothing was deployed,
 the old migration was discarded and a single fresh migration creates the `starlight`
 schema; the old `dler` schema, if present in a local database, is simply left untouched.
@@ -53,13 +53,25 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Translations are edited on one form, not through Payload locales** (owner decision,
+  2026-09-16). Payload's localization made the owner switch the locale selector and save
+  once per language; the spec's "complete in all three languages" rule stays, but every
+  translated field (product name and description, category name, city name, About text)
+  is now a group with `ckb`, `ar` and `en` inputs on the same page, saved together
+  (`src/fields/translated.ts`). The public site picks the page language from the group
+  (`pickTranslation`), the search fields are built from all three as before, and a
+  computed `adminTitle` ("English · Kurdish") is the list and picker title. Duplicate city
+  names are still refused per language, now by three unique indexes. The migration copies
+  the old locale rows (including product version history) and deliberately keeps the old
+  `*_locales` tables and the `_products_v.snapshot`/`published_locale` columns so the
+  previously deployed build keeps working until the new one is live; drop them in the next
+  schema migration (see the note in `20260916_113912_translations_on_one_form.ts`).
 - **Image descriptions are one optional text per image, shared by all languages** (owner
   decision, 2026-09-16; the spec asked for alt text in all three languages). The public
   site uses the product name in the page's language when the description is empty, and
   the shop name for the logo, so every image still has language-correct alt text.
-  Publishing no longer checks descriptions. The migration keeps `media_locales` in place
-  because migrations run before the new code is deployed and the previous build still
-  reads it; drop that table in the next schema migration.
+  Publishing no longer checks descriptions. (`media_locales` was kept by that migration
+  for the then-live build and dropped by the next one.)
 - **Delivery cities** are the Payload collection `cities` (labelled "Delivery cities") so
   that the public fixed-projection endpoint can live at `GET /api/delivery-cities` without
   colliding with Payload's generated `/api/<collection>` routes. Public reads (generated or

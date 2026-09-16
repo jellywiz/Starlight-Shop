@@ -3,9 +3,9 @@
 ## Daily owner guide (admin at `/admin`)
 
 **Add a product.** Products → Create new. Choose the category (create and activate it first
-under Categories if missing), enter the name and description in the language selected at
-the top right of the page, then switch the locale selector to fill Sorani, Arabic and
-English. Under Price and availability enter the price in whole Iraqi dinars (e.g. `25000`,
+under Categories if missing), then enter the name and description: each has three inputs on
+the same page — Sorani (کوردی), Arabic (العربية) and English — so everything is written on one
+form and saved once. Under Price and availability enter the price in whole Iraqi dinars (e.g. `25000`,
 no decimals), tick **Available** if the piece can be ordered, and under Photos upload the
 pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover).
 Each picture is uploaded once and shared by all three languages; the optional "Image
@@ -26,7 +26,7 @@ but keeps the images; prefer Unpublish.
 **Change the slug of a published product** only if needed; the old address redirects
 automatically (Redirects collection).
 
-**Categories.** Categories → Create new: enter the name in all three languages, choose the
+**Categories.** Categories → Create new: enter the three names (one form), choose the
 position (sort order) and tick Active. Only active categories with at least one published
 product appear in the website's navigation and filters; empty categories can be kept for
 later. Renaming updates the public label on the next request. A category used by published
@@ -119,8 +119,8 @@ still works.
   Instagram and never shows a zero fee by mistake.
 - **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: resize the photo
   before uploading (any phone gallery app can export a smaller copy).
-- **Publish refuses with missing languages**: switch the locale selector and fill the
-  listed fields (name and description are the only per-language product fields).
+- **Publish refuses with missing languages**: fill the listed language inputs on the Basic
+  details tab (name and description are the only per-language product fields).
 - **City cannot be activated**: fill all three names and a valid whole-dinar fee; a zero
   fee needs the free-delivery confirmation.
 - **Locked document**: another session is editing the same record; Payload warns about

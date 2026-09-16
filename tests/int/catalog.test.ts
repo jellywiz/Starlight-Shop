@@ -325,7 +325,6 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
       collection: 'products',
       id: star.docs[0].id,
       data: { slug: 'silver-star-necklace', _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -335,7 +334,6 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
       collection: 'products',
       id: star.docs[0].id,
       data: { _status: 'draft' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })

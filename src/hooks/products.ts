@@ -5,18 +5,19 @@ import type {
   PayloadRequest,
   ValidationFieldError,
 } from 'payload'
-import { APIError, ValidationError } from 'payload'
+import { ValidationError } from 'payload'
 
-import { LOCALES, type Locale, isLocale, DEFAULT_LOCALE } from '@/i18n/config'
+import { LOCALES, type Locale } from '@/i18n/config'
 import { isValidIqd } from '@/lib/catalog/dinar'
 import { buildNormalizedName, buildSearchText } from '@/lib/catalog/normalize'
 import { isValidSlug, slugify } from '@/lib/slug'
 import {
-  type LocaleMap,
-  localeValues,
-  mergeLocalizedField,
+  type Translations,
+  adminTitleFrom,
+  mergeTranslations,
   missingLocales,
-  readAllLocales,
+  translationValues,
+  trimTranslations,
 } from '@/hooks/localized'
 
 export const LOCALE_LABELS: Record<Locale, string> = {
@@ -34,11 +35,6 @@ export const LIMITS = {
 } as const
 
 type AnyDoc = Record<string, unknown>
-
-export function requestLocale(req: PayloadRequest): Locale {
-  const locale = req.locale
-  return isLocale(locale) ? locale : DEFAULT_LOCALE
-}
 
 export function relationId(value: unknown): number | string | null {
   if (value === null || value === undefined) {
@@ -59,29 +55,21 @@ function relationIds(value: unknown): Array<number | string> {
 }
 
 /**
- * Builds the complete all-locales picture of the product that WOULD be stored if this
- * request succeeds: the stored document (all locales) with the incoming request-locale
- * data merged on top.
+ * The complete product that WOULD be stored if this request succeeds: the latest saved
+ * revision with the incoming data merged on top (translated groups merged per language).
  */
-async function mergedProduct(args: {
-  data: AnyDoc
-  id?: number | string
-  req: PayloadRequest
-}): Promise<{ doc: AnyDoc; name: LocaleMap; description: LocaleMap }> {
-  const { data, id, req } = args
-  const locale = requestLocale(req)
-  const existing = id !== undefined ? await readAllLocales(req, 'products', id) : null
-  const doc: AnyDoc = { ...(existing ?? {}), ...data }
-  const name = mergeLocalizedField(existing?.name, data.name, locale)
-  const description = mergeLocalizedField(existing?.description, data.description, locale)
+function mergedProduct(data: AnyDoc, originalDoc: AnyDoc | undefined) {
+  const doc: AnyDoc = { ...(originalDoc ?? {}), ...data }
+  const name = mergeTranslations(originalDoc?.name, data.name)
+  const description = mergeTranslations(originalDoc?.description, data.description)
   return { doc, name, description }
 }
 
 /** Errors that prevent publication (spec section 5 "Publishing validation"). */
 async function publicationErrors(args: {
   doc: AnyDoc
-  name: LocaleMap
-  description: LocaleMap
+  name: Translations
+  description: Translations
   req: PayloadRequest
 }): Promise<ValidationFieldError[]> {
   const { doc, name, description, req } = args
@@ -89,13 +77,13 @@ async function publicationErrors(args: {
 
   for (const locale of missingLocales(name, { maxLength: LIMITS.name })) {
     errors.push({
-      path: 'name',
+      path: `name.${locale}`,
       message: `Name is missing or too long in ${LOCALE_LABELS[locale]}.`,
     })
   }
   for (const locale of missingLocales(description, { maxLength: LIMITS.description })) {
     errors.push({
-      path: 'description',
+      path: `description.${locale}`,
       message: `Description is missing or too long in ${LOCALE_LABELS[locale]}.`,
     })
   }
@@ -164,20 +152,9 @@ async function publicationErrors(args: {
   return errors
 }
 
-async function englishName(
-  data: AnyDoc,
-  id: number | string | undefined,
-  req: PayloadRequest,
-): Promise<string | null> {
-  if (requestLocale(req) === 'en' && typeof data.name === 'string' && data.name.trim()) {
-    return data.name.trim()
-  }
-  if (id === undefined) {
-    return null
-  }
-  const existing = await readAllLocales(req, 'products', id)
-  const stored = (existing?.name as LocaleMap | undefined)?.en
-  return typeof stored === 'string' && stored.trim() ? stored.trim() : null
+function englishName(data: AnyDoc, originalDoc: AnyDoc | undefined): string | null {
+  const en = mergeTranslations(originalDoc?.name, data.name).en
+  return typeof en === 'string' && en.trim() ? en.trim() : null
 }
 
 /**
@@ -194,9 +171,8 @@ export const productBeforeValidate: CollectionBeforeValidateHook = async ({
   if (!data) {
     return data
   }
-  if (typeof data.name === 'string') {
-    data.name = data.name.trim().replace(/\s+/g, ' ')
-  }
+  trimTranslations(data.name)
+  trimTranslations(data.description, { multiline: true })
   if (typeof data.slug === 'string') {
     data.slug = data.slug.trim().toLowerCase()
     if (data.slug === '') {
@@ -221,7 +197,7 @@ export const productBeforeValidate: CollectionBeforeValidateHook = async ({
 
   const currentSlug = data.slug ?? originalDoc?.slug
   if (!currentSlug) {
-    const en = await englishName(data, originalDoc?.id, req)
+    const en = englishName(data, originalDoc)
     const candidate = en ? slugify(en) : ''
     if (candidate) {
       data.slug = await uniqueSlug(req, candidate, originalDoc?.id)
@@ -281,26 +257,20 @@ export const productBeforeChange: CollectionBeforeChangeHook = async ({
   context,
 }) => {
   const id = originalDoc?.id as number | string | undefined
-  const merged = await mergedProduct({ data, id, req })
+  const merged = mergedProduct(data, originalDoc)
 
-  data.normalizedName = buildNormalizedName(localeValues(merged.name))
+  data.adminTitle = adminTitleFrom(
+    merged.name,
+    typeof merged.doc.slug === 'string' ? merged.doc.slug : 'Untitled product',
+  )
+  data.normalizedName = buildNormalizedName(translationValues(merged.name))
   data.searchText = buildSearchText({
-    names: localeValues(merged.name),
-    descriptions: localeValues(merged.description),
+    names: translationValues(merged.name),
+    descriptions: translationValues(merged.description),
   })
 
   if (req.user && req.user.collection === 'users') {
     data.updatedBy = req.user.id
-  }
-
-  const publishSpecificLocale = req.query?.publishSpecificLocale
-  if (typeof publishSpecificLocale === 'string' && publishSpecificLocale.length > 0) {
-    throw new APIError(
-      'Publish all languages together. Publishing a single language is disabled to avoid mixed-language pages.',
-      400,
-      undefined,
-      true,
-    )
   }
 
   const publishing =

@@ -37,9 +37,13 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(page.getByRole('link', { name: /forgot/i })).toBeHidden()
     await login(page)
 
-    // The admin list shows titles in the selected content locale.
-    await page.goto('/admin/collections/products?limit=10&locale=en')
-    await page.getByRole('link', { name: 'Sample moon necklace', exact: true }).first().click()
+    // The admin list shows the bilingual title (English · Kurdish); no locale switcher.
+    await page.goto('/admin/collections/products?limit=10')
+    await expect(page.getByText('Locale:')).toHaveCount(0)
+    await page
+      .getByRole('link', { name: /^Sample moon necklace · / })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/admin\/collections\/products\/\d+/)
     await page.getByRole('button', { name: 'Price and availability' }).click()
     const price = page.getByLabel('Price (IQD)')
@@ -86,8 +90,11 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
 
   test('a delivery fee change appears on a fresh home request (A21)', async ({ page }) => {
     await login(page)
-    await page.goto('/admin/collections/cities?limit=10&locale=en')
-    await page.getByRole('link', { name: 'Sample city 1', exact: true }).first().click()
+    await page.goto('/admin/collections/cities?limit=10')
+    await page
+      .getByRole('link', { name: /^Sample city 1 · / })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/admin\/collections\/cities\/\d+/)
     const fee = page.getByLabel('Delivery fee (IQD)')
     if ((await fee.inputValue()) === '5500') {
@@ -109,9 +116,41 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await saveWith(page, 'Save', 'cities')
   })
 
+  test('a category is created with all three names on one form', async ({ page }) => {
+    await login(page)
+    // Repeatable: remove a leftover from an interrupted run.
+    const leftovers = await page.request.get('/api/categories?where[slug][equals]=e2e-brooches')
+    for (const doc of (await leftovers.json()).docs ?? []) {
+      await page.request.delete(`/api/categories/${doc.id}`)
+    }
+
+    await page.goto('/admin/collections/categories/create')
+    await expect(page.getByText('Locale:')).toHaveCount(0)
+    // The three languages are inputs on the same page, no switching needed.
+    await page.locator('#field-name__ckb').fill('بڕۆشی تاقیکردنەوە')
+    await page.locator('#field-name__ar').fill('دبابيس تجريبية')
+    await page.locator('#field-name__en').fill('E2E brooches')
+    await page.getByLabel('Is Active').check()
+    const created = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && r.url().includes('/api/categories'),
+    )
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    expect((await created).ok()).toBe(true)
+    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    // Slug derived from the English name; bilingual title in the list.
+    await expect(page.locator('#field-slug')).toHaveValue('e2e-brooches')
+    await page.goto('/admin/collections/categories?limit=20')
+    await expect(page.getByRole('link', { name: 'E2E brooches · بڕۆشی تاقیکردنەوە' })).toBeVisible()
+
+    const cleanup = await page.request.get('/api/categories?where[slug][equals]=e2e-brooches')
+    for (const doc of (await cleanup.json()).docs ?? []) {
+      await page.request.delete(`/api/categories/${doc.id}`)
+    }
+  })
+
   test('an oversized photo is refused with the reason shown in the toast', async ({ page }) => {
     await login(page)
-    await page.goto('/admin/collections/media/create?locale=en')
+    await page.goto('/admin/collections/media/create')
     await page.setInputFiles('input[type="file"]', {
       name: 'big.png',
       mimeType: 'image/png',

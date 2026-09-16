@@ -21,16 +21,12 @@ export async function countProductsReferencing(
       : { category: { equals: id } },
     depth: 0,
     limit: 3,
-    locale: 'en',
-    fallbackLocale: false,
     overrideAccess: true,
     draft: !options.publishedOnly,
   })
   return {
     total: result.totalDocs,
-    examples: result.docs.map((d) =>
-      typeof d.name === 'string' && d.name ? d.name : (d.slug ?? `id ${d.id}`),
-    ),
+    examples: result.docs.map((d) => d.adminTitle || d.slug || `id ${d.id}`),
   }
 }
 

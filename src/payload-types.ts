@@ -94,14 +94,14 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ckb' | 'ar' | 'en') | ('ckb' | 'ar' | 'en')[];
+  fallbackLocale: null;
   globals: {
     'shop-settings': ShopSetting;
   };
   globalsSelect: {
     'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
   };
-  locale: 'ckb' | 'ar' | 'en';
+  locale: null;
   widgets: {
     collections: CollectionsWidget;
   };
@@ -130,7 +130,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Save Draft keeps changes private. Publish makes the product public and requires complete content in all three languages.
+ * Save Draft keeps changes private. Publish makes the product public and requires the name and description in all three languages.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -138,17 +138,25 @@ export interface UserAuthOperations {
 export interface Product {
   id: number;
   /**
-   * Product name in the language selected at the top of the page (1 to 160 characters).
+   * Product name in each language (1 to 160 characters).
    */
-  name: string;
+  name?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Exactly one active category.
    */
   category: number | Category;
   /**
-   * Plain text describing the actual handmade item. 1 to 5000 characters per language.
+   * Plain text describing the actual handmade item, in each language (1 to 5000 characters).
    */
-  description: string;
+  description?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Drag to reorder. The first image is the cover. Photos are shared by all three languages, so each image is uploaded once.
    */
@@ -174,6 +182,7 @@ export interface Product {
    */
   publishedAt?: string | null;
   updatedBy?: (number | null) | User;
+  adminTitle?: string | null;
   searchText?: string | null;
   normalizedName?: string | null;
   updatedAt: string;
@@ -189,11 +198,15 @@ export interface Product {
 export interface Category {
   id: number;
   /**
-   * Category name in the language selected at the top of the page.
+   * The category name in each language (1 to 80 characters). All three are needed before the category can be activated.
    */
-  name: string;
+  name?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
-   * Latin slug used in catalog URLs, e.g. necklaces. Filled automatically when the English name is entered first.
+   * Latin slug used in catalog URLs, e.g. necklaces. Filled automatically from the English name.
    */
   slug: string;
   /**
@@ -205,6 +218,7 @@ export interface Category {
    */
   isActive?: boolean | null;
   updatedBy?: (number | null) | User;
+  adminTitle?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -299,9 +313,13 @@ export interface Media {
 export interface City {
   id: number;
   /**
-   * City name in the language selected at the top of the page (1 to 100 characters). All three languages are required before activation.
+   * The city name in each language (1 to 100 characters). All three are needed before the city can be activated.
    */
-  name: string;
+  name?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Current delivery charge for this city in whole dinars, e.g. 5000. Enter 0 only for intentional free delivery.
    */
@@ -319,7 +337,12 @@ export interface City {
    */
   isActive?: boolean | null;
   updatedBy?: (number | null) | User;
-  normalizedName?: string | null;
+  adminTitle?: string | null;
+  normalizedName?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -431,9 +454,21 @@ export interface PayloadMigration {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
-  name?: T;
+  name?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   category?: T;
-  description?: T;
+  description?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   photos?: T;
   priceIqd?: T;
   isAvailable?: T;
@@ -441,6 +476,7 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   publishedAt?: T;
   updatedBy?: T;
+  adminTitle?: T;
   searchText?: T;
   normalizedName?: T;
   updatedAt?: T;
@@ -452,11 +488,18 @@ export interface ProductsSelect<T extends boolean = true> {
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
-  name?: T;
+  name?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   slug?: T;
   sortOrder?: T;
   isActive?: T;
   updatedBy?: T;
+  adminTitle?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -465,13 +508,26 @@ export interface CategoriesSelect<T extends boolean = true> {
  * via the `definition` "cities_select".
  */
 export interface CitiesSelect<T extends boolean = true> {
-  name?: T;
+  name?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   feeIqd?: T;
   freeDeliveryConfirmed?: T;
   sortOrder?: T;
   isActive?: T;
   updatedBy?: T;
-  normalizedName?: T;
+  adminTitle?: T;
+  normalizedName?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -623,9 +679,13 @@ export interface ShopSetting {
    */
   instagramUrl: string;
   /**
-   * Short factual introduction to the handmade jewellery shop, shown on the About page and the home page. Fill in all three languages; an empty language shows the built-in text.
+   * Short factual introduction to the handmade jewellery shop, shown on the About page and the home page. A language left empty shows the built-in text.
    */
-  aboutText?: string | null;
+  aboutText?: {
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   updatedBy?: (number | null) | User;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -639,7 +699,13 @@ export interface ShopSettingsSelect<T extends boolean = true> {
   logo?: T;
   defaultLocale?: T;
   instagramUrl?: T;
-  aboutText?: T;
+  aboutText?:
+    | T
+    | {
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
   updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;

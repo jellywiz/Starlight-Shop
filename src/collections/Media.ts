@@ -129,13 +129,11 @@ async function findReferences(req: PayloadRequest, mediaId: number | string): Pr
     depth: 0,
     limit: 5,
     pagination: false,
-    locale: 'en',
-    fallbackLocale: false,
     overrideAccess: true,
     draft: true,
   })
   for (const doc of products.docs) {
-    const label = typeof doc.name === 'string' && doc.name ? doc.name : (doc.slug ?? `id ${doc.id}`)
+    const label = doc.adminTitle || doc.slug || `id ${doc.id}`
     refs.push({ collection: 'products', label: `product "${label}"` })
   }
 

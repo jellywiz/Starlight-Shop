@@ -187,27 +187,15 @@ async function main() {
     if (!id) {
       const created = await payload.create({
         collection: 'categories',
-        data: { name: category.name.en, slug: category.slug, sortOrder: category.sortOrder },
-        locale: 'en',
+        data: {
+          name: category.name,
+          slug: category.slug,
+          sortOrder: category.sortOrder,
+          isActive: true,
+        },
         overrideAccess: true,
       })
       id = created.id
-      for (const locale of ['ckb', 'ar'] as const) {
-        await payload.update({
-          collection: 'categories',
-          id,
-          data: { name: category.name[locale] },
-          locale,
-          overrideAccess: true,
-        })
-      }
-      await payload.update({
-        collection: 'categories',
-        id,
-        data: { isActive: true },
-        locale: 'en',
-        overrideAccess: true,
-      })
     }
     categoryIds.set(category.slug, id)
   }
@@ -236,11 +224,12 @@ async function main() {
       })
       photoIds.push(media.id)
     }
+    // Saved as a draft first, then published, like the admin's Save Draft → Publish flow.
     const created = await payload.create({
       collection: 'products',
       data: {
-        name: product.name.en,
-        description: product.description.en,
+        name: product.name,
+        description: product.description,
         slug: `sample-${product.key}`,
         category: categoryIds.get(product.category)!,
         photos: photoIds,
@@ -249,29 +238,13 @@ async function main() {
         featured: product.featured,
         _status: 'draft',
       },
-      locale: 'en',
       draft: true,
       overrideAccess: true,
     })
-    for (const locale of ['ckb', 'ar'] as const) {
-      await payload.update({
-        collection: 'products',
-        id: created.id,
-        data: {
-          name: product.name[locale],
-          description: product.description[locale],
-          _status: 'draft',
-        },
-        locale,
-        draft: true,
-        overrideAccess: true,
-      })
-    }
     await payload.update({
       collection: 'products',
       id: created.id,
       data: { _status: 'published' },
-      locale: 'en',
       draft: false,
       overrideAccess: true,
     })
@@ -281,65 +254,34 @@ async function main() {
   const existingCities = await payload.count({ collection: 'cities', overrideAccess: true })
   if (existingCities.totalDocs === 0) {
     for (const city of CITIES) {
-      const created = await payload.create({
+      await payload.create({
         collection: 'cities',
         data: {
-          name: city.name.en,
+          name: city.name,
           feeIqd: city.feeIqd,
           sortOrder: city.sortOrder,
           freeDeliveryConfirmed: city.feeIqd === 0,
-          isActive: false,
+          isActive: true,
         },
-        locale: 'en',
-        overrideAccess: true,
-      })
-      for (const locale of ['ckb', 'ar'] as const) {
-        await payload.update({
-          collection: 'cities',
-          id: created.id,
-          data: { name: city.name[locale] },
-          locale,
-          overrideAccess: true,
-        })
-      }
-      await payload.update({
-        collection: 'cities',
-        id: created.id,
-        data: { isActive: true },
-        locale: 'en',
         overrideAccess: true,
       })
       process.stdout.write(`Activated sample city ${city.name.en} (fee ${city.feeIqd})\n`)
     }
   }
 
-  const settings = await payload.findGlobal({
-    slug: 'shop-settings',
-    locale: 'en',
-    overrideAccess: true,
-  })
-  if (!settings.aboutText) {
-    for (const [locale, about] of [
-      [
-        'en',
-        'SAMPLE about text. Starlight Jewellery makes handmade jewellery and accessories; every piece is made by hand and orders are arranged through Instagram messages.',
-      ],
-      [
-        'ckb',
-        'دەقی نموونە. ستارلایت جوێلەری خشڵ و ئەکسسواری دەستکرد دروست دەکات؛ هەموو پارچەیەک بە دەست دروست کراوە و داواکارییەکان لە ڕێگەی نامەی ئینستاگرامەوە ڕێک دەخرێن.',
-      ],
-      [
-        'ar',
-        'نص تجريبي. ستارلايت جوليري تصنع مجوهرات وإكسسوارات يدوية؛ كل قطعة مصنوعة يدويًا وتُرتَّب الطلبات عبر رسائل إنستغرام.',
-      ],
-    ] as const) {
-      await payload.updateGlobal({
-        slug: 'shop-settings',
-        data: { aboutText: about },
-        locale,
-        overrideAccess: true,
-      })
-    }
+  const settings = await payload.findGlobal({ slug: 'shop-settings', overrideAccess: true })
+  if (!settings.aboutText?.en) {
+    await payload.updateGlobal({
+      slug: 'shop-settings',
+      data: {
+        aboutText: {
+          en: 'SAMPLE about text. Starlight Jewellery makes handmade jewellery and accessories; every piece is made by hand and orders are arranged through Instagram messages.',
+          ckb: 'دەقی نموونە. ستارلایت جوێلەری خشڵ و ئەکسسواری دەستکرد دروست دەکات؛ هەموو پارچەیەک بە دەست دروست کراوە و داواکارییەکان لە ڕێگەی نامەی ئینستاگرامەوە ڕێک دەخرێن.',
+          ar: 'نص تجريبي. ستارلايت جوليري تصنع مجوهرات وإكسسوارات يدوية؛ كل قطعة مصنوعة يدويًا وتُرتَّب الطلبات عبر رسائل إنستغرام.',
+        },
+      },
+      overrideAccess: true,
+    })
     process.stdout.write('Filled sample shop settings\n')
   }
   process.stdout.write('Seed complete.\n')

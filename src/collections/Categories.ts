@@ -2,23 +2,32 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { activeOrOwner, ownerOnly } from '@/access'
-import { mergeLocalizedField, missingLocales, readAllLocales } from '@/hooks/localized'
-import { LOCALE_LABELS, requestLocale } from '@/hooks/products'
+import { translatedField } from '@/fields/translated'
+import {
+  adminTitleFrom,
+  mergeTranslations,
+  missingLocales,
+  trimTranslations,
+} from '@/hooks/localized'
+import { LOCALE_LABELS } from '@/hooks/products'
 import { assertCategoryDeactivatable, assertCategoryDeletable } from '@/hooks/references'
 import { slugify, validateSlug } from '@/lib/slug'
 
+export const CATEGORY_NAME_MAX = 80
+
 /**
- * Flat product categories (spec section 6). Names are localized; the slug is shared and
- * used in filter URLs. Categories are owner-managed, never a hard-coded list. Only active
- * categories are readable publicly; the catalog additionally shows only categories that
- * have at least one published product.
+ * Flat product categories (spec section 6). The name is translated (all three languages
+ * on one form); the slug is shared and used in filter URLs. Categories are owner-managed,
+ * never a hard-coded list. Only active categories are readable publicly; the catalog
+ * additionally shows only categories that have at least one published product.
  */
 export const Categories: CollectionConfig = {
   slug: 'categories',
   admin: {
     group: 'Catalog',
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'slug', 'sortOrder', 'isActive', 'updatedAt'],
+    useAsTitle: 'adminTitle',
+    defaultColumns: ['adminTitle', 'slug', 'sortOrder', 'isActive', 'updatedAt'],
+    listSearchableFields: ['adminTitle', 'slug'],
     description:
       'Flat list of categories, e.g. Necklaces, Bracelets, Rings. A category needs all three names before it can be activated. Deactivate instead of deleting when products still use it.',
   },
@@ -31,13 +40,11 @@ export const Categories: CollectionConfig = {
   defaultSort: 'sortOrder',
   hooks: {
     beforeValidate: [
-      ({ data, originalDoc, req }) => {
+      ({ data, originalDoc }) => {
         if (!data) {
           return data
         }
-        if (typeof data.name === 'string') {
-          data.name = data.name.trim().replace(/\s+/g, ' ')
-        }
+        trimTranslations(data.name)
         if (typeof data.slug === 'string') {
           data.slug = data.slug.trim().toLowerCase()
           if (data.slug === '') {
@@ -45,13 +52,9 @@ export const Categories: CollectionConfig = {
           }
         }
         // Derive the slug from the English name the first time it is available.
-        if (
-          !data.slug &&
-          !originalDoc?.slug &&
-          typeof data.name === 'string' &&
-          requestLocale(req) === 'en'
-        ) {
-          const candidate = slugify(data.name)
+        if (!data.slug && !originalDoc?.slug) {
+          const en = mergeTranslations(originalDoc?.name, data.name).en
+          const candidate = typeof en === 'string' ? slugify(en) : ''
           if (candidate) {
             data.slug = candidate
           }
@@ -62,16 +65,19 @@ export const Categories: CollectionConfig = {
     beforeChange: [
       async ({ data, originalDoc, req }) => {
         const id = originalDoc?.id
-        const activating = data.isActive === true
-        if (activating) {
+        const names = mergeTranslations(originalDoc?.name, data.name)
+        data.adminTitle = adminTitleFrom(
+          names,
+          data.slug ?? originalDoc?.slug ?? 'Untitled category',
+        )
+
+        if (data.isActive === true) {
           // Activation requires every translation (spec section 6 "Integrity rules").
-          const existing = id !== undefined ? await readAllLocales(req, 'categories', id) : null
-          const names = mergeLocalizedField(existing?.name, data.name, requestLocale(req))
-          const missing = missingLocales(names, { maxLength: 80 })
+          const missing = missingLocales(names, { maxLength: CATEGORY_NAME_MAX })
           if (missing.length > 0) {
             // A plain message (not a field error) so the admin toast shows the reason.
             throw new APIError(
-              `Cannot activate this category: the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')}. Untick Active and Save, switch the language selector at the top right, enter the name in each language and Save, then activate.`,
+              `Cannot activate this category: the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')}. Fill in the missing name(s) above, or untick Active to save it inactive.`,
               400,
               undefined,
               true,
@@ -94,14 +100,13 @@ export const Categories: CollectionConfig = {
     ],
   },
   fields: [
-    {
+    translatedField({
       name: 'name',
-      type: 'text',
-      localized: true,
-      required: true,
-      maxLength: 80,
-      admin: { description: 'Category name in the language selected at the top of the page.' },
-    },
+      label: 'Name',
+      maxLength: CATEGORY_NAME_MAX,
+      description:
+        'The category name in each language (1 to 80 characters). All three are needed before the category can be activated.',
+    }),
     {
       name: 'slug',
       type: 'text',
@@ -113,7 +118,7 @@ export const Categories: CollectionConfig = {
         position: 'sidebar',
         rtl: false,
         description:
-          'Latin slug used in catalog URLs, e.g. necklaces. Filled automatically when the English name is entered first.',
+          'Latin slug used in catalog URLs, e.g. necklaces. Filled automatically from the English name.',
       },
     },
     {
@@ -139,6 +144,15 @@ export const Categories: CollectionConfig = {
       relationTo: 'users',
       access: { read: ({ req }) => Boolean(req.user), update: () => false },
       admin: { position: 'sidebar', readOnly: true },
+    },
+    {
+      // List/picker title: "English name · Kurdish name" (see adminTitleFrom).
+      name: 'adminTitle',
+      type: 'text',
+      label: 'Title',
+      index: true,
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true },
     },
   ],
 }

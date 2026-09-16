@@ -1,6 +1,7 @@
 import config from '@payload-config'
 import { getPayload, type Payload, type Where } from 'payload'
 
+import { pickTranslation } from '@/hooks/localized'
 import { LOCALES, LOCALE_META, type Locale } from '@/i18n/config'
 import type { Category, ShopSetting, User } from '@/payload-types'
 import {
@@ -37,14 +38,10 @@ export async function getPayloadClient(): Promise<Payload> {
 
 const PUBLISHED: Where = { _status: { equals: 'published' } }
 
-function catalogReadArgs(locale: Locale) {
-  return {
-    locale,
-    fallbackLocale: false as const,
-    draft: false as const,
-    overrideAccess: false as const,
-    context: { catalogRead: true },
-  }
+const CATALOG_READ_ARGS = {
+  draft: false as const,
+  overrideAccess: false as const,
+  context: { catalogRead: true },
 }
 
 async function guard<T>(fn: () => Promise<T>): Promise<T> {
@@ -130,7 +127,7 @@ export async function listProducts(query: CatalogQuery): Promise<CatalogResult> 
   return guard(async () => {
     const payload = await getPayloadClient()
     const where = await buildWhere(payload, query)
-    const args = catalogReadArgs(query.locale)
+    const args = CATALOG_READ_ARGS
 
     if (query.sort === 'relevance' && query.normalizedQ) {
       // Bounded in-memory ranking: at catalog scale (about 100 products) every match is
@@ -189,7 +186,7 @@ export async function getProductBySlug(
       where: { and: [PUBLISHED, { slug: { equals: slug } }] },
       depth: 1,
       limit: 1,
-      ...catalogReadArgs(locale),
+      ...CATALOG_READ_ARGS,
     })
     const doc = result.docs[0]
     return doc ? toProductDetail(doc, locale) : null
@@ -212,8 +209,6 @@ export async function getProductPreview(
       where: { slug: { equals: slug } },
       depth: 1,
       limit: 1,
-      locale,
-      fallbackLocale: false,
       draft: true,
       overrideAccess: false,
       user,
@@ -243,7 +238,7 @@ export async function getRelatedProducts(
       depth: 1,
       limit: 4,
       sort: ['-publishedAt', '-id'],
-      ...catalogReadArgs(locale),
+      ...CATALOG_READ_ARGS,
     })
     return result.docs
       .map((doc) => toCatalogItem(doc, locale))
@@ -261,7 +256,7 @@ export async function getFeaturedProducts(locale: Locale): Promise<CatalogItem[]
       depth: 1,
       limit: 8,
       sort: ['-publishedAt', '-id'],
-      ...catalogReadArgs(locale),
+      ...CATALOG_READ_ARGS,
     })
     return result.docs
       .map((doc) => toCatalogItem(doc, locale))
@@ -284,8 +279,6 @@ export async function getCatalogFilters(locale: Locale): Promise<CatalogFilters>
         depth: 0,
         pagination: false,
         limit: 0,
-        locale,
-        fallbackLocale: false,
         overrideAccess: false,
       }),
       payload.find({
@@ -311,7 +304,7 @@ export async function getCatalogFilters(locale: Locale): Promise<CatalogFilters>
         .filter((c: Category) => used.has(c.id))
         .map((c: Category) => ({
           slug: c.slug,
-          name: typeof c.name === 'string' && c.name ? c.name : c.slug,
+          name: pickTranslation(c.name, locale) ?? c.slug,
         })),
     }
   })
@@ -376,12 +369,10 @@ export async function listDeliveryCities(locale: Locale): Promise<DeliveryCity[]
       depth: 0,
       pagination: false,
       limit: 0,
-      locale,
-      fallbackLocale: false,
       overrideAccess: false,
     })
     const collator = new Intl.Collator(LOCALE_META[locale].intl)
-    const rows = result.docs.map((doc) => ({ doc, city: toDeliveryCity(doc) }))
+    const rows = result.docs.map((doc) => ({ doc, city: toDeliveryCity(doc, locale) }))
     return rows
       .filter(
         (row): row is { doc: (typeof rows)[number]['doc']; city: DeliveryCity } =>
@@ -428,8 +419,6 @@ export async function getShopSettings(locale: Locale): Promise<ShopSettingsResul
     const doc = (await payload.findGlobal({
       slug: 'shop-settings',
       depth: 1,
-      locale,
-      fallbackLocale: false,
       overrideAccess: false,
     })) as ShopSetting
     const fallback = fallbackSettings()
@@ -448,7 +437,7 @@ export async function getShopSettings(locale: Locale): Promise<ShopSettingsResul
         publicName: text(doc.publicName) ?? fallback.publicName,
         instagramUrl,
         instagramHandle: instagramHandleFromUrl(instagramUrl),
-        aboutText: text(doc.aboutText),
+        aboutText: text(doc.aboutText?.[locale]),
         logo: logoImage
           ? { url: logoImage.src, width: logoImage.width, height: logoImage.height }
           : null,

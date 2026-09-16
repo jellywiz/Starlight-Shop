@@ -1,12 +1,14 @@
 import type { GlobalConfig } from 'payload'
 
 import { anyone, ownerOnly } from '@/access'
+import { translatedField } from '@/fields/translated'
+import { trimTranslations } from '@/hooks/localized'
 import { LOCALES, LOCALE_META } from '@/i18n/config'
 import { SHOP_DEFAULTS, isInstagramProfileUrl } from '@/lib/shop'
 
 /**
  * Shop-wide public content (spec section 6 "Shop settings global"): public name, logo,
- * the confirmed Instagram profile, the localized introduction and the default language.
+ * the confirmed Instagram profile, the translated introduction and the default language.
  * No phone, WhatsApp, address, map or external-shop fields exist in this release.
  */
 export const ShopSettings: GlobalConfig = {
@@ -27,6 +29,7 @@ export const ShopSettings: GlobalConfig = {
         if (typeof data.instagramUrl === 'string') {
           data.instagramUrl = data.instagramUrl.trim()
         }
+        trimTranslations(data.aboutText, { multiline: true })
         if (req.user && req.user.collection === 'users') {
           data.updatedBy = req.user.id
         }
@@ -94,17 +97,15 @@ export const ShopSettings: GlobalConfig = {
         {
           label: 'Introduction',
           fields: [
-            {
+            translatedField({
               name: 'aboutText',
+              label: 'Introduction',
               type: 'textarea',
-              localized: true,
               maxLength: 3000,
-              admin: {
-                description:
-                  'Short factual introduction to the handmade jewellery shop, shown on the About page and the home page. Fill in all three languages; an empty language shows the built-in text.',
-                rows: 8,
-              },
-            },
+              rows: 6,
+              description:
+                'Short factual introduction to the handmade jewellery shop, shown on the About page and the home page. A language left empty shows the built-in text.',
+            }),
           ],
         },
       ],

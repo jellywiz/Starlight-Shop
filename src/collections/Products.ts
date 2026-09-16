@@ -1,6 +1,8 @@
 import type { CollectionConfig, FieldAccess } from 'payload'
 
 import { isOwnerUser, ownerOnly, publishedOrOwner } from '@/access'
+import { translatedField } from '@/fields/translated'
+import { DEFAULT_LOCALE } from '@/i18n/config'
 import {
   LIMITS,
   productAfterChange,
@@ -29,14 +31,14 @@ export const Products: CollectionConfig = {
   slug: 'products',
   admin: {
     group: 'Catalog',
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'category', 'priceIqd', 'isAvailable', '_status', 'updatedAt'],
-    listSearchableFields: ['name', 'slug'],
+    useAsTitle: 'adminTitle',
+    defaultColumns: ['adminTitle', 'category', 'priceIqd', 'isAvailable', '_status', 'updatedAt'],
+    listSearchableFields: ['adminTitle', 'slug'],
     description:
-      'Save Draft keeps changes private. Publish makes the product public and requires complete content in all three languages.',
-    preview: (doc, { locale }) => {
+      'Save Draft keeps changes private. Publish makes the product public and requires the name and description in all three languages.',
+    preview: (doc) => {
       const slug = typeof doc?.slug === 'string' ? doc.slug : ''
-      return slug ? `/${locale ?? 'ckb'}/products/${slug}?preview=1` : null
+      return slug ? `/${DEFAULT_LOCALE}/products/${slug}?preview=1` : null
     },
   },
   access: {
@@ -66,19 +68,15 @@ export const Products: CollectionConfig = {
         {
           label: 'Basic details',
           description:
-            'Name and description are translated: switch the language at the top of the page and fill in all three before publishing.',
+            'All three languages are on this page. A draft can be saved with gaps; publishing needs the name and description in every language.',
           fields: [
-            {
+            translatedField({
               name: 'name',
-              type: 'text',
-              localized: true,
-              required: true,
+              label: 'Name',
               maxLength: LIMITS.name,
-              admin: {
-                description:
-                  'Product name in the language selected at the top of the page (1 to 160 characters).',
-              },
-            },
+              layout: 'row',
+              description: 'Product name in each language (1 to 160 characters).',
+            }),
             {
               name: 'category',
               type: 'relationship',
@@ -87,18 +85,15 @@ export const Products: CollectionConfig = {
               filterOptions: () => ({ isActive: { equals: true } }),
               admin: { description: 'Exactly one active category.' },
             },
-            {
+            translatedField({
               name: 'description',
+              label: 'Description',
               type: 'textarea',
-              localized: true,
-              required: true,
               maxLength: LIMITS.description,
-              admin: {
-                description:
-                  'Plain text describing the actual handmade item. 1 to 5000 characters per language.',
-                rows: 8,
-              },
-            },
+              rows: 6,
+              description:
+                'Plain text describing the actual handmade item, in each language (1 to 5000 characters).',
+            }),
           ],
         },
         {
@@ -194,7 +189,16 @@ export const Products: CollectionConfig = {
       access: { read: ownerOnlyField, update: () => false },
       admin: { position: 'sidebar', readOnly: true },
     },
-    // Derived search fields: written by hooks, never by clients (spec section 5).
+    // Derived fields: written by hooks, never by clients (spec section 5).
+    {
+      // List/picker title: "English name · Kurdish name" (see adminTitleFrom).
+      name: 'adminTitle',
+      type: 'text',
+      label: 'Title',
+      index: true,
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true },
+    },
     {
       name: 'searchText',
       type: 'text',

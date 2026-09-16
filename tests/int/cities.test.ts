@@ -47,7 +47,6 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
       collection: 'cities',
       id: first.id,
       data: { feeIqd: 5500, isActive: true },
-      locale: 'en',
       overrideAccess: true,
     })
     const updated = await listDeliveryCities('en')
@@ -59,8 +58,7 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
     // Missing translations and fee: can be saved inactive, not activated.
     const partial = await payload.create({
       collection: 'cities',
-      data: { name: 'Partial city', isActive: false },
-      locale: 'en',
+      data: { name: { en: 'Partial city' }, isActive: false },
       overrideAccess: true,
     })
     const messages = await expectFailure(() =>
@@ -68,7 +66,6 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
         collection: 'cities',
         id: partial.id,
         data: { isActive: true },
-        locale: 'en',
         overrideAccess: true,
       }),
     )
@@ -80,8 +77,7 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
       await expect(
         payload.create({
           collection: 'cities',
-          data: { name: `Bad fee ${feeIqd}`, feeIqd, isActive: false },
-          locale: 'en',
+          data: { name: { en: `Bad fee ${feeIqd}` }, feeIqd, isActive: false },
           overrideAccess: true,
         }),
       ).rejects.toThrow()
@@ -101,7 +97,6 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
         collection: 'cities',
         id: free.id,
         data: { isActive: true },
-        locale: 'en',
         overrideAccess: true,
       }),
     )
@@ -111,7 +106,6 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
       collection: 'cities',
       id: free.id,
       data: { isActive: true, freeDeliveryConfirmed: true },
-      locale: 'en',
       overrideAccess: true,
     })
     const cities = await listDeliveryCities('en')
@@ -133,39 +127,37 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
     const duplicateEnglish = await expectFailure(() =>
       payload.create({
         collection: 'cities',
-        data: { name: '  sample   CITY ', feeIqd: 2000, isActive: false },
-        locale: 'en',
+        data: { name: { en: '  sample   CITY ' }, feeIqd: 2000, isActive: false },
         overrideAccess: true,
       }),
     )
-    expect(duplicateEnglish).toMatch(/name: .*already exists in English/)
+    expect(duplicateEnglish).toMatch(/name\.en: .*already exists in English/)
 
     // Arabic keyboard variants of the same Sorani name are duplicates too.
     const other = await payload.create({
       collection: 'cities',
-      data: { name: 'Other city', feeIqd: 2000, isActive: false },
-      locale: 'en',
+      data: { name: { en: 'Other city' }, feeIqd: 2000, isActive: false },
       overrideAccess: true,
     })
     const duplicateSorani = await expectFailure(() =>
       payload.update({
         collection: 'cities',
         id: other.id,
-        data: { name: 'شاري نموونە' },
-        locale: 'ckb',
+        data: { name: { ckb: 'شاري نموونە' } },
         overrideAccess: true,
       }),
     )
-    expect(duplicateSorani).toMatch(/already exists in Sorani Kurdish/)
+    expect(duplicateSorani).toMatch(/name\.ckb: .*already exists in Sorani Kurdish/)
 
-    // The same string in a DIFFERENT language is not a duplicate.
-    await payload.update({
+    // The same string in a DIFFERENT language is not a duplicate, and a partial update
+    // keeps the other languages.
+    const renamed = await payload.update({
       collection: 'cities',
       id: other.id,
-      data: { name: 'Sample city' },
-      locale: 'ckb',
+      data: { name: { ckb: 'Sample city' } },
       overrideAccess: true,
     })
+    expect(renamed.name).toMatchObject({ ckb: 'Sample city', en: 'Other city' })
   })
 
   it('hides deactivated and deleted cities from the public and from anonymous reads (A24, A25)', async () => {
@@ -182,7 +174,6 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
       collection: 'cities',
       id: city.id,
       data: { isActive: false },
-      locale: 'en',
       overrideAccess: true,
     })
     expect((await listDeliveryCities('en')).some((c) => c.id === city.id)).toBe(false)
