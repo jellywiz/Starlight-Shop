@@ -53,6 +53,18 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Admin look and feel** (owner decision, 2026-09-16): the admin is used on a phone and an
+  iPad, so it is restyled and simplified rather than left as Payload's default. The
+  Starlight light theme is applied through Payload's CSS variables in
+  `src/app/(payload)/custom.scss` (light only, `admin.theme: 'light'`), with 16px inputs
+  (no iOS zoom), 44px touch targets and one column below 768px. The dashboard is replaced
+  by a task-based home (`src/components/admin/Home.tsx`: Add a product, tiles with live
+  counts, View the website). Every collection and global uses `SIMPLE_DOCUMENT_VIEW`
+  (`src/lib/admin.ts`): no API or Versions tabs (version history still exists for drafts
+  and stays reachable through the REST API), hidden `publishedAt`/`updatedBy`, and the
+  Last Modified/Created line hidden by CSS while the Draft/Published status stays. The
+  product form is three stacked sections instead of tabs so nothing is hidden on a
+  phone. Class names are Payload 3.89's; re-check the stylesheet after a Payload upgrade.
 - **Web addresses (slugs) are generated and hidden from the admin** (owner decision,
   2026-09-16; the spec let the owner enter or change the slug by hand, with a redirect on
   change). A product's slug follows its English name while the product has never been

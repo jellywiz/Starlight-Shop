@@ -8,6 +8,7 @@ import { APIError } from 'payload'
 import sharp, { type Metadata as SharpMetadata } from 'sharp'
 
 import { anyone, ownerOnly } from '@/access'
+import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -163,9 +164,11 @@ async function findReferences(req: PayloadRequest, mediaId: number | string): Pr
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  labels: { singular: 'Photo', plural: 'Photos' },
   admin: {
+    ...SIMPLE_DOCUMENT_VIEW,
     group: 'Catalog',
-    defaultColumns: ['filename', 'altText', 'width', 'height', 'updatedAt'],
+    defaultColumns: ['filename', 'altText', 'updatedAt'],
     description:
       'Product photos and the shop logo. Upload each image once: the same file is used in all three languages. JPEG, PNG or WebP up to 3 MB and 20 megapixels.',
   },

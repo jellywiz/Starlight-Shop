@@ -1,39 +1,912 @@
-/* Admin panel adjustments for Starlight Jewellery. */
+/*
+  Starlight Jewellery admin theme (docs/decisions.md "Admin look and feel").
 
-/* Password reset by email is not available in the free baseline (spec section 12):
-   hide the "Forgot password?" link. Recovery is the maintainer script. */
+  The admin is Payload's, restyled through its CSS variables plus a small number of
+  component overrides, and tuned for a phone and an iPad first: 16px inputs (no iOS zoom
+  on focus), 44px touch targets, one column below 768px. The theme is light only
+  (`admin.theme: 'light'` in payload.config.ts). Class names are Payload 3.89's; check
+  them after a Payload upgrade.
+*/
+
+/* ---------- Brand tokens (same plum palette as the public site) ---------- */
+:root {
+  --sl-plum-950: #1f0b21;
+  --sl-plum-900: #2d1230;
+  --sl-plum-800: #3a1a3c;
+  --sl-plum-700: #482044;
+  --sl-plum-600: #5d2f5b;
+  --sl-plum-500: #78467a;
+  --sl-plum-400: #9a6b9b;
+  --sl-plum-300: #bd9dbd;
+  --sl-plum-200: #dcc8db;
+  --sl-plum-100: #efe5ee;
+  --sl-plum-50: #f9f4f8;
+  --sl-page: #fcfafc;
+  --sl-ink: #251a26;
+  --sl-ink-soft: #5a4a5b;
+  --sl-ink-muted: #7d6c7e;
+  --sl-star: #f6e3b4;
+  --sl-shadow: 0 1px 2px rgba(72, 32, 68, 0.06), 0 8px 24px -12px rgba(72, 32, 68, 0.25);
+  --sl-tap: 44px;
+}
+
+/* ---------- Payload variables ---------- */
+:root,
+html[data-theme='light'] {
+  /* Plum-tinted neutrals: Payload derives borders, disabled states, table stripes,
+     buttons (elevation-800) and text (elevation-800/1000) from this scale. */
+  --color-base-0: #ffffff;
+  --color-base-50: #f9f4f8;
+  --color-base-100: #f1e9f0;
+  --color-base-150: #e6dbe5;
+  --color-base-200: #d9cbd8;
+  --color-base-250: #ccbccb;
+  --color-base-300: #bda9bc;
+  --color-base-350: #ad97ac;
+  --color-base-400: #9c859b;
+  --color-base-450: #8c748b;
+  --color-base-500: #7b657a;
+  --color-base-550: #6c566b;
+  --color-base-600: #5d485c;
+  --color-base-650: #4f3b4e;
+  --color-base-700: #432f42;
+  --color-base-750: #382437;
+  --color-base-800: #2d1a2c;
+  --color-base-850: #24131f;
+  --color-base-900: #1a0c1b;
+  --color-base-950: #120611;
+  --color-base-1000: #0a020a;
+
+  /* "success" is Payload's accent (focus rings, published pill, checked states). */
+  --color-success-50: #f9f4f8;
+  --color-success-100: #efe5ee;
+  --color-success-150: #e6d6e5;
+  --color-success-200: #dcc8db;
+  --color-success-250: #cdb3cc;
+  --color-success-300: #bd9dbd;
+  --color-success-350: #ab84ab;
+  --color-success-400: #9a6b9b;
+  --color-success-450: #89598a;
+  --color-success-500: #78467a;
+  --color-success-550: #6a3b6a;
+  --color-success-600: #5d2f5b;
+  --color-success-650: #52284f;
+  --color-success-700: #482044;
+  --color-success-750: #411d3f;
+  --color-success-800: #3a1a3c;
+  --color-success-850: #331634;
+  --color-success-900: #2d1230;
+  --color-success-950: #1f0b21;
+
+  --theme-bg: var(--sl-page);
+  --theme-input-bg: #ffffff;
+  --theme-text: var(--sl-ink);
+  --theme-border-color: #e6dbe5;
+
+  --style-radius-s: 8px;
+  --style-radius-m: 10px;
+  --style-radius-l: 14px;
+
+  --font-body:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Helvetica Neue',
+    Arial, sans-serif;
+}
+
+/* Base type a touch larger than Payload's 13px so field labels read well on a phone. */
+html {
+  font-size: 14px;
+}
+
+body {
+  background: var(--theme-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header and navigation ---------- */
+.app-header {
+  --app-header-height: calc(var(--base) * 2.8);
+}
+
+.app-header__bg {
+  background: #ffffff;
+  border-bottom: 1px solid var(--sl-plum-100);
+}
+
+.app-header .hamburger {
+  color: var(--sl-plum-800);
+}
+
+.nav-toggler,
+.nav__mobile-close {
+  min-width: var(--sl-tap);
+  min-height: var(--sl-tap);
+}
+
+.nav {
+  background: linear-gradient(180deg, #ffffff 0%, var(--sl-plum-50) 100%);
+  border-inline-end: 1px solid var(--sl-plum-100);
+}
+
+.nav__header,
+.nav__header-content {
+  background: transparent;
+}
+
+.nav-group__toggle {
+  min-height: var(--sl-tap);
+}
+
+.nav-group__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-ink-muted);
+}
+
+.nav-group__indicator {
+  color: var(--sl-ink-muted);
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: calc(var(--base) * 0.3) calc(var(--base) * 0.6);
+  margin: 0;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  color: var(--sl-ink);
+  text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+
+  &:hover {
+    background: rgba(72, 32, 68, 0.06);
+    color: var(--sl-plum-800);
+  }
+
+  /* Payload marks the current section with an indicator element inside the link. */
+  &:has(.nav__link-indicator) {
+    background: var(--sl-plum-700);
+    color: #ffffff;
+    font-weight: 600;
+  }
+}
+
+.nav__link-indicator {
+  display: none;
+}
+
+.nav-group__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sl-nav-extras {
+  margin-top: calc(var(--base) * 0.75);
+  padding-top: calc(var(--base) * 0.75);
+  border-top: 1px solid var(--sl-plum-100);
+}
+
+.sl-nav-extras__link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--sl-tap);
+  padding: calc(var(--base) * 0.4) calc(var(--base) * 0.6);
+  border-radius: 10px;
+  font-size: 1.05rem;
+  color: var(--sl-plum-700);
+  text-decoration: none;
+
+  &:hover {
+    background: rgba(72, 32, 68, 0.06);
+  }
+}
+
+.sl-nav-extras__icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.nav__controls {
+  margin-top: calc(var(--base) * 0.5);
+}
+
+.nav__log-out {
+  color: var(--sl-ink-muted);
+  min-width: var(--sl-tap);
+  min-height: var(--sl-tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-nav a,
+.step-nav__last {
+  color: var(--sl-ink-soft);
+}
+
+.app-header__account {
+  min-width: var(--sl-tap);
+  min-height: var(--sl-tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Buttons and controls ---------- */
+.btn {
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.btn--size-medium,
+.btn--size-large {
+  min-height: var(--sl-tap);
+}
+
+.btn--style-primary {
+  --bg-color: var(--sl-plum-700);
+  --hover-bg: var(--sl-plum-800);
+  --color: #ffffff;
+  box-shadow: 0 6px 16px -8px rgba(72, 32, 68, 0.6);
+
+  &.btn--disabled {
+    --bg-color: var(--sl-plum-100);
+    --color: var(--sl-ink-muted);
+    box-shadow: none;
+  }
+}
+
+.btn--style-secondary {
+  --btn-border: 1px solid var(--sl-plum-200);
+  --hover-btn-border: 1px solid var(--sl-plum-400);
+  --color: var(--sl-plum-800);
+  --hover-color: var(--sl-plum-900);
+  background: #ffffff;
+}
+
+.btn--style-pill {
+  --bg-color: var(--sl-plum-100);
+  --hover-bg: var(--sl-plum-200);
+  --color: var(--sl-plum-900);
+  --hover-color: var(--sl-plum-900);
+}
+
+/* "Create New" in list headers: make it the obvious primary action. */
+.list-header .btn--style-pill {
+  --bg-color: var(--sl-plum-700);
+  --hover-bg: var(--sl-plum-800);
+  --color: #ffffff;
+  --hover-color: #ffffff;
+  align-self: center;
+  min-height: 40px;
+  padding-inline: calc(var(--base) * 0.8);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 16px -8px rgba(72, 32, 68, 0.6);
+}
+
+.list-header__title-and-actions {
+  align-items: center;
+  gap: calc(var(--base) * 0.6);
+}
+
+.list-header__title {
+  margin-bottom: 0;
+}
+
+.popup-button--background {
+  background: #ffffff;
+  border: 1px solid var(--sl-plum-200);
+}
+
+/* ---------- Fields ---------- */
+.field-label {
+  font-weight: 600;
+  color: var(--sl-ink);
+}
+
+.field-description {
+  color: var(--sl-ink-muted);
+}
+
+.field-type input:not([type='checkbox']):not([type='radio']),
+.field-type textarea,
+.field-type select,
+.search-filter__input,
+.react-select .rs__control,
+.dinar-field__input input {
+  background: #ffffff;
+  border: 1px solid var(--sl-plum-200);
+  border-radius: var(--style-radius-m);
+  color: var(--sl-ink);
+  box-shadow: none;
+
+  &:hover {
+    border-color: var(--sl-plum-300);
+  }
+
+  &:focus,
+  &:focus-within {
+    border-color: var(--sl-plum-600);
+    box-shadow: 0 0 0 3px rgba(120, 70, 122, 0.18);
+    outline: none;
+  }
+}
+
+.field-type input:not([type='checkbox']):not([type='radio']),
+.search-filter__input,
+.react-select .rs__control,
+.dinar-field__input input {
+  min-height: var(--sl-tap);
+}
+
+.field-type textarea {
+  line-height: 1.5;
+}
+
+.field-type.checkbox {
+  .checkbox-input__input,
+  .checkbox-input__input input {
+    width: 24px;
+    height: 24px;
+  }
+
+  .checkbox-input__input {
+    border-radius: 7px;
+    border-color: var(--sl-plum-300);
+  }
+
+  .checkbox-input__label {
+    font-size: 1.05rem;
+    min-height: var(--sl-tap);
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+.checkbox-input--checked .checkbox-input__input {
+  background: var(--sl-plum-700);
+  border-color: var(--sl-plum-700);
+}
+
+/* Sections (collapsible fields) as soft cards */
+.collapsible-field .collapsible {
+  background: #ffffff;
+  border: 1px solid var(--sl-plum-100);
+  border-radius: var(--style-radius-l);
+  box-shadow: var(--sl-shadow);
+}
+
+.collapsible__toggle {
+  min-height: var(--sl-tap);
+}
+
+.collapsible__header-wrap .collapsible__header,
+.collapsible__header {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sl-plum-900);
+}
+
+.collapsible--style-default > .collapsible__toggle-wrap {
+  background: var(--sl-plum-50);
+  border-radius: var(--style-radius-l) var(--style-radius-l) 0 0;
+}
+
+.collapsible--collapsed > .collapsible__toggle-wrap {
+  border-radius: var(--style-radius-l);
+}
+
+.collapsible__content {
+  padding: calc(var(--base) * 0.8) calc(var(--base) * 0.8) calc(var(--base) * 0.4);
+}
+
+/* Translated groups (name, description, …): a quiet heading, then the three inputs.
+   Payload stretches groups edge to edge inside a section; keep them inside the card. */
+.collapsible__content .group-field--within-collapsible {
+  margin-left: 0;
+  margin-right: 0;
+  padding: calc(var(--base) * 0.6) 0;
+  border-top: 1px solid var(--sl-plum-100);
+  border-bottom: 0;
+
+  &:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+.group-field__title {
+  font-weight: 700;
+  color: var(--sl-plum-900);
+}
+
+/* ---------- Edit view ---------- */
+.doc-header__title {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--sl-plum-900);
+}
+
+/* Only one tab (Edit) remains and it is hidden by config: drop the strip entirely. */
+.doc-tabs {
+  display: none;
+}
+
+.doc-controls {
+  background: rgba(252, 250, 252, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.doc-controls__divider {
+  background: var(--sl-plum-100);
+}
+
+/* Keep the Draft/Published status; hide the technical timestamps. Records without a
+   status (categories, cities, photos, settings) then have nothing to show there. */
+.doc-controls__list-item.doc-controls__value-wrap {
+  display: none;
+}
+
+.doc-controls__content:not(:has(.doc-controls__status)) {
+  display: none;
+}
+
+.doc-controls__status .status {
+  font-weight: 600;
+}
+
+.status__value--published,
+.pill--style-success {
+  background: var(--sl-plum-100);
+  color: var(--sl-plum-800);
+}
+
+.custom-view-description {
+  color: var(--sl-ink-muted);
+}
+
+.document-fields__sidebar-fields {
+  background: #ffffff;
+  border: 1px solid var(--sl-plum-100);
+  border-radius: var(--style-radius-l);
+  padding: calc(var(--base) * 0.8);
+}
+
+/* Upload field / photos */
+.upload__wrap,
+.dropzone {
+  border-radius: var(--style-radius-l);
+  border-color: var(--sl-plum-200);
+}
+
+.dropzone--is-dragging,
+.dropzone:hover {
+  border-color: var(--sl-plum-500);
+}
+
+/* ---------- List view ---------- */
+.list-header__title {
+  color: var(--sl-plum-900);
+}
+
+.collection-list__sub-header {
+  color: var(--sl-ink-muted);
+}
+
+.list-controls__columns > div,
+.list-controls__where > div {
+  border-radius: var(--style-radius-l);
+}
+
+.table {
+  background: #ffffff;
+  border: 1px solid var(--sl-plum-100);
+  border-radius: var(--style-radius-l);
+  overflow: hidden;
+
+  thead th {
+    background: var(--sl-plum-50);
+    color: var(--sl-ink-soft);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  td,
+  th {
+    border-bottom: 1px solid var(--sl-plum-100);
+    padding-block: calc(var(--base) * 0.55);
+  }
+
+  tbody tr:nth-child(odd) {
+    background: #ffffff;
+  }
+
+  tbody tr:nth-child(even) {
+    background: var(--sl-plum-50);
+  }
+
+  a {
+    color: var(--sl-plum-800);
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
+
+.cell-_status .pill,
+.cell-isActive .pill,
+.cell-isAvailable .pill {
+  border-radius: 999px;
+}
+
+.page-controls {
+  color: var(--sl-ink-muted);
+}
+
+/* ---------- Home ---------- */
+.sl-home {
+  padding-block: calc(var(--base) * 1.2) calc(var(--base) * 2);
+  max-width: 1120px;
+}
+
+.sl-home__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: calc(var(--base) * 0.8);
+  padding: calc(var(--base) * 1.2) calc(var(--base) * 1.2);
+  border-radius: 20px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(246, 227, 180, 0.35), transparent 32%),
+    radial-gradient(circle at 15% 90%, rgba(154, 107, 155, 0.5), transparent 40%),
+    linear-gradient(135deg, var(--sl-plum-900) 0%, var(--sl-plum-700) 60%, var(--sl-plum-600) 100%);
+  box-shadow: 0 16px 40px -20px rgba(45, 18, 48, 0.7);
+}
+
+.sl-home__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sl-star);
+}
+
+.sl-home__eyebrow-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sl-home__title {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.15;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sl-home__lead {
+  margin: 0.4rem 0 0;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sl-home__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--sl-plum-800);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease;
+
+  &:hover {
+    background: var(--sl-plum-50);
+    transform: translateY(-1px);
+  }
+}
+
+.sl-home__cta-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sl-home__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: calc(var(--base) * 0.8);
+  margin-top: calc(var(--base) * 1);
+}
+
+.sl-tile {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'icon label arrow'
+    'icon count arrow'
+    'icon note arrow';
+  column-gap: 0.9rem;
+  align-items: center;
+  min-height: 108px;
+  padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
+  border: 1px solid var(--sl-plum-100);
+  border-radius: 18px;
+  background: #ffffff;
+  color: var(--sl-ink);
+  text-decoration: none;
+  box-shadow: var(--sl-shadow);
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    border-color: var(--sl-plum-300);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -16px rgba(72, 32, 68, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--sl-plum-500);
+    outline-offset: 2px;
+  }
+}
+
+.sl-tile__icon {
+  grid-area: icon;
+  width: 48px;
+  height: 48px;
+  padding: 11px;
+  border-radius: 14px;
+  background: var(--sl-plum-50);
+  color: var(--sl-plum-700);
+  align-self: start;
+}
+
+.sl-tile--products .sl-tile__icon {
+  background: var(--sl-plum-700);
+  color: var(--sl-star);
+}
+
+.sl-tile--site .sl-tile__icon {
+  background: #fff7e2;
+  color: #8a6a1f;
+}
+
+.sl-tile__label {
+  grid-area: label;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sl-plum-900);
+}
+
+.sl-tile__count {
+  grid-area: count;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-plum-700);
+}
+
+.sl-tile__note {
+  grid-area: note;
+  font-size: 0.9rem;
+  color: var(--sl-ink-muted);
+}
+
+.sl-tile__note--solo {
+  grid-row: count / note-end;
+  align-self: start;
+  padding-top: 0.15rem;
+}
+
+.sl-tile__arrow {
+  grid-area: arrow;
+  width: 22px;
+  height: 22px;
+  color: var(--sl-plum-300);
+}
+
+.sl-home__tips {
+  margin-top: calc(var(--base) * 1.2);
+  padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
+  border-radius: 18px;
+  background: var(--sl-plum-50);
+  border: 1px solid var(--sl-plum-100);
+}
+
+.sl-home__tips-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sl-plum-900);
+}
+
+.sl-home__tips-list {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  color: var(--sl-ink-soft);
+  line-height: 1.55;
+
+  li + li {
+    margin-top: 0.4rem;
+  }
+
+  strong {
+    color: var(--sl-plum-900);
+  }
+}
+
+/* ---------- Login ---------- */
+.login.template-minimal {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(246, 227, 180, 0.35), transparent 30%),
+    radial-gradient(circle at 10% 90%, rgba(154, 107, 155, 0.35), transparent 40%),
+    linear-gradient(160deg, var(--sl-plum-900) 0%, var(--sl-plum-700) 100%);
+}
+
+.login .template-minimal__wrap {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: calc(var(--base) * 1.6) calc(var(--base) * 1.4);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.5);
+}
+
+.login__brand {
+  margin-bottom: calc(var(--base) * 1);
+  color: var(--sl-plum-900);
+}
+
+/* Password reset by email is not available (spec section 12): hide the link. */
 .login__form > a[href$='/forgot'],
 .login__form > a[href*='/forgot?'] {
   display: none;
 }
 
-/* Custom whole-dinar amount fields (price and delivery fee) */
+.login .form-submit .btn {
+  width: 100%;
+  background: var(--sl-plum-700);
+  color: #ffffff;
+  border-radius: 999px;
+  min-height: 52px;
+  font-size: 1.05rem;
+
+  &:hover {
+    background: var(--sl-plum-800);
+  }
+}
+
+/* ---------- Toasts ---------- */
+.payload-toast-container {
+  --toast-radius: 14px;
+}
+
+/* ---------- Custom whole-dinar amount fields (price and delivery fee) ---------- */
 .dinar-field__input {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
 .dinar-field__input input {
   flex: 1;
   font-family: var(--font-mono, monospace);
-  font-size: 1rem;
+  font-size: 1.05rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--theme-elevation-150);
-  border-radius: var(--style-radius-s);
-  background: var(--theme-input-bg);
-  color: var(--theme-elevation-800);
 }
+
 .dinar-field__currency {
-  font-weight: 600;
-  color: var(--theme-elevation-600);
+  font-weight: 700;
+  color: var(--sl-plum-700);
 }
+
 .dinar-field__stored {
   margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: var(--theme-elevation-500);
+  font-size: 0.85rem;
+  color: var(--sl-ink-muted);
 }
+
 .dinar-field__error {
   color: var(--theme-error-500);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   margin-top: 0.25rem;
+}
+
+/* ---------- Phone and iPad (portrait) ---------- */
+@media (max-width: 768px) {
+  /* iOS zooms into inputs smaller than 16px; keep every text input at 16px. */
+  .field-type input:not([type='checkbox']):not([type='radio']),
+  .field-type textarea,
+  .field-type select,
+  .search-filter__input,
+  .react-select .rs__control,
+  .dinar-field__input input {
+    font-size: 16px;
+  }
+
+  .doc-header__title {
+    font-size: 1.35rem;
+  }
+
+  .list-header__title {
+    font-size: 1.6rem;
+  }
+
+  /* Bulk selection is a desktop task: the checkbox column only costs space here. */
+  .table .cell-_select,
+  .table th:first-child:has(input[type='checkbox']),
+  .table td:first-child:has(input[type='checkbox']) {
+    display: none;
+  }
+
+  /* Three name inputs side by side do not fit: stack them. */
+  .row-field {
+    flex-direction: column;
+  }
+
+  .row-field > .row-field__field,
+  .row-field > * {
+    width: 100% !important;
+    flex-basis: 100% !important;
+  }
+
+  .sl-home__hero {
+    padding: calc(var(--base) * 1) calc(var(--base) * 0.9);
+  }
+
+  .sl-home__title {
+    font-size: 1.6rem;
+  }
+
+  .sl-home__cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sl-home__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sl-tile {
+    min-height: 0;
+  }
+
+  /* The action bar (Save Draft / Publish) stays reachable while scrolling. */
+  .doc-controls__controls {
+    gap: calc(var(--base) * 0.4);
+  }
+
+  .doc-controls__controls .btn {
+    padding-inline: calc(var(--base) * 0.7);
+  }
+}
+
+@media (max-width: 400px) {
+  .doc-controls__controls .btn--size-medium {
+    padding-inline: calc(var(--base) * 0.5);
+  }
 }

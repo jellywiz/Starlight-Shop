@@ -37,6 +37,10 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(page.getByRole('link', { name: /forgot/i })).toBeHidden()
     await login(page)
 
+    // The task-based home replaces Payload's dashboard.
+    await expect(page.getByRole('link', { name: /Add a product/ })).toBeVisible()
+    await expect(page.locator('.sl-tile--products')).toBeVisible()
+
     // The admin list shows the bilingual title (English · Kurdish); no locale switcher.
     await page.goto('/admin/collections/products?limit=10')
     await expect(page.getByText('Locale:')).toHaveCount(0)
@@ -45,7 +49,9 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
       .first()
       .click()
     await expect(page).toHaveURL(/\/admin\/collections\/products\/\d+/)
-    await page.getByRole('button', { name: 'Price and availability' }).click()
+    // No tabs: every section is on the page, and the technical tabs are gone.
+    await expect(page.getByRole('link', { name: 'API' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /^Versions/ })).toHaveCount(0)
     const price = page.getByLabel('Price (IQD)')
 
     // Reset to the sample price so the test is repeatable regardless of earlier runs
@@ -54,7 +60,6 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
       await price.fill('32000')
       await saveWith(page, 'Publish changes', 'products')
       await page.reload()
-      await page.getByRole('button', { name: 'Price and availability' }).click()
     }
     await expect(price).toHaveValue('32000')
     await expect(page.getByText('Published', { exact: true })).toBeVisible()

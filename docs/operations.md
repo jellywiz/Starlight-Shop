@@ -2,11 +2,15 @@
 
 ## Daily owner guide (admin at `/admin`)
 
-**Add a product.** Products → Create new. Choose the category (create and activate it first
+The admin works on a phone, an iPad and a computer. After logging in, the home screen
+shows **Add a product**, the counts of products, photos, categories and delivery cities,
+and a link to the public website; the menu (☰) lists the same sections.
+
+**Add a product.** Products → Create new (or Add a product on the home screen). Choose the category (create and activate it first
 under Categories if missing), then enter the name and description: each has three inputs on
 the same page — Sorani (کوردی), Arabic (العربية) and English — so everything is written on one
-form and saved once. Under Price and availability enter the price in whole Iraqi dinars (e.g. `25000`,
-no decimals), tick **Available** if the piece can be ordered, and under Photos upload the
+form and saved once. Further down, enter the price in whole Iraqi dinars (e.g. `25000`,
+no decimals), tick **Available** if the piece can be ordered, and under Photos add the
 pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover).
 Each picture is uploaded once and shared by all three languages; the optional "Image
 description" under Media is a single text for all languages, and when it is empty the site

@@ -37,11 +37,19 @@ export default buildConfig({
       titleSuffix: ' · Starlight Jewellery admin',
       icons: [{ rel: 'icon', type: 'image/png', url: '/brand/favicon-32.png' }],
     },
+    // The Starlight light theme only (src/app/(payload)/custom.scss); the owner works on a
+    // phone and an iPad, and one consistent look is easier to support.
+    theme: 'light',
     components: {
       graphics: {
         Logo: '@/components/admin/Logo#Logo',
         Icon: '@/components/admin/Logo#Icon',
       },
+      // Task-based home instead of Payload's collection cards (docs/decisions.md).
+      views: {
+        dashboard: { Component: '@/components/admin/Home#Home' },
+      },
+      afterNavLinks: ['@/components/admin/NavExtras#NavExtras'],
     },
     dateFormat: 'yyyy-MM-dd HH:mm',
     // No third-party requests from the admin (Gravatar would leak the owner's email hash).

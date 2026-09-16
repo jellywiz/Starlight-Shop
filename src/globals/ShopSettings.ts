@@ -4,6 +4,7 @@ import { anyone, ownerOnly } from '@/access'
 import { translatedField } from '@/fields/translated'
 import { trimTranslations } from '@/hooks/localized'
 import { LOCALES, LOCALE_META } from '@/i18n/config'
+import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { SHOP_DEFAULTS, isInstagramProfileUrl } from '@/lib/shop'
 
 /**
@@ -15,6 +16,7 @@ export const ShopSettings: GlobalConfig = {
   slug: 'shop-settings',
   label: 'Shop settings',
   admin: {
+    ...SIMPLE_DOCUMENT_VIEW,
     group: 'Administration',
     description:
       'Public shop name, logo, Instagram destination and the introduction text. Changes are live on the next page request.',
@@ -115,7 +117,7 @@ export const ShopSettings: GlobalConfig = {
       type: 'relationship',
       relationTo: 'users',
       access: { read: ({ req }) => Boolean(req.user), update: () => false },
-      admin: { position: 'sidebar', readOnly: true },
+      admin: { hidden: true },
     },
   ],
 }

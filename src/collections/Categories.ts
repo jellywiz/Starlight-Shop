@@ -12,6 +12,7 @@ import {
 import { LOCALE_LABELS } from '@/hooks/products'
 import { assertCategoryDeactivatable, assertCategoryDeletable } from '@/hooks/references'
 import { deriveSlug } from '@/hooks/slugs'
+import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { validateSlug } from '@/lib/slug'
 
 export const CATEGORY_NAME_MAX = 80
@@ -26,9 +27,10 @@ export const CATEGORY_NAME_MAX = 80
 export const Categories: CollectionConfig = {
   slug: 'categories',
   admin: {
+    ...SIMPLE_DOCUMENT_VIEW,
     group: 'Catalog',
     useAsTitle: 'adminTitle',
-    defaultColumns: ['adminTitle', 'sortOrder', 'isActive', 'updatedAt'],
+    defaultColumns: ['adminTitle', 'isActive', 'sortOrder'],
     listSearchableFields: ['adminTitle'],
     description:
       'Flat list of categories, e.g. Necklaces, Bracelets, Rings. A category needs all three names before it can be activated. Deactivate instead of deleting when products still use it.',
@@ -154,7 +156,7 @@ export const Categories: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       access: { read: ({ req }) => Boolean(req.user), update: () => false },
-      admin: { position: 'sidebar', readOnly: true },
+      admin: { hidden: true },
     },
     {
       // List/picker title: "English name · Kurdish name" (see adminTitleFrom).

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { Forbidden, APIError } from 'payload'
 
 import { isOwnerUser, ownerOnly } from '@/access'
+import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 
 /**
  * Administrators. One owner role at launch (spec sections 6, 7 and 12).
@@ -24,6 +25,7 @@ export const Users: CollectionConfig = {
     },
   },
   admin: {
+    ...SIMPLE_DOCUMENT_VIEW,
     useAsTitle: 'email',
     defaultColumns: ['email', 'role', 'updatedAt'],
     group: 'Administration',

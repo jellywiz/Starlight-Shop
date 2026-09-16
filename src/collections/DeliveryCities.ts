@@ -12,6 +12,7 @@ import {
 } from '@/hooks/localized'
 import { LOCALE_LABELS } from '@/hooks/products'
 import { LOCALES } from '@/i18n/config'
+import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { MAX_IQD, isValidIqd } from '@/lib/catalog/dinar'
 import { normalizeForSearch } from '@/lib/catalog/normalize'
 
@@ -28,9 +29,10 @@ export const DeliveryCities: CollectionConfig = {
   slug: 'cities',
   labels: { singular: 'Delivery city', plural: 'Delivery cities' },
   admin: {
+    ...SIMPLE_DOCUMENT_VIEW,
     group: 'Catalog',
     useAsTitle: 'adminTitle',
-    defaultColumns: ['adminTitle', 'feeIqd', 'sortOrder', 'isActive', 'updatedAt'],
+    defaultColumns: ['adminTitle', 'feeIqd', 'isActive', 'sortOrder'],
     listSearchableFields: ['adminTitle'],
     description:
       'Cities and their delivery fees in whole Iraqi dinars. Fees are information only; they are never added to product prices. Only active cities appear on the website.',
@@ -202,7 +204,7 @@ export const DeliveryCities: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       access: { read: ({ req }) => Boolean(req.user), update: () => false },
-      admin: { position: 'sidebar', readOnly: true },
+      admin: { hidden: true },
     },
     {
       // List/picker title: "English name · Kurdish name" (see adminTitleFrom).
