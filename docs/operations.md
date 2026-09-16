@@ -23,8 +23,11 @@ Draft alone does not change the public page. A fresh page load shows the new val
 "Unavailable" label; only Unpublish removes a product from the site. Deleting is possible
 but keeps the images; prefer Unpublish.
 
-**Change the slug of a published product** only if needed; the old address redirects
-automatically (Redirects collection).
+**Web addresses** are automatic. A product's address (`/en/products/pink-heart-necklace`)
+comes from its English name while it is a draft and is fixed from the first publication
+on, so links already shared keep working even if the product is renamed. The same applies
+to category addresses from the first activation. Use the preview button or the public
+page's "Copy product link" to get the address.
 
 **Categories.** Categories → Create new: enter the three names (one form), choose the
 position (sort order) and tick Active. Only active categories with at least one published

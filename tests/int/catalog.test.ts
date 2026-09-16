@@ -39,28 +39,29 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
     const necklaces = await createCategory(
       payload,
       { ckb: 'ملوانکە', ar: 'قلائد', en: 'Necklaces' },
-      'necklaces',
       { sortOrder: 1 },
     )
     const rings = await createCategory(
       payload,
       { ckb: 'ئەڵقە', ar: 'خواتم', en: 'Rings' },
-      'rings',
       { sortOrder: 2 },
     )
     // Active but empty: retained in the admin, hidden from navigation and filters.
     const brooches = await createCategory(
       payload,
       { ckb: 'بڕۆش', ar: 'دبابيس', en: 'Brooches' },
-      'brooches',
       { sortOrder: 3 },
     )
-    emptyCategorySlug = brooches.slug
+    emptyCategorySlug = brooches.slug as string
     // Inactive category: a saved URL naming it is CATEGORY_UNAVAILABLE.
-    await createCategory(payload, { ckb: 'کۆن', ar: 'قديم', en: 'Retired' }, 'retired', {
-      sortOrder: 4,
-      isActive: false,
-    })
+    await createCategory(
+      payload,
+      { ckb: 'کۆن', ar: 'قديم', en: 'Retired' },
+      {
+        sortOrder: 4,
+        isActive: false,
+      },
+    )
     // Shared photo without a description: the site falls back to the product name.
     const media = await createMedia(payload)
     // A described photo: the single description is used in every language.
@@ -313,7 +314,7 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
     expect(await getProductBySlug('draft-only-necklace', 'en')).toBeNull()
   })
 
-  it('resolves redirects only to published products', async () => {
+  it('resolves legacy redirects only to published products', async () => {
     const payload = await testPayload()
     const star = await payload.find({
       collection: 'products',
@@ -321,14 +322,14 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
       overrideAccess: true,
       limit: 1,
     })
-    await payload.update({
-      collection: 'products',
-      id: star.docs[0].id,
-      data: { slug: 'silver-star-necklace', _status: 'published' },
-      draft: false,
+    // Addresses no longer change, so redirects only exist from before that rule (or are
+    // added through the API); the old address still resolves to the product.
+    await payload.create({
+      collection: 'redirects',
+      data: { oldSlug: 'old-star-address', product: star.docs[0].id },
       overrideAccess: true,
     })
-    expect(await resolveRedirect(slugs.star)).toBe('silver-star-necklace')
+    expect(await resolveRedirect('old-star-address')).toBe(slugs.star)
     expect(await resolveRedirect('never-existed')).toBeNull()
     await payload.update({
       collection: 'products',
@@ -337,6 +338,6 @@ describe('catalog layer: search, filters, sorting and pagination (A07, A08, A09)
       draft: false,
       overrideAccess: true,
     })
-    expect(await resolveRedirect(slugs.star)).toBeNull()
+    expect(await resolveRedirect('old-star-address')).toBeNull()
   })
 })

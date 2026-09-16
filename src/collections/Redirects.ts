@@ -6,17 +6,18 @@ import { validateSlug } from '@/lib/slug'
 
 /**
  * Old product slugs that permanently redirect to the current product (spec sections 6
- * and 15). Rows are created automatically when a published product's slug changes; the
- * owner can also add or remove them by hand.
+ * and 15). Product addresses are frozen once published (docs/decisions.md), so nothing
+ * creates rows here any more; the collection stays, hidden from the admin, so that any
+ * redirect created earlier keeps working and a maintainer can add one through the API.
  */
 export const Redirects: CollectionConfig = {
   slug: 'redirects',
   admin: {
+    hidden: true,
     group: 'Catalog',
     useAsTitle: 'oldSlug',
     defaultColumns: ['oldSlug', 'product', 'updatedAt'],
-    description:
-      'Old product addresses that redirect to the current product. Created automatically when a published slug changes.',
+    description: 'Old product addresses that redirect to the current product.',
   },
   access: {
     read: anyone,

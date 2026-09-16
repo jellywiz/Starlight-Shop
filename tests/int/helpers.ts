@@ -74,17 +74,19 @@ export async function createMedia(
   })
 }
 
-/** Creates a category with all three names on one save; active unless `isActive: false`. */
+/**
+ * Creates a category with all three names on one save; active unless `isActive: false`.
+ * The address (slug) is generated from the English name.
+ */
 export async function createCategory(
   payload: Payload,
   names: LocalizedText,
-  slug: string,
   extra: Partial<Category> = {},
 ) {
   const { isActive = true, ...rest } = extra
   return payload.create({
     collection: 'categories',
-    data: { name: names, slug, ...rest, isActive },
+    data: { name: names, ...rest, isActive },
     overrideAccess: true,
   })
 }
@@ -118,7 +120,6 @@ export type ProductFixture = {
   priceIqd: number
   isAvailable?: boolean
   featured?: boolean
-  slug?: string
 }
 
 /**
@@ -145,7 +146,6 @@ export async function createProduct(
       priceIqd: fixture.priceIqd,
       isAvailable: fixture.isAvailable ?? true,
       featured: fixture.featured ?? false,
-      ...(fixture.slug ? { slug: fixture.slug } : {}),
       _status: 'draft',
     },
     draft: true,

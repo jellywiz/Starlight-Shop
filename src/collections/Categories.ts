@@ -11,13 +11,15 @@ import {
 } from '@/hooks/localized'
 import { LOCALE_LABELS } from '@/hooks/products'
 import { assertCategoryDeactivatable, assertCategoryDeletable } from '@/hooks/references'
-import { slugify, validateSlug } from '@/lib/slug'
+import { deriveSlug } from '@/hooks/slugs'
+import { validateSlug } from '@/lib/slug'
 
 export const CATEGORY_NAME_MAX = 80
 
 /**
  * Flat product categories (spec section 6). The name is translated (all three languages
- * on one form); the slug is shared and used in filter URLs. Categories are owner-managed,
+ * on one form); the slug used in filter URLs is generated from the English name and
+ * frozen at the first activation (hidden from the admin). Categories are owner-managed,
  * never a hard-coded list. Only active categories are readable publicly; the catalog
  * additionally shows only categories that have at least one published product.
  */
@@ -26,8 +28,8 @@ export const Categories: CollectionConfig = {
   admin: {
     group: 'Catalog',
     useAsTitle: 'adminTitle',
-    defaultColumns: ['adminTitle', 'slug', 'sortOrder', 'isActive', 'updatedAt'],
-    listSearchableFields: ['adminTitle', 'slug'],
+    defaultColumns: ['adminTitle', 'sortOrder', 'isActive', 'updatedAt'],
+    listSearchableFields: ['adminTitle'],
     description:
       'Flat list of categories, e.g. Necklaces, Bracelets, Rings. A category needs all three names before it can be activated. Deactivate instead of deleting when products still use it.',
   },
@@ -40,25 +42,27 @@ export const Categories: CollectionConfig = {
   defaultSort: 'sortOrder',
   hooks: {
     beforeValidate: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
         if (!data) {
           return data
         }
         trimTranslations(data.name)
-        if (typeof data.slug === 'string') {
-          data.slug = data.slug.trim().toLowerCase()
-          if (data.slug === '') {
-            delete data.slug
-          }
-        }
-        // Derive the slug from the English name the first time it is available.
-        if (!data.slug && !originalDoc?.slug) {
-          const en = mergeTranslations(originalDoc?.name, data.name).en
-          const candidate = typeof en === 'string' ? slugify(en) : ''
-          if (candidate) {
-            data.slug = candidate
-          }
-        }
+        // The filter-URL address follows the English name until the category is first
+        // activated, then stays fixed. Whatever a client sent is ignored: the stored
+        // address is the only input (see the same note in src/hooks/products.ts).
+        const storedSlug = typeof originalDoc?.slug === 'string' ? originalDoc.slug : null
+        const en = mergeTranslations(originalDoc?.name, data.name).en
+        const slug = await deriveSlug({
+          req,
+          collection: 'categories',
+          englishName: typeof en === 'string' && en.trim() ? en.trim() : null,
+          currentSlug: storedSlug,
+          excludeId: originalDoc?.id,
+          frozen: Boolean(originalDoc?.activatedAt),
+          goingPublic: data.isActive === true,
+          fallbackPrefix: 'category',
+        })
+        data.slug = slug ?? storedSlug
         return data
       },
     ],
@@ -84,6 +88,10 @@ export const Categories: CollectionConfig = {
             )
           }
         }
+        if (data.isActive === true && !originalDoc?.activatedAt) {
+          // Freezes the address (see beforeValidate).
+          data.activatedAt = new Date().toISOString()
+        }
         if (id !== undefined && data.isActive === false && originalDoc?.isActive !== false) {
           await assertCategoryDeactivatable(req, id)
         }
@@ -108,18 +116,21 @@ export const Categories: CollectionConfig = {
         'The category name in each language (1 to 80 characters). All three are needed before the category can be activated.',
     }),
     {
+      // Generated from the English name, frozen at first activation (src/hooks/slugs.ts).
+      // Client values are discarded by the beforeValidate hook, which runs before field
+      // access control (a field-level `access` would strip the generated value too).
       name: 'slug',
       type: 'text',
-      required: true,
       unique: true,
       index: true,
       validate: validateSlug,
-      admin: {
-        position: 'sidebar',
-        rtl: false,
-        description:
-          'Latin slug used in catalog URLs, e.g. necklaces. Filled automatically from the English name.',
-      },
+      admin: { hidden: true },
+    },
+    {
+      name: 'activatedAt',
+      type: 'date',
+      access: { create: () => false, update: () => false },
+      admin: { hidden: true },
     },
     {
       name: 'sortOrder',

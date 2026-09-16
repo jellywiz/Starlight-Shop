@@ -52,7 +52,7 @@ Open http://localhost:3000 (site, redirects to `/ckb`) and http://localhost:3000
 ```
 src/app/(site)/[locale]/     public pages: home (with delivery fees), products, products/[slug], about, contact
 src/app/(payload)/           Payload admin and REST API routes (generated wrappers)
-src/collections/             Products, Categories, DeliveryCities (slug "cities"), Media, Redirects, Users
+src/collections/             Products, Categories, DeliveryCities (slug "cities"), Media, Redirects (hidden, legacy), Users
 src/globals/ShopSettings.ts  public name, logo, Instagram profile, introduction text, default language
 src/endpoints/               GET /api/catalog and GET /api/delivery-cities (fixed public projections)
 src/hooks/                   product publication rules, localized-data helpers, category integrity guards

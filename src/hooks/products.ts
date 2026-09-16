@@ -1,5 +1,4 @@
 import type {
-  CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
   PayloadRequest,
@@ -10,7 +9,8 @@ import { ValidationError } from 'payload'
 import { LOCALES, type Locale } from '@/i18n/config'
 import { isValidIqd } from '@/lib/catalog/dinar'
 import { buildNormalizedName, buildSearchText } from '@/lib/catalog/normalize'
-import { isValidSlug, slugify } from '@/lib/slug'
+import { isValidSlug } from '@/lib/slug'
+import { deriveSlug } from '@/hooks/slugs'
 import {
   type Translations,
   adminTitleFrom,
@@ -88,10 +88,11 @@ async function publicationErrors(args: {
     })
   }
   if (!isValidSlug(doc.slug)) {
+    // Unreachable in practice: the address is generated before validation, with a
+    // fallback when the English name has no Latin letters.
     errors.push({
       path: 'slug',
-      message:
-        'A Latin URL slug is required before publishing. It is filled automatically from the English name; enter one by hand if the English name has no Latin letters.',
+      message: 'The web address could not be generated. Save the product again.',
     })
   }
 
@@ -158,9 +159,13 @@ function englishName(data: AnyDoc, originalDoc: AnyDoc | undefined): string | nu
 }
 
 /**
- * beforeValidate: trims text, derives the slug from the English name the first time one
- * is available (with a numeric suffix when the slug is taken: product names need not be
- * unique) and never changes an existing slug automatically.
+ * beforeValidate: trims text, generates the web address (slug) and applies the defaults
+ * of a new draft.
+ *
+ * The address follows the English name (numeric suffix when taken: product names need not
+ * be unique) for as long as the product has never been published, so a typo fixed while
+ * drafting fixes the address too. From the first publication on it is frozen, whatever the
+ * name becomes, so links already shared keep working. Clients cannot set it.
  */
 export const productBeforeValidate: CollectionBeforeValidateHook = async ({
   data,
@@ -173,12 +178,6 @@ export const productBeforeValidate: CollectionBeforeValidateHook = async ({
   }
   trimTranslations(data.name)
   trimTranslations(data.description, { multiline: true })
-  if (typeof data.slug === 'string') {
-    data.slug = data.slug.trim().toLowerCase()
-    if (data.slug === '') {
-      delete data.slug
-    }
-  }
 
   // Drafts may be incomplete (no price yet) but never invalid: a fractional, negative,
   // non-finite or oversized amount is rejected even on Save Draft (spec section 5).
@@ -195,14 +194,22 @@ export const productBeforeValidate: CollectionBeforeValidateHook = async ({
     })
   }
 
-  const currentSlug = data.slug ?? originalDoc?.slug
-  if (!currentSlug) {
-    const en = englishName(data, originalDoc)
-    const candidate = en ? slugify(en) : ''
-    if (candidate) {
-      data.slug = await uniqueSlug(req, candidate, originalDoc?.id)
-    }
-  }
+  // The stored address is the only input; whatever a client sent is ignored. (Payload
+  // merges the stored document into `data` before this hook, and deleting the key would
+  // null the column on a draft save, so the value is always set explicitly.)
+  const storedSlug = typeof originalDoc?.slug === 'string' ? originalDoc.slug : null
+  const slug = await deriveSlug({
+    req,
+    collection: 'products',
+    englishName: englishName(data, originalDoc),
+    currentSlug: storedSlug,
+    excludeId: originalDoc?.id,
+    frozen: Boolean(originalDoc?.publishedAt),
+    // Anything but an explicit draft save may publish, so make sure an address exists.
+    goingPublic: data._status !== 'draft',
+    fallbackPrefix: 'item',
+  })
+  data.slug = slug ?? storedSlug
 
   if (operation === 'create') {
     if (data.featured === undefined) {
@@ -216,47 +223,15 @@ export const productBeforeValidate: CollectionBeforeValidateHook = async ({
   return data
 }
 
-async function uniqueSlug(
-  req: PayloadRequest,
-  base: string,
-  excludeId?: number | string,
-): Promise<string> {
-  let candidate = base
-  for (let i = 2; i < 100; i += 1) {
-    const clash = await req.payload.find({
-      collection: 'products',
-      where: {
-        and: [
-          { slug: { equals: candidate } },
-          ...(excludeId !== undefined ? [{ id: { not_equals: excludeId } }] : []),
-        ],
-      },
-      depth: 0,
-      limit: 1,
-      draft: true,
-      overrideAccess: true,
-    })
-    if (clash.totalDocs === 0) {
-      return candidate
-    }
-    candidate = `${base}-${i}`
-  }
-  return `${base}-${Date.now()}`
-}
-
 /**
  * beforeChange: computes derived search fields from every translation, enforces the
- * publication contract, stamps publishedAt/updatedBy and remembers the currently
- * published slug so afterChange can create a redirect when it changes.
+ * publication contract and stamps publishedAt/updatedBy.
  */
 export const productBeforeChange: CollectionBeforeChangeHook = async ({
   data,
   originalDoc,
-  operation,
   req,
-  context,
 }) => {
-  const id = originalDoc?.id as number | string | undefined
   const merged = mergedProduct(data, originalDoc)
 
   data.adminTitle = adminTitleFrom(
@@ -287,72 +262,7 @@ export const productBeforeChange: CollectionBeforeChangeHook = async ({
     }
   }
 
-  // Remember the slug that the public currently sees, for redirect creation.
-  if (operation === 'update' && id !== undefined) {
-    const published = await req.payload.findByID({
-      collection: 'products',
-      id,
-      depth: 0,
-      draft: false,
-      overrideAccess: true,
-      disableErrors: true,
-    })
-    context.previousPublishedSlug =
-      published && published._status === 'published' ? published.slug : null
-  }
   return data
-}
-
-/**
- * afterChange: when a published product's slug changes, keep a permanent redirect from
- * the old slug (spec sections 7 and 15). Redirect loops are prevented by removing any
- * redirect that points from the new slug.
- */
-export const productAfterChange: CollectionAfterChangeHook = async ({
-  doc,
-  operation,
-  req,
-  context,
-}) => {
-  if (operation !== 'update' || doc._status !== 'published') {
-    return doc
-  }
-  const previousSlug = context.previousPublishedSlug
-  if (typeof previousSlug !== 'string' || previousSlug === doc.slug || !doc.slug) {
-    return doc
-  }
-  const { payload } = req
-  await payload.delete({
-    collection: 'redirects',
-    where: { oldSlug: { equals: doc.slug } },
-    overrideAccess: true,
-    req,
-  })
-  const existing = await payload.find({
-    collection: 'redirects',
-    where: { oldSlug: { equals: previousSlug } },
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-    req,
-  })
-  if (existing.totalDocs > 0) {
-    await payload.update({
-      collection: 'redirects',
-      id: existing.docs[0].id,
-      data: { product: doc.id },
-      overrideAccess: true,
-      req,
-    })
-  } else {
-    await payload.create({
-      collection: 'redirects',
-      data: { oldSlug: previousSlug, product: doc.id },
-      overrideAccess: true,
-      req,
-    })
-  }
-  return doc
 }
 
 export { LOCALES }

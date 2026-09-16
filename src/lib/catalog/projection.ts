@@ -63,9 +63,12 @@ function isPopulatedCategory(value: unknown): value is Category {
   )
 }
 
-/** Category label in the page language (published content has every language). */
+/**
+ * Category label in the page language (published content has every language). An active
+ * category always has an address; one without cannot be linked and is left out.
+ */
 export function toPublicCategory(value: unknown, locale: Locale): PublicCategory | null {
-  if (!isPopulatedCategory(value)) {
+  if (!isPopulatedCategory(value) || typeof value.slug !== 'string' || !value.slug) {
     return null
   }
   return { name: pickTranslation(value.name, locale) ?? value.slug, slug: value.slug }

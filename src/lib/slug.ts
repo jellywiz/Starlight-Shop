@@ -1,6 +1,7 @@
 /**
- * Latin slugs shared across languages (spec section 2). Slugs are stable identifiers:
- * they are generated once when a record is created and never changed automatically.
+ * Latin slugs shared across languages (spec section 2). They are generated from the English
+ * name and frozen once a record goes public (see src/hooks/slugs.ts); the owner never
+ * edits them.
  */
 
 export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -15,8 +16,8 @@ const LATIN_FOLD: Record<string, string> = {
 
 /**
  * Converts free text to a slug. Non-Latin scripts (Arabic, Kurdish) produce an empty
- * string on purpose: the admin must then enter a Latin slug by hand rather than getting
- * an unreadable transliteration.
+ * string on purpose: a readable fallback is generated instead of an unreadable
+ * transliteration.
  */
 export function slugify(input: string): string {
   return input
@@ -36,10 +37,14 @@ export function isValidSlug(value: unknown): value is string {
   )
 }
 
-/** Field-level validator usable in Payload `validate`. */
+/**
+ * Field-level validator usable in Payload `validate`. An empty value is accepted here:
+ * whether an address is required at all is decided by the collection hooks (publishing,
+ * activation) or by the field's own `required` flag.
+ */
 export function validateSlug(value: unknown): string | true {
   if (value === undefined || value === null || value === '') {
-    return 'Enter a slug using lowercase Latin letters, digits and hyphens, e.g. hikvision-ds-2cd2043g2-i'
+    return true
   }
   if (!isValidSlug(value)) {
     return 'Slugs may only contain lowercase Latin letters, digits and single hyphens (no spaces, no Arabic or Kurdish letters).'

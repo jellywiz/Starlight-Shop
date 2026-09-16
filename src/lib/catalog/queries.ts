@@ -301,11 +301,10 @@ export async function getCatalogFilters(locale: Locale): Promise<CatalogFilters>
     }
     return {
       categories: categories.docs
-        .filter((c: Category) => used.has(c.id))
-        .map((c: Category) => ({
-          slug: c.slug,
-          name: pickTranslation(c.name, locale) ?? c.slug,
-        })),
+        .filter((c: Category): c is Category & { slug: string } =>
+          Boolean(used.has(c.id) && typeof c.slug === 'string' && c.slug),
+        )
+        .map((c) => ({ slug: c.slug, name: pickTranslation(c.name, locale) ?? c.slug })),
     }
   })
 }

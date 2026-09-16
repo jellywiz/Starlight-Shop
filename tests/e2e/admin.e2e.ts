@@ -118,11 +118,8 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
 
   test('a category is created with all three names on one form', async ({ page }) => {
     await login(page)
-    // Repeatable: remove a leftover from an interrupted run.
-    const leftovers = await page.request.get('/api/categories?where[slug][equals]=e2e-brooches')
-    for (const doc of (await leftovers.json()).docs ?? []) {
-      await page.request.delete(`/api/categories/${doc.id}`)
-    }
+    // Repeatable: remove leftovers from interrupted runs (suffixed addresses included).
+    await removeCategories(page, 'e2e-brooches')
 
     await page.goto('/admin/collections/categories/create')
     await expect(page.getByText('Locale:')).toHaveCount(0)
@@ -131,21 +128,21 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await page.locator('#field-name__ar').fill('دبابيس تجريبية')
     await page.locator('#field-name__en').fill('E2E brooches')
     await page.getByLabel('Is Active').check()
+    // No address (slug) field on the form: it is generated from the English name.
+    await expect(page.locator('#field-slug')).toBeHidden()
     const created = page.waitForResponse(
       (r) => r.request().method() === 'POST' && r.url().includes('/api/categories'),
     )
     await page.getByRole('button', { name: 'Save', exact: true }).click()
-    expect((await created).ok()).toBe(true)
+    const response = await created
+    expect(response.ok()).toBe(true)
+    expect((await response.json()).doc.slug).toBe('e2e-brooches')
     await expect(page.getByText(/successfully/i).first()).toBeVisible()
-    // Slug derived from the English name; bilingual title in the list.
-    await expect(page.locator('#field-slug')).toHaveValue('e2e-brooches')
+    // Bilingual title in the list.
     await page.goto('/admin/collections/categories?limit=20')
     await expect(page.getByRole('link', { name: 'E2E brooches · بڕۆشی تاقیکردنەوە' })).toBeVisible()
 
-    const cleanup = await page.request.get('/api/categories?where[slug][equals]=e2e-brooches')
-    for (const doc of (await cleanup.json()).docs ?? []) {
-      await page.request.delete(`/api/categories/${doc.id}`)
-    }
+    await removeCategories(page, 'e2e-brooches')
   })
 
   test('an oversized photo is refused with the reason shown in the toast', async ({ page }) => {
@@ -164,6 +161,20 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(page).toHaveURL(/\/admin\/collections\/media\/create/)
   })
 })
+
+/** Deletes every category whose address starts with `slugPrefix` (test fixtures only). */
+async function removeCategories(page: Page, slugPrefix: string) {
+  // Cookie authentication needs the Origin header (CSRF check), which page.request omits.
+  const headers = { Origin: new URL(page.url()).origin }
+  const found = await page.request.get(
+    `/api/categories?where[slug][like]=${encodeURIComponent(slugPrefix)}&limit=50&depth=0`,
+    { headers },
+  )
+  for (const doc of (await found.json()).docs ?? []) {
+    const deleted = await page.request.delete(`/api/categories/${doc.id}`, { headers })
+    expect(deleted.ok()).toBe(true)
+  }
+}
 
 /** Incompressible pseudo-random pixels, so the PNG is well above the 3 MB upload limit. */
 async function oversizedPng(): Promise<Buffer> {

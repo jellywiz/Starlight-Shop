@@ -3,12 +3,7 @@ import type { CollectionConfig, FieldAccess } from 'payload'
 import { isOwnerUser, ownerOnly, publishedOrOwner } from '@/access'
 import { translatedField } from '@/fields/translated'
 import { DEFAULT_LOCALE } from '@/i18n/config'
-import {
-  LIMITS,
-  productAfterChange,
-  productBeforeChange,
-  productBeforeValidate,
-} from '@/hooks/products'
+import { LIMITS, productBeforeChange, productBeforeValidate } from '@/hooks/products'
 import { MAX_IQD, isValidIqd } from '@/lib/catalog/dinar'
 import { validateSlug } from '@/lib/slug'
 
@@ -59,7 +54,6 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeValidate: [productBeforeValidate],
     beforeChange: [productBeforeChange],
-    afterChange: [productAfterChange],
   },
   fields: [
     {
@@ -160,17 +154,15 @@ export const Products: CollectionConfig = {
       ],
     },
     {
+      // Web address, shared by all languages: generated from the English name while the
+      // product is unpublished, frozen from the first publication (src/hooks/slugs.ts).
+      // Client values are discarded by the beforeValidate hook.
       name: 'slug',
       type: 'text',
       unique: true,
       index: true,
       validate: validateSlug,
-      admin: {
-        position: 'sidebar',
-        rtl: false,
-        description:
-          'Latin URL slug, shared by all languages. Filled automatically from the English name on first save; changing it after publishing keeps a redirect from the old address.',
-      },
+      admin: { hidden: true },
     },
     {
       name: 'publishedAt',

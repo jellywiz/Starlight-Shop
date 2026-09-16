@@ -173,9 +173,6 @@ export interface Product {
    * Show on the home page (up to eight featured products are displayed).
    */
   featured?: boolean | null;
-  /**
-   * Latin URL slug, shared by all languages. Filled automatically from the English name on first save; changing it after publishing keeps a redirect from the old address.
-   */
   slug?: string | null;
   /**
    * First publication date (used for "Newest" sorting).
@@ -205,10 +202,8 @@ export interface Category {
     ar?: string | null;
     en?: string | null;
   };
-  /**
-   * Latin slug used in catalog URLs, e.g. necklaces. Filled automatically from the English name.
-   */
-  slug: string;
+  slug?: string | null;
+  activatedAt?: string | null;
   /**
    * Lower numbers appear first.
    */
@@ -347,7 +342,7 @@ export interface City {
   createdAt: string;
 }
 /**
- * Old product addresses that redirect to the current product. Created automatically when a published slug changes.
+ * Old product addresses that redirect to the current product.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
@@ -496,6 +491,7 @@ export interface CategoriesSelect<T extends boolean = true> {
         en?: T;
       };
   slug?: T;
+  activatedAt?: T;
   sortOrder?: T;
   isActive?: T;
   updatedBy?: T;

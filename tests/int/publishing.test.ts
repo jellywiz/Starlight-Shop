@@ -24,11 +24,7 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     const payload = await testPayload()
     await resetDatabase(payload)
     await createOwner(payload)
-    const category = await createCategory(
-      payload,
-      { ckb: 'ملوانکە', ar: 'قلائد', en: 'Necklaces' },
-      'necklaces',
-    )
+    const category = await createCategory(payload, { ckb: 'ملوانکە', ar: 'قلائد', en: 'Necklaces' })
     const media = await createMedia(payload, { alt: ALT })
     categoryId = category.id
     mediaId = media.id
@@ -293,56 +289,157 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     }
   })
 
-  it('creates a redirect when a published slug changes and prevents loops', async () => {
+  it('generates the address from the English name and freezes it at first publication', async () => {
     const payload = await testPayload()
-    const product = await createProduct(
-      payload,
-      {
-        names: { ckb: 'ئەڵقە', ar: 'خاتم', en: 'Twist ring' },
+    const draft = await payload.create({
+      collection: 'products',
+      data: {
+        name: { ckb: 'ئەڵقە', ar: 'خاتم', en: 'Twist rng' },
+        description: { ckb: 'وەسف', ar: 'وصف', en: 'A ring' },
         category: categoryId,
         photos: [mediaId],
         priceIqd: 12000,
+        isAvailable: true,
+        // Client-supplied addresses are ignored.
+        slug: 'my-own-address',
+        _status: 'draft',
       },
-      { publish: true },
-    )
-    const oldSlug = product.slug as string
-    await payload.update({
-      collection: 'products',
-      id: product.id,
-      data: { slug: 'twisted-silver-ring', _status: 'published' },
-      draft: false,
+      draft: true,
       overrideAccess: true,
     })
-    const redirects = await payload.find({
-      collection: 'redirects',
-      where: { oldSlug: { equals: oldSlug } },
-      overrideAccess: false,
-      depth: 1,
-    })
-    expect(redirects.totalDocs).toBe(1)
-    const target = redirects.docs[0].product
-    expect(typeof target === 'object' && target.slug).toBe('twisted-silver-ring')
+    expect(draft.slug).toBe('twist-rng')
 
-    // Changing back removes the would-be loop and creates the reverse redirect.
-    await payload.update({
+    // Fixing the name while still a draft fixes the address too.
+    const fixed = await payload.update({
       collection: 'products',
-      id: product.id,
-      data: { slug: oldSlug, _status: 'published' },
+      id: draft.id,
+      data: { name: { en: 'Twist ring' }, _status: 'draft' },
+      draft: true,
+      overrideAccess: true,
+    })
+    expect(fixed.slug).toBe('twist-ring')
+
+    // Publishing freezes it: later renames (and explicit slugs) leave it untouched.
+    const published = await payload.update({
+      collection: 'products',
+      id: draft.id,
+      data: { _status: 'published' },
       draft: false,
       overrideAccess: true,
     })
-    const loop = await payload.find({
-      collection: 'redirects',
-      where: { oldSlug: { equals: oldSlug } },
+    expect(published.slug).toBe('twist-ring')
+    const renamed = await payload.update({
+      collection: 'products',
+      id: draft.id,
+      data: {
+        name: { en: 'Twisted silver ring' },
+        slug: 'twisted-silver-ring',
+        _status: 'published',
+      },
+      draft: false,
       overrideAccess: true,
     })
-    expect(loop.totalDocs).toBe(0)
-    const reverse = await payload.find({
-      collection: 'redirects',
-      where: { oldSlug: { equals: 'twisted-silver-ring' } },
+    expect(renamed.slug).toBe('twist-ring')
+    expect(renamed.name?.en).toBe('Twisted silver ring')
+    const asDraftLater = await payload.update({
+      collection: 'products',
+      id: draft.id,
+      data: { name: { en: 'Yet another name' }, _status: 'draft' },
+      draft: true,
       overrideAccess: true,
     })
-    expect(reverse.totalDocs).toBe(1)
+    expect(asDraftLater.slug).toBe('twist-ring')
+    // Nothing writes redirects any more.
+    const redirects = await payload.count({ collection: 'redirects', overrideAccess: true })
+    expect(redirects.totalDocs).toBe(0)
+  })
+
+  it('falls back to a generated address when the English name has no Latin letters', async () => {
+    const payload = await testPayload()
+    const draft = await payload.create({
+      collection: 'products',
+      data: {
+        name: { ckb: 'ملوانکە ٧', ar: 'قلادة ٧', en: '★ ٧ ★' },
+        description: { ckb: 'وەسف', ar: 'وصف', en: 'Seven' },
+        category: categoryId,
+        photos: [mediaId],
+        priceIqd: 7000,
+        isAvailable: true,
+        _status: 'draft',
+      },
+      draft: true,
+      overrideAccess: true,
+    })
+    expect(draft.slug ?? null).toBeNull()
+    const published = await payload.update({
+      collection: 'products',
+      id: draft.id,
+      data: { _status: 'published' },
+      draft: false,
+      overrideAccess: true,
+    })
+    expect(published.slug).toMatch(/^item-[0-9a-f]{6}$/)
+    const again = await payload.update({
+      collection: 'products',
+      id: draft.id,
+      data: { priceIqd: 7500, _status: 'published' },
+      draft: false,
+      overrideAccess: true,
+    })
+    expect(again.slug).toBe(published.slug)
+  })
+
+  it('generates category addresses, suffixes duplicates and freezes them at activation', async () => {
+    const payload = await testPayload()
+    const charms = await payload.create({
+      collection: 'categories',
+      data: { name: { ckb: 'تەڵیسم', ar: 'تعويذات', en: 'Charmz' }, isActive: false },
+      overrideAccess: true,
+    })
+    expect(charms.slug).toBe('charmz')
+    expect(charms.activatedAt ?? null).toBeNull()
+    const fixed = await payload.update({
+      collection: 'categories',
+      id: charms.id,
+      data: { name: { en: 'Charms' } },
+      overrideAccess: true,
+    })
+    expect(fixed.slug).toBe('charms')
+
+    const activated = await payload.update({
+      collection: 'categories',
+      id: charms.id,
+      data: { isActive: true },
+      overrideAccess: true,
+    })
+    expect(activated.slug).toBe('charms')
+    expect(activated.activatedAt).toBeTruthy()
+    const renamed = await payload.update({
+      collection: 'categories',
+      id: charms.id,
+      data: { name: { en: 'Lucky charms' }, slug: 'lucky-charms' },
+      overrideAccess: true,
+    })
+    expect(renamed.slug).toBe('charms')
+
+    // A second category with the same English name gets a numeric suffix.
+    const twin = await payload.create({
+      collection: 'categories',
+      data: { name: { ckb: 'تەڵیسمی دوو', ar: 'تعويذات اثنان', en: 'Charms' }, isActive: false },
+      overrideAccess: true,
+    })
+    expect(twin.slug).toBe('charms-2')
+
+    // No Latin letters in the English name: a readable fallback at activation.
+    const symbols = await payload.create({
+      collection: 'categories',
+      data: { name: { ckb: 'هێما', ar: 'رموز', en: '٢٠٢٦' }, isActive: true },
+      overrideAccess: true,
+    })
+    expect(symbols.slug).toMatch(/^category-[0-9a-f]{6}$/)
+    for (const id of [charms.id, twin.id, symbols.id]) {
+      await payload.delete({ collection: 'categories', id, overrideAccess: true })
+    }
   })
 
   it('denies anonymous writes and private reads (A13)', async () => {
@@ -381,7 +478,7 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     await expect(
       payload.create({
         collection: 'categories',
-        data: { name: { en: 'Hacked category' }, slug: 'hacked' },
+        data: { name: { en: 'Hacked category' } },
         overrideAccess: false,
       }),
     ).rejects.toThrow()
@@ -416,11 +513,7 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
 
   it('protects referenced media and categories, and requires reassignment before removal (A12)', async () => {
     const payload = await testPayload()
-    const category = await createCategory(
-      payload,
-      { ckb: 'گوارە', ar: 'أقراط', en: 'Earrings' },
-      'earrings',
-    )
+    const category = await createCategory(payload, { ckb: 'گوارە', ar: 'أقراط', en: 'Earrings' })
     const product = await createProduct(
       payload,
       {
@@ -491,10 +584,11 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     const payload = await testPayload()
     const partial = await payload.create({
       collection: 'categories',
-      data: { name: { en: 'Brooches' }, slug: 'brooches', isActive: false },
+      data: { name: { en: 'Brooches' }, isActive: false },
       overrideAccess: true,
     })
     expect(partial.adminTitle).toBe('Brooches')
+    expect(partial.slug).toBe('brooches')
     const messages = await expectFailure(() =>
       payload.update({
         collection: 'categories',

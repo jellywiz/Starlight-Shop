@@ -53,6 +53,15 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Web addresses (slugs) are generated and hidden from the admin** (owner decision,
+  2026-09-16; the spec let the owner enter or change the slug by hand, with a redirect on
+  change). A product's slug follows its English name while the product has never been
+  published — a typo fixed while drafting fixes the address — and is frozen at the first
+  publication; a category's slug is frozen at its first activation (`activatedAt`).
+  Duplicates get a numeric suffix; an English name with no Latin letters gets a readable
+  fallback (`item-a1b2c3`, `category-…`). Because addresses no longer change, nothing
+  creates redirects any more; the Redirects collection stays for legacy rows, hidden from
+  the admin menu (`src/hooks/slugs.ts`).
 - **Translations are edited on one form, not through Payload locales** (owner decision,
   2026-09-16). Payload's localization made the owner switch the locale selector and save
   once per language; the spec's "complete in all three languages" rule stays, but every
