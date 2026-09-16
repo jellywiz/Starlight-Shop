@@ -90,7 +90,7 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
                 onClick={() => show(i)}
                 aria-pressed={i === index}
                 aria-label={t(dict.product.thumbnailLabel, { index: i + 1, total })}
-                className={`block h-16 w-16 overflow-hidden rounded-xl bg-white ring-2 ring-inset ${i === index ? 'ring-plum-700' : 'ring-plum-700/10 hover:ring-plum-400'}`}
+                className={`block h-16 w-16 overflow-hidden rounded-xl bg-white ring-2 ring-inset ${i === index ? 'ring-accent' : 'ring-line hover:ring-accent-muted'}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -110,7 +110,7 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
       <dialog
         ref={dialogRef}
         aria-labelledby={titleId}
-        className="m-auto w-[min(96vw,64rem)] max-w-none rounded-2xl bg-white p-3 shadow-2xl"
+        className="m-auto w-[min(96vw,64rem)] max-w-none rounded-2xl bg-surface p-3 shadow-2xl"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 id={titleId} className="text-sm font-semibold">
@@ -119,7 +119,7 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
           </h2>
           <button
             type="button"
-            className="rounded-lg p-2 hover:bg-white"
+            className="rounded-lg p-2 hover:bg-surface-2"
             onClick={() => dialogRef.current?.close()}
           >
             <span className="sr-only">{dict.product.closeEnlarged}</span>

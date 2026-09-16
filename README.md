@@ -51,14 +51,14 @@ Open http://localhost:3000 (site, redirects to `/ckb`) and http://localhost:3000
 
 ```
 src/app/(site)/[locale]/     public pages: home (with delivery fees), products, products/[slug], about, contact
-src/app/(payload)/           Payload admin and REST API routes (generated wrappers)
+src/app/(payload)/           Payload admin and REST API routes (generated wrappers), custom.scss admin theme (light + dark)
 src/collections/             Products, Categories, DeliveryCities (slug "cities"), Media, Redirects (hidden, legacy), Users
 src/globals/ShopSettings.ts  public name, logo, Instagram profile, introduction text, default language
 src/endpoints/               GET /api/catalog and GET /api/delivery-cities (fixed public projections)
 src/hooks/                   product publication rules, localized-data helpers, category integrity guards
 src/lib/catalog/             normalization, whole-dinar handling, URL params, queries, projections, ranking
 src/i18n/                    locale config and ckb/ar/en interface dictionaries
-src/components/site|admin    site UI (sparkles, delivery selector, Instagram actions) and admin dinar fields
+src/components/site|admin    site UI (sparkles, delivery selector, Instagram actions, theme toggle) and admin home, menu extras, Appearance switch, dinar fields
 src/migrations/              committed PostgreSQL migrations (never edit applied ones)
 src/fonts/                   self-hosted Noto Sans / Noto Sans Arabic
 public/brand/                supplied logo and its derivatives, favicons, social preview image

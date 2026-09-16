@@ -30,7 +30,7 @@ export default function ErrorPage({
 
   return (
     <div role="alert" className="mx-auto max-w-xl py-10 text-center">
-      <h1 className="text-2xl font-bold text-plum-900">{dict.unavailable.heading}</h1>
+      <h1 className="text-2xl font-bold text-heading">{dict.unavailable.heading}</h1>
       <p className="mt-2 text-ink-soft">{dict.errors.unexpected}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <button type="button" onClick={reset} className="btn-primary">

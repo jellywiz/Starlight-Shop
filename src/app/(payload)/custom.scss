@@ -3,12 +3,18 @@
 
   The admin is Payload's, restyled through its CSS variables plus a small number of
   component overrides, and tuned for a phone and an iPad first: 16px inputs (no iOS zoom
-  on focus), 44px touch targets, one column below 768px. The theme is light only
-  (`admin.theme: 'light'` in payload.config.ts). Class names are Payload 3.89's; check
-  them after a Payload upgrade.
+  on focus), 44px touch targets, one column below 768px. Light and dark are both
+  supported: Payload sets `data-theme` on <html> (the owner's choice from the
+  Appearance switch in the menu, otherwise the device setting) and every colour below is
+  a semantic token with a value per theme. Class names are Payload 3.89's; check them
+  after a Payload upgrade.
+
+  Payload's own styles live in `@layer payload-default`; these rules are unlayered and
+  therefore win, so theme-dependent Payload variables (--theme-*) are only ever set inside
+  the light/dark scoped blocks, never on :root.
 */
 
-/* ---------- Brand tokens (same plum palette as the public site) ---------- */
+/* ---------- Brand tokens (same plum palette as the public site; fixed in both themes) ---------- */
 :root {
   --sl-plum-950: #1f0b21;
   --sl-plum-900: #2d1230;
@@ -21,20 +27,12 @@
   --sl-plum-200: #dcc8db;
   --sl-plum-100: #efe5ee;
   --sl-plum-50: #f9f4f8;
-  --sl-page: #fcfafc;
-  --sl-ink: #251a26;
-  --sl-ink-soft: #5a4a5b;
-  --sl-ink-muted: #7d6c7e;
   --sl-star: #f6e3b4;
-  --sl-shadow: 0 1px 2px rgba(72, 32, 68, 0.06), 0 8px 24px -12px rgba(72, 32, 68, 0.25);
   --sl-tap: 44px;
-}
 
-/* ---------- Payload variables ---------- */
-:root,
-html[data-theme='light'] {
   /* Plum-tinted neutrals: Payload derives borders, disabled states, table stripes,
-     buttons (elevation-800) and text (elevation-800/1000) from this scale. */
+     buttons (elevation-800) and text (elevation-800/1000) from this scale in light mode
+     and inverts it itself in dark mode. */
   --color-base-0: #ffffff;
   --color-base-50: #f9f4f8;
   --color-base-100: #f1e9f0;
@@ -78,11 +76,6 @@ html[data-theme='light'] {
   --color-success-900: #2d1230;
   --color-success-950: #1f0b21;
 
-  --theme-bg: var(--sl-page);
-  --theme-input-bg: #ffffff;
-  --theme-text: var(--sl-ink);
-  --theme-border-color: #e6dbe5;
-
   --style-radius-s: 8px;
   --style-radius-m: 10px;
   --style-radius-l: 14px;
@@ -90,6 +83,120 @@ html[data-theme='light'] {
   --font-body:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Helvetica Neue',
     Arial, sans-serif;
+}
+
+/* ---------- Semantic tokens: light ---------- */
+html[data-theme='light'],
+html:not([data-theme]) {
+  color-scheme: light;
+  --sl-page: #fcfafc;
+  --sl-surface: #ffffff;
+  --sl-surface-2: #f9f4f8;
+  --sl-surface-3: #efe5ee;
+  --sl-line: #e6dbe5;
+  --sl-line-strong: #dcc8db;
+  --sl-line-hover: #bd9dbd;
+  --sl-text: #251a26;
+  --sl-text-soft: #5a4a5b;
+  --sl-text-muted: #7d6c7e;
+  --sl-heading: #2d1230;
+  --sl-accent: #482044;
+  --sl-accent-soft: #78467a;
+  --sl-accent-bg: #f9f4f8;
+  --sl-primary: #482044;
+  --sl-primary-hover: #3a1a3c;
+  --sl-on-primary: #ffffff;
+  --sl-focus: #5d2f5b;
+  --sl-focus-ring: rgba(120, 70, 122, 0.18);
+  --sl-shadow: 0 1px 2px rgba(72, 32, 68, 0.06), 0 8px 24px -12px rgba(72, 32, 68, 0.25);
+  --sl-shadow-hover: 0 14px 30px -16px rgba(72, 32, 68, 0.45);
+  --sl-nav-bg: linear-gradient(180deg, #ffffff 0%, #f9f4f8 100%);
+  --sl-controls-bg: rgba(252, 250, 252, 0.94);
+  --sl-tile-arrow: #bd9dbd;
+  --sl-site-icon-bg: #fff7e2;
+  --sl-site-icon: #8a6a1f;
+
+  --theme-bg: var(--sl-page);
+  --theme-input-bg: var(--sl-surface);
+  --theme-text: var(--sl-text);
+  --theme-border-color: var(--sl-line);
+}
+
+/* ---------- Semantic tokens: dark (aligned with Payload's inverted base scale) ---------- */
+@mixin starlight-dark {
+  color-scheme: dark;
+  --sl-page: #1a0c1b;
+  --sl-surface: #24131f;
+  --sl-surface-2: #2d1a2c;
+  --sl-surface-3: #382437;
+  --sl-line: #382437;
+  --sl-line-strong: #432f42;
+  --sl-line-hover: #6c566b;
+  --sl-text: #f3e9f2;
+  --sl-text-soft: #d9cbd8;
+  --sl-text-muted: #a08fa1;
+  --sl-heading: #ffffff;
+  --sl-accent: #d9b8d8;
+  --sl-accent-soft: #c39dc3;
+  --sl-accent-bg: #382437;
+  --sl-primary: #78467a;
+  --sl-primary-hover: #8a578b;
+  --sl-on-primary: #ffffff;
+  --sl-focus: #bd9dbd;
+  --sl-focus-ring: rgba(189, 157, 189, 0.25);
+  --sl-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --sl-shadow-hover: 0 14px 30px -16px rgba(0, 0, 0, 0.8);
+  --sl-nav-bg: linear-gradient(180deg, #24131f 0%, #1a0c1b 100%);
+  --sl-controls-bg: rgba(26, 12, 27, 0.92);
+  --sl-tile-arrow: #6c566b;
+  --sl-site-icon-bg: #3a2f1a;
+  --sl-site-icon: #f6e3b4;
+
+  --theme-bg: var(--sl-page);
+  --theme-input-bg: var(--sl-surface);
+  --theme-text: var(--sl-text);
+  --theme-border-color: var(--sl-line);
+}
+
+html[data-theme='dark'] {
+  @include starlight-dark;
+}
+
+/* Payload's own dark mode is the same variable inversion it scopes to
+   html[data-theme='dark'] (its dist/scss/colors.scss and app.scss); replayed here so it
+   can also be applied by the device-follows rule below. Step 500 stays put, as in Payload. */
+@mixin payload-dark {
+  color-scheme: dark;
+  --theme-overlay: rgba(5, 5, 5, 0.75);
+  @each $step in (0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 550, 600, 650, 700, 750, 800, 850)
+  {
+    --theme-elevation-#{$step}: var(--color-base-#{900 - $step});
+  }
+  --theme-elevation-900: var(--color-base-0);
+  --theme-elevation-950: var(--color-base-0);
+  --theme-elevation-1000: var(--color-base-0);
+  @each $name in (success, warning, error) {
+    @each $step
+      in (50, 100, 150, 200, 250, 300, 350, 400, 450, 550, 600, 650, 700, 750, 800, 850, 900, 950)
+    {
+      --theme-#{$name}-#{$step}: var(--color-#{$name}-#{1000 - $step});
+    }
+  }
+}
+
+/* The admin renders entirely in the browser: until its JavaScript runs the page is blank
+   and coloured by the server's guess of the theme, which is light unless a saved choice is
+   in the cookie (and on the login page Payload never corrects that guess, because the
+   unauthenticated client config carries no theme setting). While nothing has been chosen
+   the layout marks <html> with data-theme-auto (src/lib/admin-theme.ts): the page then
+   follows the device setting from the first paint, with or without JavaScript, so a dark
+   phone never flashes light. Once hydrated, Payload sets data-theme='dark' itself and both
+   rules agree. */
+@media (prefers-color-scheme: dark) {
+  html[data-theme-auto] {
+    @include payload-dark;
+    @include starlight-dark;
+  }
 }
 
 /* Base type a touch larger than Payload's 13px so field labels read well on a phone. */
@@ -108,12 +215,12 @@ body {
 }
 
 .app-header__bg {
-  background: #ffffff;
-  border-bottom: 1px solid var(--sl-plum-100);
+  background: var(--sl-surface);
+  border-bottom: 1px solid var(--sl-line);
 }
 
 .app-header .hamburger {
-  color: var(--sl-plum-800);
+  color: var(--sl-heading);
 }
 
 .nav-toggler,
@@ -123,8 +230,8 @@ body {
 }
 
 .nav {
-  background: linear-gradient(180deg, #ffffff 0%, var(--sl-plum-50) 100%);
-  border-inline-end: 1px solid var(--sl-plum-100);
+  background: var(--sl-nav-bg);
+  border-inline-end: 1px solid var(--sl-line);
 }
 
 .nav__header,
@@ -141,11 +248,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .nav-group__indicator {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .nav__link {
@@ -156,21 +263,21 @@ body {
   margin: 0;
   border-radius: 10px;
   font-size: 1.05rem;
-  color: var(--sl-ink);
+  color: var(--sl-text);
   text-decoration: none;
   transition:
     background-color 120ms ease,
     color 120ms ease;
 
   &:hover {
-    background: rgba(72, 32, 68, 0.06);
-    color: var(--sl-plum-800);
+    background: var(--sl-surface-3);
+    color: var(--sl-heading);
   }
 
   /* Payload marks the current section with an indicator element inside the link. */
   &:has(.nav__link-indicator) {
-    background: var(--sl-plum-700);
-    color: #ffffff;
+    background: var(--sl-primary);
+    color: var(--sl-on-primary);
     font-weight: 600;
   }
 }
@@ -188,7 +295,7 @@ body {
 .sl-nav-extras {
   margin-top: calc(var(--base) * 0.75);
   padding-top: calc(var(--base) * 0.75);
-  border-top: 1px solid var(--sl-plum-100);
+  border-top: 1px solid var(--sl-line);
 }
 
 .sl-nav-extras__link {
@@ -199,11 +306,11 @@ body {
   padding: calc(var(--base) * 0.4) calc(var(--base) * 0.6);
   border-radius: 10px;
   font-size: 1.05rem;
-  color: var(--sl-plum-700);
+  color: var(--sl-accent);
   text-decoration: none;
 
   &:hover {
-    background: rgba(72, 32, 68, 0.06);
+    background: var(--sl-surface-3);
   }
 }
 
@@ -213,12 +320,75 @@ body {
   flex: none;
 }
 
+/* Appearance switch (Light / Dark / Auto) in the menu */
+.sl-appearance {
+  margin-top: calc(var(--base) * 0.6);
+  padding: 0 calc(var(--base) * 0.6);
+}
+
+.sl-appearance__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-text-muted);
+}
+
+.sl-appearance__options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--sl-surface-3);
+}
+
+.sl-appearance__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sl-text-soft);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--sl-heading);
+  }
+
+  &[aria-pressed='true'] {
+    background: var(--sl-surface);
+    color: var(--sl-heading);
+    box-shadow: var(--sl-shadow);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sl-focus);
+    outline-offset: 1px;
+  }
+}
+
+.sl-appearance__icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
 .nav__controls {
   margin-top: calc(var(--base) * 0.5);
 }
 
 .nav__log-out {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
   min-width: var(--sl-tap);
   min-height: var(--sl-tap);
   display: inline-flex;
@@ -228,7 +398,7 @@ body {
 
 .step-nav a,
 .step-nav__last {
-  color: var(--sl-ink-soft);
+  color: var(--sl-text-soft);
 }
 
 .app-header__account {
@@ -252,39 +422,39 @@ body {
 }
 
 .btn--style-primary {
-  --bg-color: var(--sl-plum-700);
-  --hover-bg: var(--sl-plum-800);
-  --color: #ffffff;
+  --bg-color: var(--sl-primary);
+  --hover-bg: var(--sl-primary-hover);
+  --color: var(--sl-on-primary);
   box-shadow: 0 6px 16px -8px rgba(72, 32, 68, 0.6);
 
   &.btn--disabled {
-    --bg-color: var(--sl-plum-100);
-    --color: var(--sl-ink-muted);
+    --bg-color: var(--sl-surface-3);
+    --color: var(--sl-text-muted);
     box-shadow: none;
   }
 }
 
 .btn--style-secondary {
-  --btn-border: 1px solid var(--sl-plum-200);
-  --hover-btn-border: 1px solid var(--sl-plum-400);
-  --color: var(--sl-plum-800);
-  --hover-color: var(--sl-plum-900);
-  background: #ffffff;
+  --btn-border: 1px solid var(--sl-line-strong);
+  --hover-btn-border: 1px solid var(--sl-line-hover);
+  --color: var(--sl-heading);
+  --hover-color: var(--sl-heading);
+  background: var(--sl-surface);
 }
 
 .btn--style-pill {
-  --bg-color: var(--sl-plum-100);
-  --hover-bg: var(--sl-plum-200);
-  --color: var(--sl-plum-900);
-  --hover-color: var(--sl-plum-900);
+  --bg-color: var(--sl-surface-3);
+  --hover-bg: var(--sl-line-strong);
+  --color: var(--sl-heading);
+  --hover-color: var(--sl-heading);
 }
 
 /* "Create New" in list headers: make it the obvious primary action. */
 .list-header .btn--style-pill {
-  --bg-color: var(--sl-plum-700);
-  --hover-bg: var(--sl-plum-800);
-  --color: #ffffff;
-  --hover-color: #ffffff;
+  --bg-color: var(--sl-primary);
+  --hover-bg: var(--sl-primary-hover);
+  --color: var(--sl-on-primary);
+  --hover-color: var(--sl-on-primary);
   align-self: center;
   min-height: 40px;
   padding-inline: calc(var(--base) * 0.8);
@@ -302,18 +472,18 @@ body {
 }
 
 .popup-button--background {
-  background: #ffffff;
-  border: 1px solid var(--sl-plum-200);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-line-strong);
 }
 
 /* ---------- Fields ---------- */
 .field-label {
   font-weight: 600;
-  color: var(--sl-ink);
+  color: var(--sl-text);
 }
 
 .field-description {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .field-type input:not([type='checkbox']):not([type='radio']),
@@ -322,20 +492,20 @@ body {
 .search-filter__input,
 .react-select .rs__control,
 .dinar-field__input input {
-  background: #ffffff;
-  border: 1px solid var(--sl-plum-200);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-line-strong);
   border-radius: var(--style-radius-m);
-  color: var(--sl-ink);
+  color: var(--sl-text);
   box-shadow: none;
 
   &:hover {
-    border-color: var(--sl-plum-300);
+    border-color: var(--sl-line-hover);
   }
 
   &:focus,
   &:focus-within {
-    border-color: var(--sl-plum-600);
-    box-shadow: 0 0 0 3px rgba(120, 70, 122, 0.18);
+    border-color: var(--sl-focus);
+    box-shadow: 0 0 0 3px var(--sl-focus-ring);
     outline: none;
   }
 }
@@ -360,7 +530,7 @@ body {
 
   .checkbox-input__input {
     border-radius: 7px;
-    border-color: var(--sl-plum-300);
+    border-color: var(--sl-line-hover);
   }
 
   .checkbox-input__label {
@@ -372,14 +542,14 @@ body {
 }
 
 .checkbox-input--checked .checkbox-input__input {
-  background: var(--sl-plum-700);
-  border-color: var(--sl-plum-700);
+  background: var(--sl-primary);
+  border-color: var(--sl-primary);
 }
 
 /* Sections (collapsible fields) as soft cards */
 .collapsible-field .collapsible {
-  background: #ffffff;
-  border: 1px solid var(--sl-plum-100);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-line);
   border-radius: var(--style-radius-l);
   box-shadow: var(--sl-shadow);
 }
@@ -392,11 +562,11 @@ body {
 .collapsible__header {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 .collapsible--style-default > .collapsible__toggle-wrap {
-  background: var(--sl-plum-50);
+  background: var(--sl-surface-2);
   border-radius: var(--style-radius-l) var(--style-radius-l) 0 0;
 }
 
@@ -414,7 +584,7 @@ body {
   margin-left: 0;
   margin-right: 0;
   padding: calc(var(--base) * 0.6) 0;
-  border-top: 1px solid var(--sl-plum-100);
+  border-top: 1px solid var(--sl-line);
   border-bottom: 0;
 
   &:first-child {
@@ -425,14 +595,14 @@ body {
 
 .group-field__title {
   font-weight: 700;
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 /* ---------- Edit view ---------- */
 .doc-header__title {
   font-size: 1.6rem;
   line-height: 1.2;
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 /* Only one tab (Edit) remains and it is hidden by config: drop the strip entirely. */
@@ -441,12 +611,12 @@ body {
 }
 
 .doc-controls {
-  background: rgba(252, 250, 252, 0.94);
+  background: var(--sl-controls-bg);
   backdrop-filter: blur(8px);
 }
 
 .doc-controls__divider {
-  background: var(--sl-plum-100);
+  background: var(--sl-line);
 }
 
 /* Keep the Draft/Published status; hide the technical timestamps. Records without a
@@ -465,17 +635,17 @@ body {
 
 .status__value--published,
 .pill--style-success {
-  background: var(--sl-plum-100);
-  color: var(--sl-plum-800);
+  background: var(--sl-accent-bg);
+  color: var(--sl-accent);
 }
 
 .custom-view-description {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .document-fields__sidebar-fields {
-  background: #ffffff;
-  border: 1px solid var(--sl-plum-100);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-line);
   border-radius: var(--style-radius-l);
   padding: calc(var(--base) * 0.8);
 }
@@ -484,21 +654,21 @@ body {
 .upload__wrap,
 .dropzone {
   border-radius: var(--style-radius-l);
-  border-color: var(--sl-plum-200);
+  border-color: var(--sl-line-strong);
 }
 
 .dropzone--is-dragging,
 .dropzone:hover {
-  border-color: var(--sl-plum-500);
+  border-color: var(--sl-accent-soft);
 }
 
 /* ---------- List view ---------- */
 .list-header__title {
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 .collection-list__sub-header {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .list-controls__columns > div,
@@ -507,14 +677,14 @@ body {
 }
 
 .table {
-  background: #ffffff;
-  border: 1px solid var(--sl-plum-100);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-line);
   border-radius: var(--style-radius-l);
   overflow: hidden;
 
   thead th {
-    background: var(--sl-plum-50);
-    color: var(--sl-ink-soft);
+    background: var(--sl-surface-2);
+    color: var(--sl-text-soft);
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -523,20 +693,20 @@ body {
 
   td,
   th {
-    border-bottom: 1px solid var(--sl-plum-100);
+    border-bottom: 1px solid var(--sl-line);
     padding-block: calc(var(--base) * 0.55);
   }
 
   tbody tr:nth-child(odd) {
-    background: #ffffff;
+    background: var(--sl-surface);
   }
 
   tbody tr:nth-child(even) {
-    background: var(--sl-plum-50);
+    background: var(--sl-surface-2);
   }
 
   a {
-    color: var(--sl-plum-800);
+    color: var(--sl-accent);
     font-weight: 600;
     text-decoration: none;
   }
@@ -549,7 +719,7 @@ body {
 }
 
 .page-controls {
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 /* ---------- Home ---------- */
@@ -652,10 +822,10 @@ body {
   align-items: center;
   min-height: 108px;
   padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
-  border: 1px solid var(--sl-plum-100);
+  border: 1px solid var(--sl-line);
   border-radius: 18px;
-  background: #ffffff;
-  color: var(--sl-ink);
+  background: var(--sl-surface);
+  color: var(--sl-text);
   text-decoration: none;
   box-shadow: var(--sl-shadow);
   transition:
@@ -664,13 +834,13 @@ body {
     box-shadow 120ms ease;
 
   &:hover {
-    border-color: var(--sl-plum-300);
+    border-color: var(--sl-line-hover);
     transform: translateY(-2px);
-    box-shadow: 0 14px 30px -16px rgba(72, 32, 68, 0.45);
+    box-shadow: var(--sl-shadow-hover);
   }
 
   &:focus-visible {
-    outline: 3px solid var(--sl-plum-500);
+    outline: 3px solid var(--sl-focus);
     outline-offset: 2px;
   }
 }
@@ -681,8 +851,8 @@ body {
   height: 48px;
   padding: 11px;
   border-radius: 14px;
-  background: var(--sl-plum-50);
-  color: var(--sl-plum-700);
+  background: var(--sl-accent-bg);
+  color: var(--sl-accent);
   align-self: start;
 }
 
@@ -692,15 +862,15 @@ body {
 }
 
 .sl-tile--site .sl-tile__icon {
-  background: #fff7e2;
-  color: #8a6a1f;
+  background: var(--sl-site-icon-bg);
+  color: var(--sl-site-icon);
 }
 
 .sl-tile__label {
   grid-area: label;
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 .sl-tile__count {
@@ -709,13 +879,13 @@ body {
   line-height: 1.1;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--sl-plum-700);
+  color: var(--sl-accent);
 }
 
 .sl-tile__note {
   grid-area: note;
   font-size: 0.9rem;
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .sl-tile__note--solo {
@@ -728,28 +898,28 @@ body {
   grid-area: arrow;
   width: 22px;
   height: 22px;
-  color: var(--sl-plum-300);
+  color: var(--sl-tile-arrow);
 }
 
 .sl-home__tips {
   margin-top: calc(var(--base) * 1.2);
   padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
   border-radius: 18px;
-  background: var(--sl-plum-50);
-  border: 1px solid var(--sl-plum-100);
+  background: var(--sl-surface-2);
+  border: 1px solid var(--sl-line);
 }
 
 .sl-home__tips-title {
   margin: 0 0 0.5rem;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 .sl-home__tips-list {
   margin: 0;
   padding-inline-start: 1.1rem;
-  color: var(--sl-ink-soft);
+  color: var(--sl-text-soft);
   line-height: 1.55;
 
   li + li {
@@ -757,7 +927,7 @@ body {
   }
 
   strong {
-    color: var(--sl-plum-900);
+    color: var(--sl-heading);
   }
 }
 
@@ -770,7 +940,7 @@ body {
 }
 
 .login .template-minimal__wrap {
-  background: #ffffff;
+  background: var(--sl-surface);
   border-radius: 22px;
   padding: calc(var(--base) * 1.6) calc(var(--base) * 1.4);
   box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.5);
@@ -778,7 +948,7 @@ body {
 
 .login__brand {
   margin-bottom: calc(var(--base) * 1);
-  color: var(--sl-plum-900);
+  color: var(--sl-heading);
 }
 
 /* Password reset by email is not available (spec section 12): hide the link. */
@@ -789,14 +959,14 @@ body {
 
 .login .form-submit .btn {
   width: 100%;
-  background: var(--sl-plum-700);
-  color: #ffffff;
+  background: var(--sl-primary);
+  color: var(--sl-on-primary);
   border-radius: 999px;
   min-height: 52px;
   font-size: 1.05rem;
 
   &:hover {
-    background: var(--sl-plum-800);
+    background: var(--sl-primary-hover);
   }
 }
 
@@ -821,13 +991,13 @@ body {
 
 .dinar-field__currency {
   font-weight: 700;
-  color: var(--sl-plum-700);
+  color: var(--sl-accent);
 }
 
 .dinar-field__stored {
   margin-top: 0.25rem;
   font-size: 0.85rem;
-  color: var(--sl-ink-muted);
+  color: var(--sl-text-muted);
 }
 
 .dinar-field__error {

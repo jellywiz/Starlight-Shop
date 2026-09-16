@@ -57,6 +57,14 @@ language. Test the public Instagram link on a phone and on a desktop after savin
 publicly until Publish. Categories, delivery cities and shop settings have no drafts: Save
 is live on the next page request.
 
+**Light and dark mode.** The admin follows the phone's or computer's setting until you
+choose otherwise: open the menu (☰) and under **Appearance** pick Light, Dark or Auto
+(Auto = follow the device again). The choice is remembered in that browser. Visitors of
+the website have the same thing: the moon/sun button in the header switches the site
+between light and dark and remembers the choice in their browser; until they touch it the
+site follows their device. Neither choice is stored on the server, so it never needs
+resetting for anyone.
+
 ## Weekly checks (owner or maintainer)
 
 - Netlify → Usage: stay below 70 % of the monthly credits (300 on Free). Production

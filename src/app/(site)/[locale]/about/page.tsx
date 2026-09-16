@@ -37,12 +37,12 @@ export default async function AboutPage({ params }: Props) {
   const { settings } = await getShopSettings(locale)
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-bold text-plum-900 sm:text-3xl">{dict.about.heading}</h1>
+      <h1 className="text-2xl font-bold text-heading sm:text-3xl">{dict.about.heading}</h1>
       <p className="prose-plain text-lg leading-relaxed text-ink-soft">
         {settings.aboutText ?? dict.about.fallback}
       </p>
       <div className="card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-plum-900">{dict.home.contactHeading}</h2>
+        <h2 className="text-lg font-semibold text-heading">{dict.home.contactHeading}</h2>
         <p className="mt-2 text-ink-soft">{dict.common.inquiryNote}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <InstagramLink
@@ -50,7 +50,7 @@ export default async function AboutPage({ params }: Props) {
             label={dict.home.instagramAction}
             dict={dict}
           />
-          <bdi dir="ltr" className="ltr-isolate font-medium text-plum-800">
+          <bdi dir="ltr" className="ltr-isolate font-medium text-emphasis">
             {settings.instagramHandle}
           </bdi>
         </div>

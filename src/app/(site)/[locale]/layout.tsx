@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
+import { THEME_INIT_SCRIPT } from '@/components/site/ThemeToggle'
 import { DEFAULT_LOCALE, LOCALE_META, isLocale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionary'
 import { getShopSettings } from '@/lib/catalog/queries'
@@ -40,7 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#482044',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#482044' },
+    { media: '(prefers-color-scheme: dark)', color: '#150a17' },
+  ],
   width: 'device-width',
   initialScale: 1,
 }
@@ -58,8 +62,12 @@ export default async function LocaleLayout({ children, params }: Props) {
       lang={meta.htmlLang}
       dir={meta.dir}
       className={`${notoSans.variable} ${notoSansArabic.variable}`}
+      // data-theme is set by the script below before React hydrates.
+      suppressHydrationWarning
     >
       <head>
+        {/* Light/dark theme before the first paint (visitor's choice, else the system). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* Without JavaScript the mobile filter drawer cannot open: show the inline form instead. */}
         <noscript>
           <style>{`.filters-desktop{display:block}`}</style>

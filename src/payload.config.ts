@@ -37,9 +37,10 @@ export default buildConfig({
       titleSuffix: ' · Starlight Jewellery admin',
       icons: [{ rel: 'icon', type: 'image/png', url: '/brand/favicon-32.png' }],
     },
-    // The Starlight light theme only (src/app/(payload)/custom.scss); the owner works on a
-    // phone and an iPad, and one consistent look is easier to support.
-    theme: 'light',
+    // Light and dark Starlight themes (src/app/(payload)/custom.scss); the owner picks
+    // Light / Dark / Auto in the menu (src/components/admin/AppearanceSwitch.tsx), and
+    // src/app/(payload)/layout.tsx keeps the blank page dark on dark devices before hydration.
+    theme: 'all',
     components: {
       graphics: {
         Logo: '@/components/admin/Logo#Logo',

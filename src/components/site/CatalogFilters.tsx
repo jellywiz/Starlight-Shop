@@ -345,13 +345,13 @@ export function CatalogFilters(props: Props) {
         <dialog
           ref={dialogRef}
           aria-labelledby={titleId}
-          className="m-0 h-dvh max-h-dvh w-full max-w-none bg-white p-0 backdrop:bg-plum-950/80 open:flex open:flex-col"
+          className="m-0 h-dvh max-h-dvh w-full max-w-none bg-surface p-0 backdrop:bg-plum-950/80 open:flex open:flex-col"
         >
-          <div className="flex items-center justify-between border-b border-plum-700/10 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <h2 id={titleId} className="text-lg font-bold">
               {props.dict.catalog.filtersHeading}
             </h2>
-            <button type="button" className="rounded-full p-2 hover:bg-plum-50" onClick={close}>
+            <button type="button" className="rounded-full p-2 hover:bg-surface-2" onClick={close}>
               <span className="sr-only">{props.dict.catalog.closeFilters}</span>
               <svg
                 aria-hidden="true"

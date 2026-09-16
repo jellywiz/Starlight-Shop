@@ -28,7 +28,7 @@ export function LanguageSwitcher({ current, label }: { current: Locale; label: s
             dir={LOCALE_META[locale].dir}
             hrefLang={LOCALE_META[locale].htmlLang}
             aria-current={active ? 'true' : undefined}
-            className={`rounded-full px-3 py-1 text-sm ${active ? 'bg-plum-700 font-semibold text-white' : 'text-ink-soft hover:bg-plum-50 hover:text-plum-900'}`}
+            className={`rounded-full px-3 py-1 text-sm ${active ? 'bg-primary font-semibold text-on-primary' : 'text-ink-soft hover:bg-surface-2 hover:text-heading'}`}
           >
             {LOCALE_META[locale].label}
           </Link>

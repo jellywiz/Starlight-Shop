@@ -70,7 +70,7 @@ export function DeliveryFees({
   if (loadFailed) {
     return (
       <div role="alert" className="mt-5 flex flex-col gap-3">
-        <p className="font-medium text-plum-900">{dict.delivery.loadFailed}</p>
+        <p className="font-medium text-heading">{dict.delivery.loadFailed}</p>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
             {dict.delivery.retry}
@@ -84,7 +84,7 @@ export function DeliveryFees({
   if (cities.length === 0) {
     return (
       <div className="mt-5 flex flex-col gap-3">
-        <p className="font-medium text-plum-900">{dict.delivery.none}</p>
+        <p className="font-medium text-heading">{dict.delivery.none}</p>
         <div>
           <InstagramLink href={instagramUrl} label={dict.home.instagramAction} dict={dict} />
         </div>
@@ -99,7 +99,7 @@ export function DeliveryFees({
       className="mt-5 flex flex-col gap-3"
       onSubmit={(event) => event.preventDefault()}
     >
-      <label htmlFor={selectId} className="text-sm font-semibold text-plum-900">
+      <label htmlFor={selectId} className="text-sm font-semibold text-heading">
         {dict.delivery.cityLabel}
       </label>
       <div className="flex flex-wrap items-center gap-3">
@@ -131,7 +131,7 @@ export function DeliveryFees({
         className="min-h-6 text-base text-ink-soft"
       >
         {selected ? (
-          <span className="font-semibold text-plum-900">
+          <span className="font-semibold text-heading">
             {t(feeBefore, { city: selected.name })}
             <bdi dir="ltr" className="ltr-isolate">
               {fee(selected)}

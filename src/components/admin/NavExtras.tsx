@@ -2,9 +2,13 @@ import React from 'react'
 
 import { siteUrl } from '@/lib/env'
 
+import { AppearanceSwitch } from './AppearanceSwitch'
 import { GlobeIcon } from './icons'
 
-/** Rendered after the collection links in the admin navigation: a link to the public site. */
+/**
+ * Rendered after the collection links in the admin navigation: a link to the public site
+ * and the light/dark/auto appearance switch.
+ */
 export function NavExtras() {
   return (
     <div className="sl-nav-extras">
@@ -12,6 +16,7 @@ export function NavExtras() {
         <GlobeIcon className="sl-nav-extras__icon" />
         <span>View the website</span>
       </a>
+      <AppearanceSwitch />
     </div>
   )
 }

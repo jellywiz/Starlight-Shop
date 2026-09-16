@@ -43,13 +43,13 @@ export default async function ContactPage({ params }: Props) {
   const { settings } = await getShopSettings(locale)
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-bold text-plum-900 sm:text-3xl">{dict.contact.heading}</h1>
+      <h1 className="text-2xl font-bold text-heading sm:text-3xl">{dict.contact.heading}</h1>
       <p className="text-lg text-ink-soft">{dict.contact.lead}</p>
       <div className="card p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-plum-900">{dict.contact.instagram}</h2>
+        <h2 className="text-lg font-semibold text-heading">{dict.contact.instagram}</h2>
         <p className="mt-3 flex flex-wrap items-center gap-2 text-ink-soft">
           <span className="font-semibold">{dict.contact.handleLabel}:</span>
-          <bdi dir="ltr" className="ltr-isolate select-all text-base font-medium text-plum-800">
+          <bdi dir="ltr" className="ltr-isolate select-all text-base font-medium text-emphasis">
             {settings.instagramHandle}
           </bdi>
         </p>
@@ -68,7 +68,7 @@ export default async function ContactPage({ params }: Props) {
         </div>
       </div>
       <section aria-labelledby="contact-howto" className="card p-6 sm:p-8">
-        <h2 id="contact-howto" className="text-lg font-semibold text-plum-900">
+        <h2 id="contact-howto" className="text-lg font-semibold text-heading">
           {dict.contact.howToHeading}
         </h2>
         <ol className="mt-3 list-decimal space-y-2 ps-5 text-ink-soft">

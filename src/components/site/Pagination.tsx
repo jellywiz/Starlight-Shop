@@ -23,7 +23,7 @@ export function Pagination({
   return (
     <nav
       aria-label={dict.catalog.pagination}
-      className="flex flex-wrap items-center justify-between gap-3 border-t border-plum-700/10 pt-5"
+      className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5"
     >
       {page > 1 ? (
         <Link href={href(page - 1)} rel="prev" className="btn-secondary">

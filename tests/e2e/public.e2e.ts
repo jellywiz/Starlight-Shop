@@ -152,4 +152,43 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.locator('iframe')).toHaveCount(0)
     await expect(page.locator('form')).toHaveCount(1) // only the header search form
   })
+
+  test('the header switch toggles dark mode, remembers it, and the site otherwise follows the device', async ({
+    browser,
+    baseURL,
+  }) => {
+    // No choice yet: a dark device gets the dark theme (set by the inline script in <head>,
+    // before the first paint).
+    const darkDevice = await browser.newContext({ baseURL, colorScheme: 'dark' })
+    const darkPage = await darkDevice.newPage()
+    await darkPage.goto('/en', { waitUntil: 'domcontentloaded' })
+    await expect(darkPage.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(darkPage.locator('body')).toHaveCSS('background-color', 'rgb(21, 10, 23)')
+    await darkDevice.close()
+
+    const lightDevice = await browser.newContext({ baseURL, colorScheme: 'light' })
+    const page = await lightDevice.newPage()
+    await page.goto('/ckb')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    const toggle = page.locator('[data-theme-toggle]')
+    await expect(toggle).toHaveAttribute('aria-label', 'گۆڕین بۆ دۆخی تاریک')
+    await toggle.click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(toggle).toHaveAttribute('aria-label', 'گۆڕین بۆ دۆخی ڕووناک')
+    expect(await page.evaluate(() => localStorage.getItem('sl-theme'))).toBe('dark')
+
+    // The choice survives a reload and a language switch (it is per browser, not per page).
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await page.goto('/en/products')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('[data-theme-toggle]')).toHaveAttribute(
+      'aria-label',
+      'Switch to light mode',
+    )
+    await page.locator('[data-theme-toggle]').click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    expect(await page.evaluate(() => localStorage.getItem('sl-theme'))).toBe('light')
+    await lightDevice.close()
+  })
 })

@@ -16,11 +16,11 @@ export function CatalogUnavailable({
 }) {
   return (
     <div role="alert" className="panel-lilac p-6">
-      <h2 className="text-lg font-semibold text-plum-900">{dict.unavailable.heading}</h2>
+      <h2 className="text-lg font-semibold text-heading">{dict.unavailable.heading}</h2>
       <p className="mt-2 text-ink-soft">{dict.unavailable.body}</p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <InstagramLink href={settings.instagramUrl} label={dict.home.instagramAction} dict={dict} />
-        <bdi dir="ltr" className="ltr-isolate text-sm font-medium text-plum-800">
+        <bdi dir="ltr" className="ltr-isolate text-sm font-medium text-emphasis">
           {settings.instagramHandle}
         </bdi>
       </div>

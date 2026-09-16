@@ -174,7 +174,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       {preview ? (
         <p
           role="status"
-          className="rounded-xl bg-plum-100 px-4 py-2 text-sm font-semibold text-plum-900 ring-1 ring-plum-500/40 ring-inset"
+          className="rounded-xl bg-surface-3 px-4 py-2 text-sm font-semibold text-heading ring-1 ring-accent-soft/40 ring-inset"
         >
           Preview — latest saved revision (not necessarily published). Not cached, not indexed.
         </p>
@@ -207,7 +207,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
         <ProductGallery photos={product.photos} dict={dict} />
         <div className="flex flex-col gap-5">
-          <p className="text-sm font-medium tracking-wide text-plum-500 uppercase">
+          <p className="text-sm font-medium tracking-wide text-accent-soft uppercase">
             <Link
               href={catalogPath(locale, { category: product.category.slug })}
               className="hover:underline"
@@ -215,12 +215,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
               {product.category.name}
             </Link>
           </p>
-          <h1 className="text-2xl font-bold leading-tight text-plum-950 sm:text-4xl">
+          <h1 className="text-2xl font-bold leading-tight text-heading-strong sm:text-4xl">
             {product.name}
           </h1>
           {/* Pricing block: the product price only — never a delivery fee or total. */}
           <div className="panel-lilac flex flex-wrap items-center gap-3 px-5 py-4">
-            <Price amount={product.priceIqd} dict={dict} className="text-3xl text-plum-900" />
+            <Price amount={product.priceIqd} dict={dict} className="text-3xl text-heading" />
             <AvailabilityBadge available={product.isAvailable} dict={dict} />
           </div>
           <p className="text-sm text-ink-soft">{dict.common.currencyNote}</p>

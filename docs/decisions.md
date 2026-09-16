@@ -53,11 +53,32 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Light and dark themes on both sides, chosen by the user** (owner decision,
+  2026-09-16). Every colour on the public site is a semantic Tailwind token
+  (`page`, `surface`, `line`, `ink`, `heading`, `accent`, `primary`…, `src/app/(site)/globals.css`)
+  with a second value under `html[data-theme='dark']`; the plum brand scale, the hero and
+  the footer are the same in both, and product photos keep their white frame. The header
+  moon/sun button (`src/components/site/ThemeToggle.tsx`) saves the visitor's choice in
+  this browser (`localStorage` key `sl-theme`); until they choose, the site follows the
+  device setting, live. An inline script in `<head>` applies the theme before the first
+  paint, so there is no flash. Without JavaScript the site is light. The admin uses
+  Payload's own theme support (`admin.theme: 'all'`): the Light / Dark / Auto switch in
+  the menu (`src/components/admin/AppearanceSwitch.tsx`) stores the choice in Payload's
+  `payload-theme` cookie, so the server renders the right theme on the next request, and
+  `custom.scss` gives every semantic token a dark value. Two Payload quirks are worked
+  around in `src/app/(payload)/layout.tsx` + `src/lib/admin-theme.ts`: the admin renders
+  entirely in the browser (the served page is blank until its JavaScript runs), and on
+  unauthenticated pages (login) Payload never applies the device setting because the
+  unauthenticated client config carries no theme. So while no choice is saved the layout
+  marks `<html>` with `data-theme-auto`, and a `prefers-color-scheme: dark` rule replays
+  the dark variables for that case — a dark phone is dark from the first byte, login page
+  included. (A `providers` component that injects a script cannot do this: scripts inside
+  React components never run when rendered in the browser.)
 - **Admin look and feel** (owner decision, 2026-09-16): the admin is used on a phone and an
   iPad, so it is restyled and simplified rather than left as Payload's default. The
-  Starlight light theme is applied through Payload's CSS variables in
-  `src/app/(payload)/custom.scss` (light only, `admin.theme: 'light'`), with 16px inputs
-  (no iOS zoom), 44px touch targets and one column below 768px. The dashboard is replaced
+  Starlight theme is applied through Payload's CSS variables in
+  `src/app/(payload)/custom.scss` (light and dark, see the theme decision above), with
+  16px inputs (no iOS zoom), 44px touch targets and one column below 768px. The dashboard is replaced
   by a task-based home (`src/components/admin/Home.tsx`: Add a product, tiles with live
   counts, View the website). Every collection and global uses `SIMPLE_DOCUMENT_VIEW`
   (`src/lib/admin.ts`): no API or Versions tabs (version history still exists for drafts

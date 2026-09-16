@@ -32,6 +32,8 @@ export const en = {
     skipToContent: 'Skip to content',
     mainNavigation: 'Main navigation',
     logoLinkLabel: 'Starlight Jewellery home',
+    switchToDark: 'Switch to dark mode',
+    switchToLight: 'Switch to light mode',
   },
   common: {
     available: 'Available',

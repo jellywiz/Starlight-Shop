@@ -16,7 +16,7 @@ export default function NotFound() {
       <p className="text-6xl font-bold text-plum-200" aria-hidden="true">
         404
       </p>
-      <h1 className="mt-4 text-2xl font-bold text-plum-900">{dict.notFound.heading}</h1>
+      <h1 className="mt-4 text-2xl font-bold text-heading">{dict.notFound.heading}</h1>
       <p className="mt-2 text-ink-soft">{dict.notFound.body}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link href={`/${locale}/products`} className="btn-primary">

@@ -34,6 +34,9 @@ export const ckb: Dictionary = {
     skipToContent: 'بازدان بۆ ناوەڕۆک',
     mainNavigation: 'ڕێنیشاندەری سەرەکی',
     logoLinkLabel: 'لاپەڕەی سەرەکی ستارلایت جوێلەری',
+
+    switchToDark: 'گۆڕین بۆ دۆخی تاریک',
+    switchToLight: 'گۆڕین بۆ دۆخی ڕووناک',
   },
   common: {
     available: 'بەردەستە',

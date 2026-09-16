@@ -37,23 +37,23 @@ export function ProductCard({
               className="h-full w-full object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-plum-50 text-sm text-ink-muted">
+            <div className="flex h-full w-full items-center justify-center bg-surface-2 text-sm text-ink-muted">
               {dict.product.noPhoto}
             </div>
           )}
         </div>
       </Link>
-      <div className="flex flex-1 flex-col gap-1 border-t border-plum-700/5 p-4">
-        <p className="text-xs font-medium tracking-wide text-plum-500 uppercase">
+      <div className="flex flex-1 flex-col gap-1 border-t border-line-soft p-4">
+        <p className="text-xs font-medium tracking-wide text-accent-soft uppercase">
           {item.category.name}
         </p>
         <h3 className="text-base font-semibold leading-snug">
-          <Link href={href} className="hover:text-plum-700 focus-visible:underline">
+          <Link href={href} className="hover:text-accent focus-visible:underline">
             {item.name}
           </Link>
         </h3>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
-          <Price amount={item.priceIqd} dict={dict} className="text-lg text-plum-900" />
+          <Price amount={item.priceIqd} dict={dict} className="text-lg text-heading" />
           <AvailabilityBadge available={item.isAvailable} dict={dict} />
         </div>
       </div>

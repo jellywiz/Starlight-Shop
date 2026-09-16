@@ -28,6 +28,8 @@ must be kept; plural entries list one line per form.
 | `nav.skipToContent` | Skip to content | بازدان بۆ ناوەڕۆک | الانتقال إلى المحتوى | ☐ |
 | `nav.mainNavigation` | Main navigation | ڕێنیشاندەری سەرەکی | التنقل الرئيسي | ☐ |
 | `nav.logoLinkLabel` | Starlight Jewellery home | لاپەڕەی سەرەکی ستارلایت جوێلەری | الصفحة الرئيسية لستارلايت جوليري | ☐ |
+| `nav.switchToDark` | Switch to dark mode | گۆڕین بۆ دۆخی تاریک | التبديل إلى الوضع الداكن | ☐ |
+| `nav.switchToLight` | Switch to light mode | گۆڕین بۆ دۆخی ڕووناک | التبديل إلى الوضع الفاتح | ☐ |
 | `common.available` | Available | بەردەستە | متوفر | ☐ |
 | `common.unavailable` | Unavailable | بەردەست نییە | غير متوفر | ☐ |
 | `common.price` | Price | نرخ | السعر | ☐ |
@@ -167,4 +169,4 @@ must be kept; plural entries list one line per form.
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-159 strings.
+161 strings.

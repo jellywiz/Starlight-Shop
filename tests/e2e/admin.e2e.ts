@@ -165,6 +165,60 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(page.getByText(/larger than 3 MB \(about \d+\.\d MB\)/)).toBeVisible()
     await expect(page).toHaveURL(/\/admin\/collections\/media\/create/)
   })
+
+  test('the Appearance switch changes the theme and remembers it; a dark device is dark from the start', async ({
+    browser,
+    baseURL,
+  }) => {
+    // No choice saved and a dark device: dark before any JavaScript runs (the admin renders
+    // in the browser, so this is the blank page a phone shows first), login page included.
+    const darkDevice = await browser.newContext({
+      baseURL,
+      colorScheme: 'dark',
+      javaScriptEnabled: false,
+    })
+    const blank = await darkDevice.newPage()
+    await blank.goto('/admin/login')
+    await expect(blank.locator('html')).toHaveAttribute('data-theme-auto', '')
+    await expect(blank.locator('body')).toHaveCSS('background-color', 'rgb(26, 12, 27)')
+    await darkDevice.close()
+
+    const lightDevice = await browser.newContext({ baseURL, colorScheme: 'light' })
+    const page = await lightDevice.newPage()
+    await login(page)
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+
+    const openMenu = page.getByRole('button', { name: 'Open Menu' }).locator('visible=true')
+    const chooseAppearance = async (name: string) => {
+      const option = page.getByRole('button', { name, exact: true })
+      const navOpen = await page
+        .locator('.nav')
+        .first()
+        .evaluate((nav) => nav.classList.contains('nav--nav-open'))
+      if (!navOpen) {
+        await openMenu.first().click()
+      }
+      await option.click()
+      await expect(option).toHaveAttribute('aria-pressed', 'true')
+    }
+
+    await chooseAppearance('Dark')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme-auto', '')
+    expect((await lightDevice.cookies()).find((c) => c.name === 'payload-theme')?.value).toBe(
+      'dark',
+    )
+    // The choice is saved: the server renders the next page dark straight away.
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(26, 12, 27)')
+
+    await chooseAppearance('Auto')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light') // light device
+    await expect(page.locator('html')).toHaveAttribute('data-theme-auto', '')
+    expect((await lightDevice.cookies()).find((c) => c.name === 'payload-theme')).toBeUndefined()
+    await lightDevice.close()
+  })
 })
 
 /** Deletes every category whose address starts with `slugPrefix` (test fixtures only). */

@@ -85,7 +85,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-plum-900 sm:text-3xl">{dict.catalog.heading}</h1>
+      <h1 className="text-2xl font-bold text-heading sm:text-3xl">{dict.catalog.heading}</h1>
       <div className="grid gap-8 md:grid-cols-[16rem_1fr]">
         <CatalogFilters
           locale={locale}
@@ -103,7 +103,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
 
           {categoryUnavailable && parsed.ok ? (
             <div role="alert" className="panel-lilac p-6">
-              <p className="font-semibold text-plum-900">{dict.catalog.categoryUnavailable}</p>
+              <p className="font-semibold text-heading">{dict.catalog.categoryUnavailable}</p>
               <p className="mt-1 text-sm text-ink-soft">{dict.catalog.categoryUnavailableHint}</p>
               <Link
                 href={catalogPath(locale, { ...parsed.query, category: null, page: 1 })}

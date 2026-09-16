@@ -8,6 +8,7 @@ import type { PublicShopSettings } from '@/lib/shop'
 
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { MobileMenu } from './MobileMenu'
+import { ThemeToggle } from './ThemeToggle'
 
 function SearchIcon({ className }: { className: string }) {
   return (
@@ -19,9 +20,9 @@ function SearchIcon({ className }: { className: string }) {
 }
 
 /**
- * Light sticky header (spec section 2): logo, Home, Products, Delivery fees, About,
- * Contact, search and the language switcher. The logo keeps its own light background
- * and is never mirrored in RTL. No shopping or account icons exist.
+ * Sticky header (spec section 2): logo, Home, Products, Delivery fees, About, Contact,
+ * search, the light/dark switch and the language switcher. The logo keeps its own light
+ * background and is never mirrored in RTL. No shopping or account icons exist.
  */
 export function SiteHeader({
   locale,
@@ -40,7 +41,7 @@ export function SiteHeader({
     { href: `/${locale}/contact`, label: dict.nav.contact },
   ]
   return (
-    <header className="sticky top-0 z-30 border-b border-plum-700/10 bg-white/95 text-ink backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 text-ink backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
         <Link
           href={`/${locale}`}
@@ -55,7 +56,7 @@ export function SiteHeader({
             height={44}
             className="h-11 w-11 rounded-xl"
           />
-          <span className="text-lg font-semibold text-plum-900 max-[360px]:sr-only">
+          <span className="text-lg font-semibold text-heading max-[360px]:sr-only">
             {settings.publicName}
           </span>
         </Link>
@@ -65,7 +66,7 @@ export function SiteHeader({
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="rounded-full px-3 py-2 text-sm font-medium text-ink-soft hover:bg-plum-50 hover:text-plum-900"
+                  className="rounded-full px-3 py-2 text-sm font-medium text-ink-soft hover:bg-surface-2 hover:text-heading"
                 >
                   {item.label}
                 </Link>
@@ -89,11 +90,11 @@ export function SiteHeader({
               name="q"
               maxLength={120}
               placeholder={dict.catalog.searchPlaceholder}
-              className="w-full min-w-0 rounded-full bg-plum-50 py-2 ps-4 pe-11 text-sm text-ink ring-1 ring-plum-700/10 ring-inset placeholder:text-ink-muted focus:bg-white focus:ring-2 focus:ring-plum-600 focus:outline-none"
+              className="w-full min-w-0 rounded-full bg-surface-2 py-2 ps-4 pe-11 text-sm text-ink ring-1 ring-line ring-inset placeholder:text-ink-muted focus:bg-surface focus:ring-2 focus:ring-focus focus:outline-none"
             />
             <button
               type="submit"
-              className="absolute end-1 top-1/2 -translate-y-1/2 rounded-full bg-plum-700 p-1.5 text-white hover:bg-plum-800"
+              className="absolute end-1 top-1/2 -translate-y-1/2 rounded-full bg-primary p-1.5 text-on-primary hover:bg-primary-hover"
               aria-label={dict.catalog.searchButton}
             >
               <SearchIcon className="h-4 w-4 fill-none stroke-current stroke-2" />
@@ -103,7 +104,7 @@ export function SiteHeader({
         <div className="ms-auto flex items-center gap-1 sm:ms-2">
           <Link
             href={`/${locale}/products`}
-            className="rounded-full p-2 text-plum-800 hover:bg-plum-50 sm:hidden"
+            className="rounded-full p-2 text-emphasis hover:bg-surface-2 sm:hidden"
             aria-label={dict.nav.search}
           >
             <SearchIcon className="h-6 w-6 fill-none stroke-current stroke-2" />
@@ -113,6 +114,9 @@ export function SiteHeader({
               <LanguageSwitcher current={locale} label={dict.nav.language} />
             </Suspense>
           </div>
+          <ThemeToggle
+            labels={{ toDark: dict.nav.switchToDark, toLight: dict.nav.switchToLight }}
+          />
           <MobileMenu
             items={items}
             openLabel={dict.nav.openMenu}

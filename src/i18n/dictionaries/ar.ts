@@ -34,6 +34,9 @@ export const ar: Dictionary = {
     skipToContent: 'الانتقال إلى المحتوى',
     mainNavigation: 'التنقل الرئيسي',
     logoLinkLabel: 'الصفحة الرئيسية لستارلايت جوليري',
+
+    switchToDark: 'التبديل إلى الوضع الداكن',
+    switchToLight: 'التبديل إلى الوضع الفاتح',
   },
   common: {
     available: 'متوفر',

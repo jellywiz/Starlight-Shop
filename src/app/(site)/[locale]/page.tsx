@@ -153,9 +153,9 @@ export default async function HomePage({ params, searchParams }: Props) {
               <li key={category.slug}>
                 <Link
                   href={catalogPath(locale, { category: category.slug })}
-                  className="chip hover:bg-plum-50"
+                  className="chip hover:bg-surface-2"
                 >
-                  <SparkleIcon className="h-3 w-3 text-plum-400" />
+                  <SparkleIcon className="h-3 w-3 text-accent-muted" />
                   {category.name}
                 </Link>
               </li>
@@ -168,7 +168,7 @@ export default async function HomePage({ params, searchParams }: Props) {
         <section aria-labelledby="home-featured">
           <div className="flex items-baseline justify-between gap-4">
             <h2 id="home-featured" className="section-title flex items-center gap-2">
-              <SparkleIcon className="h-5 w-5 text-plum-400" />
+              <SparkleIcon className="h-5 w-5 text-accent-muted" />
               {dict.home.featuredHeading}
             </h2>
             <Link href={`/${locale}/products`} className="link-plum text-sm">
@@ -190,14 +190,14 @@ export default async function HomePage({ params, searchParams }: Props) {
         <Sparkles
           count={14}
           seed={23}
-          className="text-plum-300/70"
+          className="text-accent-muted/70"
           minSize={5}
           maxSize={14}
           avoidTopStart
         />
         <div className="relative">
           <h2 id="delivery-heading" className="section-title flex items-center gap-2">
-            <SparkleIcon className="h-5 w-5 text-plum-500" />
+            <SparkleIcon className="h-5 w-5 text-accent-soft" />
             {dict.delivery.heading}
           </h2>
           <p className="mt-2 max-w-prose text-ink-soft">{dict.delivery.intro}</p>
@@ -229,7 +229,7 @@ export default async function HomePage({ params, searchParams }: Props) {
           <Sparkles
             count={8}
             seed={5}
-            className="text-plum-200"
+            className="text-accent-muted/60"
             minSize={6}
             maxSize={14}
             avoidTopStart
@@ -243,7 +243,7 @@ export default async function HomePage({ params, searchParams }: Props) {
                 label={dict.home.instagramAction}
                 dict={dict}
               />
-              <bdi dir="ltr" className="ltr-isolate font-medium text-plum-800">
+              <bdi dir="ltr" className="ltr-isolate font-medium text-emphasis">
                 {settings.instagramHandle}
               </bdi>
             </div>

@@ -47,7 +47,7 @@ export function MobileMenu({
       <button
         ref={buttonRef}
         type="button"
-        className="rounded-full p-2 text-plum-800 hover:bg-plum-50"
+        className="rounded-full p-2 text-emphasis hover:bg-surface-2"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
@@ -65,14 +65,14 @@ export function MobileMenu({
         id={id}
         aria-label={navLabel}
         hidden={!open}
-        className="absolute inset-x-0 top-full z-40 border-t border-plum-700/10 bg-white shadow-lg"
+        className="absolute inset-x-0 top-full z-40 border-t border-line bg-surface shadow-lg"
       >
         <ul className="flex flex-col p-2">
           {items.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="block rounded-xl px-3 py-3 text-base text-ink hover:bg-plum-50"
+                className="block rounded-xl px-3 py-3 text-base text-ink hover:bg-surface-2"
                 aria-current={pathname === item.href ? 'page' : undefined}
                 onClick={() => setOpen(false)}
               >
@@ -81,7 +81,7 @@ export function MobileMenu({
             </li>
           ))}
         </ul>
-        {children ? <div className="border-t border-plum-700/10 px-3 py-3">{children}</div> : null}
+        {children ? <div className="border-t border-line px-3 py-3">{children}</div> : null}
       </nav>
     </div>
   )

@@ -75,7 +75,7 @@ export function FilterChips({
           <li key={chip.key}>
             <Link
               href={chip.href}
-              className="chip hover:bg-plum-50"
+              className="chip hover:bg-surface-2"
               aria-label={t(dict.catalog.removeFilter, { filter: chip.label })}
             >
               <span aria-hidden="true">{chip.label}</span>

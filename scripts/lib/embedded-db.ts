@@ -85,12 +85,15 @@ function portInUse(port: number): Promise<boolean> {
   })
 }
 
-/** Reads the process id from a cluster's lock file, if any. */
-function lockedPid(dir: string): number | null {
+/** Reads the process id and port from a cluster's lock file, if any. */
+function lockInfo(dir: string): { pid: number; port: number | null } | null {
   try {
-    const first = fs.readFileSync(path.join(dir, 'postmaster.pid'), 'utf8').split('\n')[0]
-    const pid = Number.parseInt(first.trim(), 10)
-    return Number.isInteger(pid) && pid > 0 ? pid : null
+    const lines = fs.readFileSync(path.join(dir, 'postmaster.pid'), 'utf8').split('\n')
+    const pid = Number.parseInt((lines[0] ?? '').trim(), 10)
+    const port = Number.parseInt((lines[3] ?? '').trim(), 10)
+    return Number.isInteger(pid) && pid > 0
+      ? { pid, port: Number.isInteger(port) ? port : null }
+      : null
   } catch {
     return null
   }
@@ -152,7 +155,17 @@ export async function startEmbeddedPostgres(options: EmbeddedDbOptions): Promise
     onError: (m) => process.stderr.write(`[postgres] ${String(m).trim()}\n`),
   })
 
+  const lock = lockInfo(dir)
   if (await portInUse(port)) {
+    if (lock && lock.port === port && processAlive(lock.pid)) {
+      // The cluster from an earlier `pnpm dev` is still running with this data directory:
+      // reuse it instead of failing (it stays running after this process exits).
+      const connectionString = `postgres://${encodeURIComponent(user)}:${encodeURIComponent(password)}@127.0.0.1:${port}/${database}`
+      process.stdout.write(
+        `Reusing the local PostgreSQL that is already running on port ${port} (process ${lock.pid}).\n`,
+      )
+      return { connectionString, port, stop: async () => undefined }
+    }
     throw new Error(
       [
         `Port ${port} is already in use, so the local database cannot start.`,
@@ -163,8 +176,7 @@ export async function startEmbeddedPostgres(options: EmbeddedDbOptions): Promise
     )
   }
   // A lock file left behind by a crash (no live process) would stop PostgreSQL from starting.
-  const stalePid = lockedPid(dir)
-  if (stalePid !== null && !processAlive(stalePid)) {
+  if (lock && !processAlive(lock.pid)) {
     fs.rmSync(path.join(dir, 'postmaster.pid'), { force: true })
   }
 
