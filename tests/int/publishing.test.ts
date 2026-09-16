@@ -518,7 +518,9 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
         overrideAccess: true,
       }),
     )
-    expect(messages).toMatch(/Sorani Kurdish/)
+    expect(messages).toMatch(
+      /Cannot activate this category: the name is missing in .*Sorani Kurdish/,
+    )
     expect(messages).toMatch(/Arabic/)
     // Inactive categories are invisible to anonymous readers.
     const anonymous = await payload.find({

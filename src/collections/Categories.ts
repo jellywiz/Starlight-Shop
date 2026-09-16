@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { ValidationError } from 'payload'
+import { APIError } from 'payload'
 
 import { activeOrOwner, ownerOnly } from '@/access'
 import { mergeLocalizedField, missingLocales, readAllLocales } from '@/hooks/localized'
@@ -69,16 +69,13 @@ export const Categories: CollectionConfig = {
           const names = mergeLocalizedField(existing?.name, data.name, requestLocale(req))
           const missing = missingLocales(names, { maxLength: 80 })
           if (missing.length > 0) {
-            throw new ValidationError({
-              collection: 'categories',
-              errors: [
-                {
-                  path: 'isActive',
-                  message: `Enter the category name in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')} before activating it (or save it inactive).`,
-                },
-              ],
-              req,
-            })
+            // A plain message (not a field error) so the admin toast shows the reason.
+            throw new APIError(
+              `Cannot activate this category: the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')}. Untick Active and Save, switch the language selector at the top right, enter the name in each language and Save, then activate.`,
+              400,
+              undefined,
+              true,
+            )
           }
         }
         if (id !== undefined && data.isActive === false && originalDoc?.isActive !== false) {

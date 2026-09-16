@@ -72,9 +72,9 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
         overrideAccess: true,
       }),
     )
-    expect(messages).toMatch(/name: .*Sorani Kurdish/)
-    expect(messages).toMatch(/name: .*Arabic/)
-    expect(messages).toMatch(/feeIqd: .*missing fee/i)
+    expect(messages).toMatch(/Cannot activate this city: the name is missing in .*Sorani Kurdish/)
+    expect(messages).toMatch(/Arabic/)
+    expect(messages).toMatch(/delivery fee is missing/i)
 
     for (const feeIqd of [-1, 12.5, 1_000_000_000]) {
       await expect(
@@ -105,7 +105,7 @@ describe('delivery cities: activation rules, ordering and public reads (A21–A2
         overrideAccess: true,
       }),
     )
-    expect(messages).toMatch(/freeDeliveryConfirmed: .*intentionally free/)
+    expect(messages).toMatch(/intentionally free/)
 
     await payload.update({
       collection: 'cities',

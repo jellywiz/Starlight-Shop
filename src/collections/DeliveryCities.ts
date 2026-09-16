@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { ValidationError } from 'payload'
+import { APIError, ValidationError } from 'payload'
 
 import { activeOrOwner, ownerOnly } from '@/access'
 import { mergeLocalizedField, missingLocales, readAllLocales } from '@/hooks/localized'
@@ -87,36 +87,37 @@ export const DeliveryCities: CollectionConfig = {
         if (active) {
           const existing = id !== undefined ? await readAllLocales(req, 'cities', id) : null
           const names = mergeLocalizedField(existing?.name, data.name, locale)
-          const errors: { path: string; message: string }[] = []
+          const reasons: string[] = []
           const missing = missingLocales(names, { maxLength: CITY_NAME_MAX })
           if (missing.length > 0) {
-            errors.push({
-              path: 'name',
-              message: `Enter the city name in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')} before activating it (or save it inactive).`,
-            })
+            reasons.push(
+              `the name is missing in ${missing.map((l) => LOCALE_LABELS[l]).join(', ')} (switch the language selector at the top right, enter it and Save)`,
+            )
           }
           const fee = data.feeIqd !== undefined ? data.feeIqd : originalDoc?.feeIqd
           if (!isValidIqd(fee, { allowZero: true })) {
-            errors.push({
-              path: 'feeIqd',
-              message:
-                'Enter the delivery fee in whole Iraqi dinars (0 to 999,999,999) before activating the city. A missing fee cannot be published.',
-            })
+            reasons.push(
+              'the delivery fee is missing or invalid (whole Iraqi dinars, 0 to 999,999,999); a missing fee cannot be published',
+            )
           } else if (fee === 0) {
             const confirmed =
               data.freeDeliveryConfirmed !== undefined
                 ? data.freeDeliveryConfirmed
                 : originalDoc?.freeDeliveryConfirmed
             if (confirmed !== true) {
-              errors.push({
-                path: 'freeDeliveryConfirmed',
-                message:
-                  'The fee is 0. Confirm that delivery to this city is intentionally free, or enter the real fee.',
-              })
+              reasons.push(
+                'the fee is 0, so tick the checkbox confirming that delivery to this city is intentionally free (or enter the real fee)',
+              )
             }
           }
-          if (errors.length > 0) {
-            throw new ValidationError({ collection: 'cities', errors, req })
+          if (reasons.length > 0) {
+            // A plain message (not a field error) so the admin toast shows the reasons.
+            throw new APIError(
+              `Cannot activate this city: ${reasons.join('; ')}. You can save it inactive in the meantime.`,
+              400,
+              undefined,
+              true,
+            )
           }
         }
 
