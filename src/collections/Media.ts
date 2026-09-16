@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fileTypeFromBuffer } from 'file-type'
 import type { CollectionConfig, PayloadRequest } from 'payload'
-import { APIError, ValidationError } from 'payload'
+import { APIError } from 'payload'
 import sharp, { type Metadata as SharpMetadata } from 'sharp'
 
 import { anyone, ownerOnly } from '@/access'
@@ -22,8 +22,22 @@ const ALLOWED: Record<string, { ext: string; mime: string }> = {
   'image/webp': { ext: 'webp', mime: 'image/webp' },
 }
 
-function uploadError(message: string): ValidationError {
-  return new ValidationError({ collection: 'media', errors: [{ path: 'file', message }] })
+/**
+ * A plain, public API error rather than a field-level ValidationError: the admin's upload
+ * field does not display field messages, so a ValidationError only ever surfaces as
+ * "The following field is invalid: file". A public APIError shows the reason in the toast.
+ */
+function uploadError(message: string): Error {
+  return new APIError(message, 400, undefined, true)
+}
+
+const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024)
+
+/** Rough size of the uploaded body, for the "too large" message (multipart requests only). */
+function requestMegabytes(req: PayloadRequest): string | null {
+  const header = typeof req.headers?.get === 'function' ? req.headers.get('content-length') : null
+  const bytes = header ? Number.parseInt(header, 10) : Number.NaN
+  return Number.isFinite(bytes) && bytes > 0 ? (bytes / (1024 * 1024)).toFixed(1) : null
 }
 
 /**
@@ -39,9 +53,14 @@ async function sanitizeUpload(req: PayloadRequest): Promise<void> {
   if (!file || !file.data) {
     return
   }
-  if (file.size > MAX_UPLOAD_BYTES || file.data.length > MAX_UPLOAD_BYTES) {
+  // The multipart parser stops reading at `upload.limits.fileSize` and flags the file as
+  // truncated instead of rejecting it, so an oversized upload arrives here at exactly the
+  // limit. Treat that as "too large" rather than letting it fail later as a broken image.
+  const truncated = (file as { truncated?: boolean }).truncated === true
+  if (truncated || file.size > MAX_UPLOAD_BYTES || file.data.length > MAX_UPLOAD_BYTES) {
+    const approx = truncated ? requestMegabytes(req) : (file.size / (1024 * 1024)).toFixed(1)
     throw uploadError(
-      `The image is larger than ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB. Please resize it before uploading.`,
+      `This image is larger than ${MAX_UPLOAD_MB} MB${approx ? ` (about ${approx} MB)` : ''}, so it was not saved. Use a smaller copy: export it as a JPEG, or resize it so the file is under ${MAX_UPLOAD_MB} MB, then upload again.`,
     )
   }
   const detected = await fileTypeFromBuffer(file.data)
@@ -52,10 +71,11 @@ async function sanitizeUpload(req: PayloadRequest): Promise<void> {
     )
   }
 
-  let image = sharp(file.data, { failOn: 'error', limitInputPixels: MAX_UPLOAD_PIXELS })
+  // Read the header only, without sharp's pixel limit: the limit is checked explicitly
+  // below so an oversized image is reported with its dimensions, not as "undecodable".
   let metadata: SharpMetadata
   try {
-    metadata = await image.metadata()
+    metadata = await sharp(file.data, { failOn: 'error', limitInputPixels: false }).metadata()
   } catch {
     throw uploadError(
       'The image could not be decoded. Please upload a valid JPEG, PNG or WebP file.',
@@ -68,12 +88,12 @@ async function sanitizeUpload(req: PayloadRequest): Promise<void> {
   }
   if (width * height > MAX_UPLOAD_PIXELS) {
     throw uploadError(
-      `The image has more than ${MAX_UPLOAD_PIXELS / 1_000_000} megapixels. Please resize it before uploading.`,
+      `This image is ${width} × ${height} pixels, more than ${MAX_UPLOAD_PIXELS / 1_000_000} megapixels, so it was not saved. Resize it (for example to 3000 pixels on the longer side) and upload again.`,
     )
   }
 
   // Apply the EXIF orientation, then re-encode without metadata.
-  image = image.rotate()
+  const image = sharp(file.data, { failOn: 'error', limitInputPixels: MAX_UPLOAD_PIXELS }).rotate()
   let output: Buffer
   try {
     switch (allowed.mime) {

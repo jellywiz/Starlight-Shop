@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import sharp from 'sharp'
 
 const OWNER = {
   email: process.env.E2E_OWNER_EMAIL ?? 'dev@example.com',
@@ -100,4 +101,36 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText(/successfully/i).first()).toBeVisible()
   })
+
+  test('an oversized photo is refused with the reason shown in the toast', async ({ page }) => {
+    await login(page)
+    await page.goto('/admin/collections/media/create?locale=en')
+    await page.setInputFiles('input[type="file"]', {
+      name: 'big.png',
+      mimeType: 'image/png',
+      buffer: await oversizedPng(),
+    })
+    await expect(page.locator('input[value="big.png"]')).toBeVisible()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+
+    // The multipart parser cuts the file at 3 MB; the owner must still learn the real reason.
+    await expect(page.getByText(/larger than 3 MB \(about \d+\.\d MB\)/)).toBeVisible()
+    await expect(page).toHaveURL(/\/admin\/collections\/media\/create/)
+  })
 })
+
+/** Incompressible pseudo-random pixels, so the PNG is well above the 3 MB upload limit. */
+async function oversizedPng(): Promise<Buffer> {
+  const side = 1200
+  const noise = Buffer.alloc(side * side * 3)
+  let state = 0x9e3779b9
+  for (let i = 0; i < noise.length; i += 1) {
+    state ^= state << 13
+    state ^= state >>> 17
+    state ^= state << 5
+    noise[i] = state & 0xff
+  }
+  return sharp(noise, { raw: { width: side, height: side, channels: 3 } })
+    .png({ compressionLevel: 1 })
+    .toBuffer()
+}

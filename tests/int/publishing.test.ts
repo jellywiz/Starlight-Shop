@@ -1,4 +1,7 @@
+import sharp from 'sharp'
 import { describe, expect, it, beforeAll } from 'vitest'
+
+import { MAX_UPLOAD_BYTES } from '@/collections/Media'
 
 import {
   createCategory,
@@ -534,17 +537,15 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
   it('rejects uploads that are not real images and strips metadata', async () => {
     const payload = await testPayload()
     const fake = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
-    const rejected = await payload
-      .create({
+    const rejected = await expectFailure(() =>
+      payload.create({
         collection: 'media',
         data: {},
         file: { data: fake, mimetype: 'image/png', name: 'fake.png', size: fake.length },
         overrideAccess: true,
-      })
-      .then(() => null)
-      .catch((e: unknown) => e as { data?: { errors?: { path: string; message: string }[] } })
-    expect(rejected).not.toBeNull()
-    expect(rejected?.data?.errors?.[0]?.message).toMatch(/JPEG, PNG and WebP/)
+      }),
+    )
+    expect(rejected).toMatch(/JPEG, PNG and WebP/)
 
     const media = await createMedia(payload, { alt: FULL_ALT, width: 1600, height: 1200 })
     expect(media.filename).toMatch(/^[0-9a-f]{24}\.jpg$/)
@@ -556,5 +557,73 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     expect(small.sizes?.w320?.width).toBe(320)
     expect(small.sizes?.w640?.url ?? null).toBeNull()
     expect(small.sizes?.w1280?.url ?? null).toBeNull()
+  })
+
+  it('explains oversized uploads instead of failing on the truncated file', async () => {
+    const payload = await testPayload()
+    // Incompressible noise, so the PNG is comfortably above the 3 MB limit.
+    const side = 1200
+    const noise = Buffer.alloc(side * side * 3)
+    let state = 0x9e3779b9
+    for (let i = 0; i < noise.length; i += 1) {
+      // xorshift32: deterministic pseudo-random bytes that PNG cannot compress.
+      state ^= state << 13
+      state ^= state >>> 17
+      state ^= state << 5
+      noise[i] = state & 0xff
+    }
+    const big = await sharp(noise, { raw: { width: side, height: side, channels: 3 } })
+      .png({ compressionLevel: 1 })
+      .toBuffer()
+    expect(big.length).toBeGreaterThan(MAX_UPLOAD_BYTES)
+
+    // Whole file over the limit (Local API): rejected by size with the real size shown.
+    const whole = await expectFailure(() =>
+      payload.create({
+        collection: 'media',
+        data: {},
+        file: { data: big, mimetype: 'image/png', name: 'big.png', size: big.length },
+        overrideAccess: true,
+      }),
+    )
+    expect(whole).toMatch(/larger than 3 MB \(about \d+\.\d MB\)/)
+
+    // What the REST multipart parser delivers for the same file: exactly 3 MB, flagged as
+    // truncated. It must be reported as "too large", not as an image that cannot be processed.
+    const cut = big.subarray(0, MAX_UPLOAD_BYTES)
+    const truncatedFile = {
+      data: cut,
+      mimetype: 'image/png',
+      name: 'big.png',
+      size: cut.length,
+      truncated: true,
+    }
+    const truncated = await expectFailure(() =>
+      payload.create({
+        collection: 'media',
+        data: {},
+        file: truncatedFile as unknown as NonNullable<Parameters<typeof payload.create>[0]['file']>,
+        overrideAccess: true,
+      }),
+    )
+    expect(truncated).toMatch(/larger than 3 MB/)
+    expect(truncated).not.toMatch(/could not be processed/)
+
+    // Too many pixels: the dimensions are named so the owner knows what to resize.
+    const wide = await sharp({
+      create: { width: 5000, height: 4100, channels: 3, background: '#482044' },
+    })
+      .jpeg({ quality: 30 })
+      .toBuffer()
+    expect(wide.length).toBeLessThan(MAX_UPLOAD_BYTES)
+    const pixels = await expectFailure(() =>
+      payload.create({
+        collection: 'media',
+        data: {},
+        file: { data: wide, mimetype: 'image/jpeg', name: 'wide.jpg', size: wide.length },
+        overrideAccess: true,
+      }),
+    )
+    expect(pixels).toMatch(/5000 × 4100 pixels, more than 20 megapixels/)
   })
 })
