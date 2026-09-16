@@ -65,17 +65,19 @@ local database for that.
 
 ### Apply the schema
 
-From the maintainer's machine, with `DATABASE_MIGRATION_URI` in `.env`:
+From the maintainer's machine. Pass the session-pooler connection string only for these
+commands (an inline variable is safer than keeping it in `.env`; `pnpm dev` ignores it
+either way, so local development can never touch production):
 
 ```bash
-pnpm migrate:status
-pnpm migrate
+DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' pnpm migrate:status
+DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' pnpm migrate
 ```
 
 ### Create the owner
 
 ```bash
-OWNER_EMAIL=owner@example.com pnpm owner:create     # prompts for the password
+DATABASE_MIGRATION_URI='postgresql://...same string...' OWNER_EMAIL=owner@example.com pnpm owner:create     # prompts for the password
 ```
 
 The password must be long and unique (12+ characters, a passphrase is ideal). Public

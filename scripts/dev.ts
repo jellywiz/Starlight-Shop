@@ -57,6 +57,9 @@ async function main() {
     // The cluster is created with the credentials the developer's .env expects.
     const db = await startEmbeddedPostgres({ dir: '.data/pg', quiet: true, ...fromEnv, port })
     env.DATABASE_URI = db.connectionString
+    // Local development must never migrate the production database, even when a
+    // maintainer's .env also holds DATABASE_MIGRATION_URI.
+    env.DATABASE_MIGRATION_URI = ''
     stop = db.stop
     process.stdout.write(`Embedded PostgreSQL ready on port ${db.port}\n`)
   }
