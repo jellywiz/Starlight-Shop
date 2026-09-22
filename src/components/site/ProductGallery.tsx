@@ -19,6 +19,7 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
   const titleId = useId()
   const total = photos.length
   const current = photos[index] ?? photos[0]
+  const labels = { failed: dict.product.photoFailed, retry: dict.product.retryPhoto }
 
   const show = useCallback((next: number) => setIndex(((next % total) + total) % total), [total])
 
@@ -61,6 +62,7 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
           <ResponsiveImage
             image={current}
             sizes="(min-width: 1024px) 50vw, 100vw"
+            labels={labels}
             priority
             className="h-full w-full object-contain p-6"
           />
@@ -92,13 +94,11 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
                 aria-label={t(dict.product.thumbnailLabel, { index: i + 1, total })}
                 className={`block h-16 w-16 overflow-hidden rounded-xl bg-white ring-2 ring-inset ${i === index ? 'ring-accent' : 'ring-line hover:ring-accent-muted'}`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.sources[0]?.url ?? photo.src}
-                  alt=""
-                  width={64}
-                  height={64}
-                  loading="lazy"
+                <ResponsiveImage
+                  image={{ ...photo, alt: '' }}
+                  sizes="64px"
+                  labels={labels}
+                  compact
                   className="h-full w-full object-contain"
                 />
               </button>
@@ -149,13 +149,12 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
               </svg>
             </button>
           ) : null}
-          <div className="flex max-h-[75vh] flex-1 items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={current.src}
-              alt={current.alt}
-              width={current.width}
-              height={current.height}
+          <div className="flex max-h-[75vh] min-h-48 flex-1 items-center justify-center">
+            <ResponsiveImage
+              image={current}
+              sizes="96vw"
+              labels={labels}
+              priority
               className="max-h-[75vh] w-auto max-w-full object-contain"
             />
           </div>

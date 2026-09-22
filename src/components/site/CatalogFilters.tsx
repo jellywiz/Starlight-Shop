@@ -26,16 +26,41 @@ type Props = {
 
 const DEBOUNCE_MS = 300
 
-/** Builds the canonical catalog URL from a form, dropping empty values and the page. */
-function urlFromForm(form: HTMLFormElement, locale: Locale): string {
-  const data = new FormData(form)
+/** What the form shows; every field is a string exactly as the visitor sees it. */
+type FieldValues = {
+  q: string
+  category: string
+  min: string
+  max: string
+  availability: string
+  sort: string
+}
+
+const FIELD_NAMES = ['q', 'category', 'min', 'max', 'availability', 'sort'] as const
+
+function fieldsFromRaw(raw: RawCatalogParams): FieldValues {
+  return {
+    q: raw.q,
+    category: raw.category,
+    min: raw.min,
+    max: raw.max,
+    availability: raw.availability || 'all',
+    sort: raw.sort,
+  }
+}
+
+/** The sort the form shows when none is in the URL: relevance while searching, else newest. */
+function effectiveSort(values: FieldValues): string {
+  return values.sort || (values.q.trim() ? 'relevance' : 'newest')
+}
+
+/** Builds the canonical catalog URL, dropping empty values, defaults and the page. */
+function catalogUrl(values: FieldValues, locale: Locale): string {
   const params = new URLSearchParams()
-  for (const [key, value] of data.entries()) {
-    if (typeof value !== 'string') {
-      continue
-    }
-    const trimmed = value.trim()
-    if (!trimmed || key === 'page') {
+  const q = values.q.trim()
+  for (const key of FIELD_NAMES) {
+    const trimmed = values[key].trim()
+    if (!trimmed) {
       continue
     }
     if (key === 'availability' && trimmed === 'all') {
@@ -43,7 +68,6 @@ function urlFromForm(form: HTMLFormElement, locale: Locale): string {
     }
     if (key === 'sort' && (trimmed === 'newest' || trimmed === 'relevance')) {
       // Defaults are omitted; relevance applies automatically when searching.
-      const q = String(data.get('q') ?? '').trim()
       if ((q && trimmed === 'relevance') || (!q && trimmed === 'newest')) {
         continue
       }
@@ -70,19 +94,36 @@ function FilterForm({
   showSearch,
 }: Props & { idPrefix: string; onApplied?: () => void; showSearch: boolean }) {
   const router = useRouter()
-  const formRef = useRef<HTMLFormElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [pending, startTransition] = useTransition()
   const errorFor = (field: string) => errors.find((e) => e.field === field)
   const id = (name: string) => `${idPrefix}-${name}`
 
+  // The fields are controlled so they can follow the URL: `raw` is what the results on
+  // the page were computed from, and the form shows it unless the visitor is ahead of it.
+  const [values, setValues] = useState<FieldValues>(() => fieldsFromRaw(raw))
+  const resultsUrl = catalogUrl(fieldsFromRaw(raw), locale)
+  const [shownResultsUrl, setShownResultsUrl] = useState(resultsUrl)
+  // URLs this form navigated to whose results have not arrived yet. Their results must
+  // not reset the fields (the visitor may have typed more meanwhile); any other results
+  // — a removed chip, Clear all, Back/Forward — replace what the form shows.
+  const [ownNavigations, setOwnNavigations] = useState<string[]>([])
+  if (resultsUrl !== shownResultsUrl) {
+    // New results arrived: React's "adjusting state while rendering" pattern.
+    setShownResultsUrl(resultsUrl)
+    const own = ownNavigations.indexOf(resultsUrl)
+    if (own >= 0) {
+      setOwnNavigations(ownNavigations.slice(own + 1))
+    } else {
+      setOwnNavigations([])
+      setValues(fieldsFromRaw(raw))
+    }
+  }
+
   const navigate = useCallback(
-    (replace: boolean) => {
-      const form = formRef.current
-      if (!form) {
-        return
-      }
-      const url = urlFromForm(form, locale)
+    (next: FieldValues, replace: boolean) => {
+      const url = catalogUrl(next, locale)
+      setOwnNavigations((list) => [...list, url])
       startTransition(() => {
         if (replace) {
           router.replace(url, { scroll: false })
@@ -94,12 +135,15 @@ function FilterForm({
     [locale, router],
   )
 
-  const scheduleNavigate = useCallback(() => {
+  /** Applies a field change and navigates after the debounce. */
+  const update = (patch: Partial<FieldValues>) => {
+    const next = { ...values, ...patch }
+    setValues(next)
     if (timer.current) {
       clearTimeout(timer.current)
     }
-    timer.current = setTimeout(() => navigate(true), DEBOUNCE_MS)
-  }, [navigate])
+    timer.current = setTimeout(() => navigate(next, true), DEBOUNCE_MS)
+  }
 
   useEffect(
     () => () => {
@@ -115,13 +159,12 @@ function FilterForm({
     if (timer.current) {
       clearTimeout(timer.current)
     }
-    navigate(false)
+    navigate(values, false)
     onApplied?.()
   }
 
   return (
     <form
-      ref={formRef}
       method="get"
       action={`/${locale}/products`}
       onSubmit={onSubmit}
@@ -153,11 +196,11 @@ function FilterForm({
               id={id('q')}
               name="q"
               type="search"
-              defaultValue={raw.q}
+              value={values.q}
               maxLength={MAX_QUERY_LENGTH}
               placeholder={dict.catalog.searchPlaceholder}
               className="input"
-              onInput={scheduleNavigate}
+              onChange={(event) => update({ q: event.target.value })}
               aria-invalid={Boolean(errorFor('q'))}
             />
             <button type="submit" className="btn-primary shrink-0">
@@ -177,9 +220,9 @@ function FilterForm({
         <select
           id={id('category')}
           name="category"
-          defaultValue={raw.category}
+          value={values.category}
           className="input mt-1"
-          onChange={scheduleNavigate}
+          onChange={(event) => update({ category: event.target.value })}
           aria-invalid={Boolean(errorFor('category'))}
         >
           <option value="">{dict.catalog.allCategories}</option>
@@ -204,9 +247,9 @@ function FilterForm({
               type="text"
               inputMode="numeric"
               dir="ltr"
-              defaultValue={raw.min}
+              value={values.min}
               className="input mt-1"
-              onInput={scheduleNavigate}
+              onChange={(event) => update({ min: event.target.value })}
               aria-invalid={Boolean(errorFor('min'))}
               aria-describedby={errorFor('min') ? id('min-error') : undefined}
             />
@@ -226,9 +269,9 @@ function FilterForm({
               type="text"
               inputMode="numeric"
               dir="ltr"
-              defaultValue={raw.max}
+              value={values.max}
               className="input mt-1"
-              onInput={scheduleNavigate}
+              onChange={(event) => update({ max: event.target.value })}
               aria-invalid={Boolean(errorFor('max'))}
               aria-describedby={errorFor('max') ? id('max-error') : undefined}
             />
@@ -250,8 +293,8 @@ function FilterForm({
                 type="radio"
                 name="availability"
                 value={value}
-                defaultChecked={(raw.availability || 'all') === value}
-                onChange={scheduleNavigate}
+                checked={values.availability === value}
+                onChange={() => update({ availability: value })}
                 className="h-4 w-4 accent-plum-700"
               />
               {value === 'all'
@@ -271,11 +314,11 @@ function FilterForm({
         <select
           id={id('sort')}
           name="sort"
-          defaultValue={raw.sort || (raw.q ? 'relevance' : 'newest')}
+          value={effectiveSort(values)}
           className="input mt-1"
-          onChange={scheduleNavigate}
+          onChange={(event) => update({ sort: event.target.value })}
         >
-          {raw.q ? <option value="relevance">{dict.catalog.sortRelevance}</option> : null}
+          {values.q.trim() ? <option value="relevance">{dict.catalog.sortRelevance}</option> : null}
           <option value="newest">{dict.catalog.sortNewest}</option>
           <option value="price-asc">{dict.catalog.sortPriceAsc}</option>
           <option value="price-desc">{dict.catalog.sortPriceDesc}</option>

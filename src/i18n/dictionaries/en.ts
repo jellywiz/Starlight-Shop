@@ -167,6 +167,8 @@ export const en = {
       'Send us this product link in an Instagram message so we know which piece you mean. We reply from the shop account.',
     related: 'More from this category',
     noPhoto: 'No photo available',
+    photoFailed: 'The photo could not be loaded',
+    retryPhoto: 'Try again',
     breadcrumb: 'Breadcrumb',
   },
   contact: {

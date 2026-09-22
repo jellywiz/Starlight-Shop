@@ -6,14 +6,14 @@ only: visitors browse products with Iraqi dinar prices, check delivery fees by c
 home page and message the shop on Instagram. Built from the "Website implementation"
 specification v2.0 (15 September 2026).
 
-| | |
-| --- | --- |
-| Framework | Next.js 16 (App Router, TypeScript), Tailwind CSS 4 |
-| CMS / admin | Payload CMS 3 at `/admin`, PostgreSQL via `@payloadcms/db-postgres` |
-| Database | PostgreSQL 17 — embedded locally, Supabase in production (schema `starlight`) |
-| Images | Supabase Storage through the S3 adapter (local disk in development) |
-| Hosting | Netlify (free plan, `starlight-jewellery.netlify.app` desired), code on GitHub |
-| Node / pnpm | Node 22 LTS or newer, pnpm 10 (pinned in `package.json`) |
+|             |                                                                                |
+| ----------- | ------------------------------------------------------------------------------ |
+| Framework   | Next.js 16 (App Router, TypeScript), Tailwind CSS 4                            |
+| CMS / admin | Payload CMS 3 at `/admin`, PostgreSQL via `@payloadcms/db-postgres`            |
+| Database    | PostgreSQL 17 — embedded locally, Supabase in production (schema `starlight`)  |
+| Images      | Supabase Storage through the S3 adapter (local disk in development)            |
+| Hosting     | Netlify (free plan, `starlight-jewellery.netlify.app` desired), code on GitHub |
+| Node / pnpm | Node 22 LTS or newer, pnpm 10 (pinned in `package.json`)                       |
 
 ## Quick start (macOS)
 
@@ -31,21 +31,21 @@ Open http://localhost:3000 (site, redirects to `/ckb`) and http://localhost:3000
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Local development: embedded PostgreSQL + migrations + `next dev` |
-| `pnpm db:start` / `pnpm db:reset` | Run (or wipe and run) the local database alone |
-| `pnpm migrate` / `pnpm migrate:create <name>` | Apply / generate committed migrations (`src/migrations`) |
-| `pnpm generate:types` / `pnpm generate:importmap` | Regenerate `src/payload-types.ts` / the admin import map after config changes |
-| `pnpm owner:create` | Create the first owner account (see docs/deployment.md) |
-| `pnpm owner:reset-password` | Maintainer password reset (no email provider is configured) |
-| `pnpm seed:dev [--owner]` | Synthetic sample content (products, two sample cities) for local work only |
-| `pnpm brand:assets` | Regenerate logo derivatives and favicons from `public/brand/logo.png` |
-| `pnpm typecheck` / `pnpm lint` | TypeScript and ESLint |
-| `pnpm test:unit` / `pnpm test:int` / `pnpm test` | Unit tests; integration tests on a throwaway database |
-| `pnpm test:e2e` | Playwright browser journeys against a running site |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `./scripts/backup.sh` | Database dump + storage copy with manifest |
+| Command                                           | Purpose                                                                                                  |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                        | Local development: embedded PostgreSQL + migrations + `next dev`                                         |
+| `pnpm db:start` / `pnpm db:reset`                 | Run (or wipe and run) the local database alone                                                           |
+| `pnpm migrate` / `pnpm migrate:create <name>`     | Apply / generate committed migrations (`src/migrations`)                                                 |
+| `pnpm generate:types` / `pnpm generate:importmap` | Regenerate `src/payload-types.ts` / the admin import map after config changes                            |
+| `pnpm owner:create`                               | Create the first owner account (see docs/deployment.md)                                                  |
+| `pnpm owner:reset-password`                       | Maintainer password reset (no email provider is configured)                                              |
+| `pnpm seed:dev [--owner]`                         | Synthetic sample content (products, two sample cities) for local work only                               |
+| `pnpm brand:assets`                               | Regenerate logo derivatives and favicons from `public/brand/logo.png`                                    |
+| `pnpm typecheck` / `pnpm lint`                    | TypeScript and ESLint                                                                                    |
+| `pnpm test:unit` / `pnpm test:int` / `pnpm test`  | Unit tests; integration tests on a throwaway database                                                    |
+| `pnpm test:e2e`                                   | Playwright browser journeys against a running site, on a desktop, a phone and an iPad (CI runs them too) |
+| `pnpm build` / `pnpm start`                       | Production build / serve                                                                                 |
+| `./scripts/backup.sh`                             | Database dump + storage copy with manifest                                                               |
 
 ## Repository layout
 

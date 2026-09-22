@@ -53,6 +53,29 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   categories that have at least one published product; a URL naming a missing or inactive
   category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
   an active but empty category simply shows zero results.
+- **Catalogue filter fields follow the URL** (2026-09-22). The filter form used to keep its
+  own state (uncontrolled inputs), so removing a chip, Clear all or the Back button changed
+  the results but left the old selection in the form. The fields are now controlled and
+  mirror the results' query (`src/components/site/CatalogFilters.tsx`): when new results
+  arrive from anywhere other than the form itself, the fields are reset to them; results
+  for the form's own navigations never reset it, so a visitor typing faster than the
+  results arrive is never interrupted (the form remembers which navigations are its own).
+  The relevance sort option now appears as soon as something is typed.
+- **Photos that fail to load show a Starlight placeholder with "Try again"** (2026-09-22).
+  `src/components/site/ResponsiveImage.tsx` is a client component: on error (and for images
+  the browser already gave up on before hydration) the same frame shows the sparkle mark,
+  a translated message and a retry button that reloads the image with a `retry=N` marker so
+  the failed response is not reused; thumbnails show the mark only. In product cards the
+  link is an overlay over the frame rather than a wrapper, so the button is never nested
+  inside a link.
+- **Browser journeys run in CI on three devices** (2026-09-22). Playwright has desktop,
+  phone (Pixel 7) and iPad projects — Chromium plays the iPad so one browser install covers
+  local runs and CI — and the admin journeys no longer skip small screens; a journey uploads
+  a photo from the product form, publishes, edits and removes the product on each device.
+  The `browser` job in `.github/workflows/ci.yml` starts the embedded database, migrates,
+  seeds, builds, serves the production build and runs every journey, keeping traces of
+  failures as an artifact. Layout branches in the tests key off the viewport width (the
+  iPad has the desktop filters but the collapsed header menu).
 - **Light and dark themes on both sides, chosen by the user** (owner decision,
   2026-09-16). Every colour on the public site is a semantic Tailwind token
   (`page`, `surface`, `line`, `ink`, `heading`, `accent`, `primary`…, `src/app/(site)/globals.css`)

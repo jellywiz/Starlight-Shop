@@ -1,7 +1,13 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 const SAMPLE_SLUG = 'sample-star-necklace'
 const INSTAGRAM = 'https://www.instagram.com/sl_.jewellery/'
+
+const width = (page: Page) => page.viewportSize()?.width ?? 1280
+/** Below Tailwind's `md` the catalogue filters live in a dialog behind a Filters button. */
+const filtersInDialog = (page: Page) => width(page) < 768
+/** Below `lg` the navigation and language links sit behind the Open menu button. */
+const menuCollapsed = (page: Page) => width(page) < 1024
 
 test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => {
   test('root redirects to the default language and pages carry lang/dir', async ({ page }) => {
@@ -21,11 +27,10 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
 
   test('search, filter, open a product, copy its link and find the Instagram action (A07, A11)', async ({
     page,
-    isMobile,
     context,
   }) => {
     await page.goto('/en/products')
-    if (isMobile) {
+    if (filtersInDialog(page)) {
       await page.getByRole('button', { name: 'Filters' }).click()
       const dialog = page.getByRole('dialog')
       await dialog.getByLabel('Search products').fill('star necklace')
@@ -58,10 +63,9 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
 
   test('switching language keeps the same product and translates the page (A10)', async ({
     page,
-    isMobile,
   }) => {
     await page.goto(`/en/products/${SAMPLE_SLUG}`)
-    if (isMobile) {
+    if (menuCollapsed(page)) {
       await page.getByRole('button', { name: 'Open menu' }).click()
     }
     await page.getByRole('link', { name: 'العربية' }).click()
@@ -78,6 +82,103 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page).toHaveURL(/sample-moon-necklace/)
     await page.goBack()
     await expect(page).toHaveURL(/category=necklaces&sort=price-asc/)
+  })
+
+  test('filter fields follow the URL when a chip is removed or Back is pressed', async ({
+    page,
+  }) => {
+    await page.goto('/en/products')
+    if (filtersInDialog(page)) {
+      // On a phone the form lives in a dialog: a change applies while it is open, and
+      // reopening it after the results changed elsewhere shows the current filters.
+      await page.getByRole('button', { name: 'Filters' }).click()
+      const dialog = page.getByRole('dialog')
+      await dialog.getByLabel('Category').selectOption('necklaces')
+      await expect(page).toHaveURL(/category=necklaces/)
+      await dialog.getByRole('button', { name: 'Close filters' }).click()
+      await page.getByRole('link', { name: /Remove filter: Category: Necklaces/ }).click()
+      await expect(page).toHaveURL(/\/en\/products$/)
+      await page.getByRole('button', { name: 'Filters' }).click()
+      await expect(page.getByRole('dialog').getByLabel('Category')).toHaveValue('')
+      return
+    }
+    const form = page.locator('aside form')
+    const category = form.getByLabel('Category')
+    const search = form.getByLabel('Search products')
+
+    await category.selectOption('necklaces')
+    await expect(page).toHaveURL(/category=necklaces/)
+    await search.fill('moon')
+    await expect(page).toHaveURL(/q=moon/)
+    await expect(form.getByLabel('Sort by')).toHaveValue('relevance')
+
+    // Removing a chip is a plain link: the form must follow the new results.
+    await page.getByRole('link', { name: /Remove filter: Category: Necklaces/ }).click()
+    await expect(page).toHaveURL(/^(?!.*category=).*q=moon/)
+    await expect(category).toHaveValue('')
+    await expect(search).toHaveValue('moon')
+    await expect(page.getByText(/products? for .moon./)).toBeVisible()
+
+    // Back returns to the previous results and the fields show them again.
+    await page.goBack()
+    await expect(page).toHaveURL(/category=necklaces/)
+    await expect(category).toHaveValue('necklaces')
+    await expect(search).toHaveValue('moon')
+
+    // Clear all: everything resets, including the availability radio.
+    await form.getByLabel('Unavailable', { exact: true }).check()
+    await expect(page).toHaveURL(/availability=unavailable/)
+    await page.getByRole('link', { name: 'Clear all' }).click()
+    await expect(page).toHaveURL(/\/en\/products$/)
+    await expect(search).toHaveValue('')
+    await expect(category).toHaveValue('')
+    await expect(form.getByLabel('All', { exact: true })).toBeChecked()
+    await expect(form.getByLabel('Sort by')).toHaveValue('newest')
+
+    // Typing slower than the debounce makes results arrive while the visitor is still
+    // typing; those results must never overwrite what was typed since.
+    await search.pressSequentially('sample moon', { delay: 350 })
+    await expect(search).toHaveValue('sample moon')
+    await expect(page).toHaveURL(/q=sample\+moon$/)
+    await expect(page.getByText(/1 product for .sample moon./)).toBeVisible()
+    await expect(search).toHaveValue('sample moon')
+  })
+
+  test('a photo that cannot be loaded shows a Starlight placeholder and can be retried', async ({
+    page,
+  }) => {
+    // Storage is down: every photo request fails.
+    await page.route('**/api/media/file/**', (route) => route.abort())
+    await page.goto('/en/products')
+    const cards = page.locator('article')
+    const placeholders = page.getByRole('group', { name: 'The photo could not be loaded' })
+    await expect(placeholders.first()).toBeVisible()
+    expect(await placeholders.count()).toBeGreaterThan(0)
+    await expect(page.locator('article img')).toHaveCount(0)
+    // The card is still a working link to the product.
+    await expect(
+      cards.first().getByRole('link', { name: /necklace|earrings|bracelet/i }),
+    ).toBeVisible()
+
+    // Storage is back: "Try again" reloads that photo, and only that one.
+    await page.unroute('**/api/media/file/**')
+    const first = placeholders.first()
+    await first.getByRole('button', { name: 'Try again' }).click()
+    const img = cards.first().locator('img')
+    await expect(img).toHaveCount(1)
+    await expect(img).toHaveJSProperty('complete', true)
+    expect(await img.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+    await expect(img).toHaveAttribute('src', /retry=1/)
+    expect(await placeholders.count()).toBeGreaterThan(0)
+
+    // The product page gallery gets the same treatment, in Arabic.
+    await page.route('**/api/media/file/**', (route) => route.abort())
+    await page.goto(`/ar/products/${SAMPLE_SLUG}`)
+    const gallery = page.getByRole('region', { name: 'صور المنتج' })
+    await expect(gallery.getByRole('group', { name: 'تعذّر تحميل الصورة' }).first()).toBeVisible()
+    await page.unroute('**/api/media/file/**')
+    await gallery.getByRole('button', { name: 'إعادة المحاولة' }).first().click()
+    await expect(gallery.locator('img').first()).toHaveJSProperty('complete', true)
   })
 
   test('invalid filters show translated messages and keep typed values', async ({ page }) => {
@@ -110,7 +211,6 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
 
   test('home delivery selector shows one city fee, keeps the city across languages and never a total (A22, A24)', async ({
     page,
-    isMobile,
   }) => {
     await page.goto('/en')
     const select = page.getByLabel('Your city')
@@ -125,7 +225,7 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByText('IQD 25,000')).toBeVisible()
     await expect(page.getByText(/total/i)).toHaveCount(0)
 
-    if (isMobile) {
+    if (menuCollapsed(page)) {
       await page.getByRole('button', { name: 'Open menu' }).click()
     }
     await page.getByRole('link', { name: 'کوردی' }).click()

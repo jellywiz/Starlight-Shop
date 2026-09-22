@@ -5,14 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  PAYLOAD_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+  SITE_URL: http://localhost:3000
+  DATABASE_URI: postgres://starlight:starlight-local-dev@127.0.0.1:54329/starlight_jewellery
+
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      PAYLOAD_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
-      SITE_URL: http://localhost:3000
-      DATABASE_URI: postgres://starlight:starlight-local-dev@127.0.0.1:54329/starlight_jewellery
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,3 +27,48 @@ jobs:
       - run: pnpm test:unit
       - run: pnpm test:int
       - run: pnpm build
+
+  # The real website and admin in a browser: the public journeys and the admin journeys
+  # (upload, edit, publish) on a desktop, a phone and an iPad (playwright.config.ts).
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Start the local database
+        run: |
+          pnpm db:start > db.log 2>&1 &
+          for i in $(seq 1 60); do
+            (echo > /dev/tcp/127.0.0.1/54329) > /dev/null 2>&1 && break
+            sleep 1
+          done
+          (echo > /dev/tcp/127.0.0.1/54329) > /dev/null 2>&1 || { cat db.log; exit 1; }
+      - run: pnpm migrate
+      - run: pnpm seed:dev --owner
+      - run: pnpm build
+      - name: Start the site
+        run: |
+          pnpm start > site.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000/en > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:3000/en > /dev/null || { cat site.log; exit 1; }
+      - run: pnpm test:e2e
+      - name: Keep traces and logs of failed journeys
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: |
+            test-results/
+            site.log
+            db.log
+          retention-days: 7

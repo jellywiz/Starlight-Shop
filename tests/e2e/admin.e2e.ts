@@ -30,8 +30,6 @@ async function saveWith(page: Page, button: string, collection: string) {
 }
 
 test.describe('admin journeys (A02, A05, A15, A21)', () => {
-  test.skip(({ isMobile }) => isMobile, 'Admin editing is verified on desktop.')
-
   test('login hides password reset and the price field stores whole dinars', async ({ page }) => {
     await page.goto('/admin/login')
     await expect(page.getByRole('link', { name: /forgot/i })).toBeHidden()
@@ -166,6 +164,91 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await expect(page).toHaveURL(/\/admin\/collections\/media\/create/)
   })
 
+  test('a product is created with a photo uploaded from the form, published, edited and removed', async ({
+    page,
+  }, testInfo) => {
+    // The same journey runs on the desktop, phone and iPad projects: the admin is used on
+    // all three (docs/decisions.md "Admin look and feel").
+    const suffix = testInfo.project.name
+    const englishName = `E2E ${suffix} necklace`
+    await login(page)
+    await removeProducts(page, `e2e-${suffix}-necklace`)
+    await removeMedia(page, `e2e-${suffix}`)
+
+    await page.goto('/admin/collections/products/create')
+    await page.locator('#field-name__ckb').fill(`ملوانکەی تاقیکردنەوە ${suffix}`)
+    await page.locator('#field-name__ar').fill(`قلادة تجريبية ${suffix}`)
+    await page.locator('#field-name__en').fill(englishName)
+    await page.locator('#field-description__ckb').fill('وەسفی تاقیکردنەوە.')
+    await page.locator('#field-description__ar').fill('وصف تجريبي.')
+    await page.locator('#field-description__en').fill('An automated test description.')
+    await page.locator('#field-category .rs__control').click()
+    await page.getByRole('option', { name: /^Necklaces/ }).click()
+
+    // Photos: the "Create New" drawer uploads straight from the product form.
+    await page.getByRole('button', { name: 'Create New' }).click()
+    const drawer = page.locator('dialog.drawer--is-open').last()
+    await drawer.locator('input[type="file"]').setInputFiles({
+      name: `e2e-${suffix}.png`,
+      mimeType: 'image/png',
+      buffer: await samplePng(),
+    })
+    await expect(drawer.locator(`input[value="e2e-${suffix}.png"]`)).toBeVisible()
+    // The shared image description doubles as the marker that identifies test photos
+    // (uploaded files get random names, see src/collections/Media.ts).
+    await drawer.locator('#field-altText').fill(`e2e-${suffix}`)
+    const uploaded = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && /\/api\/media(\?|$)/.test(r.url()),
+    )
+    await drawer.getByRole('button', { name: 'Save', exact: true }).first().click()
+    const uploadResponse = await uploaded
+    expect(uploadResponse.ok()).toBe(true)
+    const photo = (await uploadResponse.json()).doc
+    await expect(drawer).toBeHidden()
+    await expect(
+      page.locator('#field-photos').getByRole('link', { name: photo.filename }),
+    ).toBeVisible()
+
+    await page.getByLabel('Price (IQD)').fill('15000')
+    await page.locator('#field-isAvailable').check()
+
+    const created = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && /\/api\/products(\?|$)/.test(r.url()),
+    )
+    await page.getByRole('button', { name: 'Publish changes' }).click()
+    const response = await created
+    expect(response.ok()).toBe(true)
+    const doc = (await response.json()).doc
+    expect(doc.slug).toBe(`e2e-${suffix}-necklace`)
+    await expect(page).toHaveURL(/\/admin\/collections\/products\/\d+/)
+    await expect(page.getByText('Published', { exact: true })).toBeVisible()
+
+    // Live on the website with the uploaded photo as the cover.
+    const publicPage = await page.context().newPage()
+    await publicPage.goto(`/en/products/${doc.slug}`)
+    await expect(publicPage.getByRole('heading', { level: 1 })).toHaveText(englishName)
+    await expect(publicPage.getByText('IQD 15,000')).toBeVisible()
+    const cover = publicPage
+      .getByRole('region', { name: 'Product photos' })
+      .getByRole('img', { name: `e2e-${suffix}` })
+      .first()
+    await expect(cover).toHaveAttribute('src', new RegExp(photo.filename.replace(/\.png$/, '')))
+    await expect(cover).toHaveJSProperty('complete', true)
+    expect(await cover.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+
+    // Edit the price and publish again: the website shows the new price on a fresh request.
+    await page.getByLabel('Price (IQD)').fill('16500')
+    await saveWith(page, 'Publish changes', 'products')
+    await publicPage.reload()
+    await expect(publicPage.getByText('IQD 16,500')).toBeVisible()
+    await publicPage.close()
+
+    // Remove the test product and its photo (the photo cannot go first: it is in use).
+    await removeProducts(page, `e2e-${suffix}-necklace`)
+    await removeMedia(page, `e2e-${suffix}`)
+    await publicPageGone(page, doc.slug)
+  })
+
   test('the Appearance switch changes the theme and remembers it; a dark device is dark from the start', async ({
     browser,
     baseURL,
@@ -221,18 +304,45 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
   })
 })
 
-/** Deletes every category whose address starts with `slugPrefix` (test fixtures only). */
-async function removeCategories(page: Page, slugPrefix: string) {
+/** Deletes every document of `collection` matching the query (test fixtures only). */
+async function removeDocuments(page: Page, collection: string, where: string) {
   // Cookie authentication needs the Origin header (CSRF check), which page.request omits.
   const headers = { Origin: new URL(page.url()).origin }
-  const found = await page.request.get(
-    `/api/categories?where[slug][like]=${encodeURIComponent(slugPrefix)}&limit=50&depth=0`,
-    { headers },
-  )
+  const found = await page.request.get(`/api/${collection}?${where}&limit=50&depth=0`, {
+    headers,
+  })
   for (const doc of (await found.json()).docs ?? []) {
-    const deleted = await page.request.delete(`/api/categories/${doc.id}`, { headers })
+    const deleted = await page.request.delete(`/api/${collection}/${doc.id}`, { headers })
     expect(deleted.ok()).toBe(true)
   }
+}
+
+/** Deletes every category whose address starts with `slugPrefix`. */
+const removeCategories = (page: Page, slugPrefix: string) =>
+  removeDocuments(page, 'categories', `where[slug][like]=${encodeURIComponent(slugPrefix)}`)
+
+/** Deletes every product (drafts included) whose address starts with `slugPrefix`. */
+const removeProducts = (page: Page, slugPrefix: string) =>
+  removeDocuments(
+    page,
+    'products',
+    `where[slug][like]=${encodeURIComponent(slugPrefix)}&draft=true`,
+  )
+
+/** Deletes every photo whose image description starts with `descriptionPrefix`. */
+const removeMedia = (page: Page, descriptionPrefix: string) =>
+  removeDocuments(page, 'media', `where[altText][like]=${encodeURIComponent(descriptionPrefix)}`)
+
+async function publicPageGone(page: Page, slug: string) {
+  const response = await page.request.get(`/en/products/${slug}`)
+  expect(response.status()).toBe(404)
+}
+
+/** A small valid photo (a star-coloured square) for upload journeys. */
+async function samplePng(): Promise<Buffer> {
+  return sharp({ create: { width: 480, height: 480, channels: 3, background: '#f6e3b4' } })
+    .png()
+    .toBuffer()
 }
 
 /** Incompressible pseudo-random pixels, so the PNG is well above the 3 MB upload limit. */

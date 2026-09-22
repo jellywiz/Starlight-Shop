@@ -25,8 +25,12 @@ export default defineConfig({
       ? { executablePath: process.env.PLAYWRIGHT_CHROME_PATH }
       : undefined,
   },
+  // The admin is used on a phone and an iPad as much as on a computer, so every journey
+  // runs on all three. Chromium plays the iPad (its viewport, touch and scale factor) so a
+  // single browser install covers CI and local runs.
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    { name: 'ipad', use: { ...devices['iPad (gen 7)'], browserName: 'chromium' } },
   ],
 })

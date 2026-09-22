@@ -27,12 +27,15 @@ export function ProductCard({
   const href = `/${locale}/products/${item.slug}`
   return (
     <article className="card card-hover group flex h-full flex-col overflow-hidden">
-      <Link href={href} className="block bg-white" tabIndex={-1} aria-hidden="true">
+      {/* The photo's link is an overlay rather than a wrapper, so the "try again" button
+          shown when a photo fails is never nested inside a link. */}
+      <div className="relative bg-white">
         <div className="aspect-square w-full">
           {item.cover ? (
             <ResponsiveImage
               image={item.cover}
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
               priority={priority}
               className="h-full w-full object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
             />
@@ -42,7 +45,8 @@ export function ProductCard({
             </div>
           )}
         </div>
-      </Link>
+        <Link href={href} className="absolute inset-0" tabIndex={-1} aria-hidden="true" />
+      </div>
       <div className="flex flex-1 flex-col gap-1 border-t border-line-soft p-4">
         <p className="text-xs font-medium tracking-wide text-accent-soft uppercase">
           {item.category.name}
