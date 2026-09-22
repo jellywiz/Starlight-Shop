@@ -25,7 +25,7 @@ export function SiteFooter({
         <div className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/logo-mark-192.png"
+            src="/brand/logo-mark-128.webp"
             alt=""
             width={56}
             height={56}

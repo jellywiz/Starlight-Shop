@@ -46,6 +46,7 @@ Open http://localhost:3000 (site, redirects to `/ckb`) and http://localhost:3000
 | `pnpm test:e2e`                                   | Playwright browser journeys against a running site, on a desktop, a phone and an iPad (CI runs them too) |
 | `pnpm build` / `pnpm start`                       | Production build / serve                                                                                 |
 | `./scripts/backup.sh`                             | Database dump + storage copy with manifest                                                               |
+| `pnpm restore:storage <folder>`                   | Upload a storage backup into the bucket named in `.env` (restore, or move regions)                       |
 
 ## Repository layout
 

@@ -76,11 +76,17 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     const publicPage = await page.context().newPage()
     await publicPage.goto(`/en/products/${SAMPLE_SLUG}`)
     await expect(publicPage.getByText('IQD 32,000')).toBeVisible()
+    // The owner's preview shows the draft price, marked as a preview and never indexed.
+    await publicPage.goto(`/en/products/${SAMPLE_SLUG}/preview`)
+    await expect(publicPage.getByText('IQD 34,000')).toBeVisible()
+    await expect(publicPage.getByRole('status')).toContainText('Preview')
+    await expect(publicPage.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
 
-    // Publish: a fresh request shows the new price (A15).
+    // Publish: a fresh request shows the new price (A15) even though product pages are
+    // served from the cache — publishing invalidates them.
     await saveWith(page, 'Publish changes', 'products')
     await expect(page.getByText('Published', { exact: true })).toBeVisible()
-    await publicPage.reload()
+    await publicPage.goto(`/en/products/${SAMPLE_SLUG}`)
     await expect(publicPage.getByText('IQD 34,000')).toBeVisible()
 
     // Restore the sample price for repeatable runs.

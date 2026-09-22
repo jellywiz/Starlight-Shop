@@ -11,6 +11,7 @@ import { isLocale } from '@/i18n/config'
 import { getDictionary, tp } from '@/i18n/dictionary'
 import { catalogPath, parseCatalogParams } from '@/lib/catalog/params'
 import { getCatalogFilters, getShopSettings, listProducts } from '@/lib/catalog/queries'
+import { settle } from '@/lib/settle'
 import {
   type CatalogFilters as FilterOptions,
   type CatalogResult,
@@ -59,19 +60,28 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   let result: CatalogResult | null = null
   let unavailable = false
   let categoryUnavailable = false
-  try {
-    options = await getCatalogFilters(locale)
-    if (parsed.ok) {
-      result = await listProducts(parsed.query)
+  // The filter options and the results are independent: one round trip, not two.
+  const [filters, listing] = await Promise.all([
+    settle(getCatalogFilters(locale)),
+    settle(parsed.ok ? listProducts(parsed.query) : Promise.resolve(null)),
+  ])
+  for (const outcome of [filters, listing]) {
+    if (outcome.ok) {
+      continue
     }
-  } catch (error) {
-    if (error instanceof CatalogUnavailableError) {
+    if (outcome.error instanceof CatalogUnavailableError) {
       unavailable = true
-    } else if (error instanceof CategoryUnavailableError) {
+    } else if (outcome.error instanceof CategoryUnavailableError) {
       categoryUnavailable = true
     } else {
-      throw error
+      throw outcome.error
     }
+  }
+  if (filters.ok) {
+    options = filters.value
+  }
+  if (listing.ok && !unavailable) {
+    result = listing.value
   }
 
   const { settings } = unavailable ? await getShopSettings(locale) : { settings: null }

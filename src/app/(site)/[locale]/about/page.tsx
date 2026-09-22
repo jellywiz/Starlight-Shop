@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { connection } from 'next/server'
 
 import { InstagramLink } from '@/components/site/InstagramLink'
 import { isLocale } from '@/i18n/config'
@@ -9,7 +10,14 @@ import { deliveryFeesPath } from '@/lib/catalog/links'
 import { getShopSettings } from '@/lib/catalog/queries'
 import { pageMetadata } from '@/lib/site/metadata'
 
-export const dynamic = 'force-dynamic'
+// Served from the cache and refreshed when the settings change (see the layout).
+// Served from the cache and refreshed when the settings change (see the layout). Nothing
+// is rendered at build time (no database there): the empty list makes unknown paths render
+// on first request and then stay cached, instead of rendering on every request.
+export const revalidate = 86400
+export function generateStaticParams() {
+  return []
+}
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -34,7 +42,10 @@ export default async function AboutPage({ params }: Props) {
     notFound()
   }
   const dict = getDictionary(locale)
-  const { settings } = await getShopSettings(locale)
+  const { settings, fromFallback } = await getShopSettings(locale)
+  if (fromFallback) {
+    await connection()
+  }
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <h1 className="text-2xl font-bold text-heading sm:text-3xl">{dict.about.heading}</h1>

@@ -48,4 +48,28 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+const withPayloadConfig = withPayload(nextConfig, { devBundleServerPackages: false })
+
+/**
+ * withPayload adds `Accept-CH` + `Critical-CH: Sec-CH-Prefers-Color-Scheme` to every
+ * route so the admin can render in the visitor's colour scheme. `Critical-CH` makes
+ * Chrome restart the first navigation to the origin with the hint attached — a whole
+ * extra round trip (and a second render) before anything is shown. The public site
+ * chooses its theme in the page and never reads the hint, so the restart is cancelled
+ * there; the admin keeps Payload's headers.
+ */
+const config: NextConfig = {
+  ...withPayloadConfig,
+  async headers() {
+    const rules = (await withPayloadConfig.headers?.()) ?? []
+    return [
+      ...rules,
+      {
+        source: '/((?!admin|api).*)',
+        headers: [{ key: 'Critical-CH', value: '' }],
+      },
+    ]
+  },
+}
+
+export default config

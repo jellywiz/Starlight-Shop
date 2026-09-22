@@ -4,6 +4,7 @@ import { isOwnerUser, ownerOnly, publishedOrOwner } from '@/access'
 import { translatedField } from '@/fields/translated'
 import { DEFAULT_LOCALE } from '@/i18n/config'
 import { LIMITS, productBeforeChange, productBeforeValidate } from '@/hooks/products'
+import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { MAX_IQD, isValidIqd } from '@/lib/catalog/dinar'
 import { validateSlug } from '@/lib/slug'
@@ -35,7 +36,8 @@ export const Products: CollectionConfig = {
       'Save Draft keeps a product private. Publish puts it on the website; that needs the name and description in all three languages, at least one photo and a price.',
     preview: (doc) => {
       const slug = typeof doc?.slug === 'string' ? doc.slug : ''
-      return slug ? `/${DEFAULT_LOCALE}/products/${slug}?preview=1` : null
+      // A separate, never-cached route (src/app/(site)/[locale]/products/[slug]/preview).
+      return slug ? `/${DEFAULT_LOCALE}/products/${slug}/preview` : null
     },
   },
   access: {
@@ -56,6 +58,8 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeValidate: [productBeforeValidate],
     beforeChange: [productBeforeChange],
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
   },
   fields: [
     // Three sections on one page (no tabs), so nothing is hidden on a phone.

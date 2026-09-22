@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { connection } from 'next/server'
 import type { ReactNode } from 'react'
 
 import { SiteFooter } from '@/components/site/SiteFooter'
@@ -13,10 +14,12 @@ import { SITE_NAME, jsonLdScript, organizationJsonLd } from '@/lib/site/metadata
 import { notoSans, notoSansArabic } from '../fonts'
 import '../globals.css'
 
-// Catalog pages always render on demand so prices, availability, delivery fees and
-// publication state are never served stale (spec section 11).
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Product, About and Contact pages are served from the cache and re-rendered the moment
+// the owner changes content (src/hooks/revalidate.ts), so nothing is ever stale (spec
+// section 11) while most visits never touch the database; the day-long limit is a
+// safety net. The home page and the catalogue listing depend on the URL and render on
+// every request (docs/decisions.md "Performance").
+export const revalidate = 86400
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> }
 
@@ -55,7 +58,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   const locale = isLocale(raw) ? raw : DEFAULT_LOCALE
   const meta = LOCALE_META[locale]
   const dict = getDictionary(locale)
-  const { settings } = await getShopSettings(locale)
+  const { settings, fromFallback } = await getShopSettings(locale)
+  if (fromFallback) {
+    // Fallback settings mean the database was unavailable: never cache such a render.
+    await connection()
+  }
 
   return (
     <html

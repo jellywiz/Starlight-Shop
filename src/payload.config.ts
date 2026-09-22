@@ -80,8 +80,13 @@ export default buildConfig({
     pool: {
       connectionString: databaseUri(),
       max: env.isProduction ? 3 : 10,
-      idleTimeoutMillis: 10_000,
+      // On the serverless host a container serves many requests in a row; opening a new
+      // TLS connection to the pooler for each of them costs several round trips, so
+      // idle connections are kept for a few minutes (below the host's 350 s NAT limit,
+      // after which a silent drop would be worse than a reconnect).
+      idleTimeoutMillis: env.isProduction ? 240_000 : 10_000,
       connectionTimeoutMillis: 10_000,
+      keepAlive: true,
     },
     schemaName: SCHEMA_NAME,
     migrationDir: path.resolve(dirname, 'migrations'),

@@ -9,6 +9,7 @@ import {
   missingLocales,
   trimTranslations,
 } from '@/hooks/localized'
+import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { LOCALE_LABELS } from '@/hooks/products'
 import { assertCategoryDeactivatable, assertCategoryDeletable } from '@/hooks/references'
 import { deriveSlug } from '@/hooks/slugs'
@@ -43,6 +44,8 @@ export const Categories: CollectionConfig = {
   },
   defaultSort: 'sortOrder',
   hooks: {
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
     beforeValidate: [
       async ({ data, originalDoc, req }) => {
         if (!data) {

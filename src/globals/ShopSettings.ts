@@ -3,6 +3,7 @@ import type { GlobalConfig } from 'payload'
 import { anyone, ownerOnly } from '@/access'
 import { translatedField } from '@/fields/translated'
 import { trimTranslations } from '@/hooks/localized'
+import { revalidateGlobalAfterChange } from '@/hooks/revalidate'
 import { LOCALES, LOCALE_META } from '@/i18n/config'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { SHOP_DEFAULTS, isInstagramProfileUrl } from '@/lib/shop'
@@ -26,6 +27,7 @@ export const ShopSettings: GlobalConfig = {
     update: ownerOnly,
   },
   hooks: {
+    afterChange: [revalidateGlobalAfterChange],
     beforeChange: [
       ({ data, req }) => {
         if (typeof data.instagramUrl === 'string') {

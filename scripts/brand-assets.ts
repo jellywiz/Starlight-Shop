@@ -10,6 +10,8 @@
  *   logo-512.png        the whole supplied image fitted in 512px (structured data)
  *   logo-mark-192.png   the SL monogram with its stars (no wordmark), 192px
  *   logo-mark-64.png    same, 64px
+ *   logo-full-384.webp  the home page tile at 2x, WebP (a tenth of the PNG's bytes)
+ *   logo-mark-128.webp  the header/footer mark at 2x, WebP
  *   favicon-32.png / favicon-16.png / apple-touch-icon.png (180px)
  *   social-default.png  1200x630 sharing image: plum background, stars, logo tile
  */
@@ -100,7 +102,7 @@ async function fitted(image: Sharp, box: Box, size: number, out: string) {
   const crop = image.clone().extract(box)
   const meta = { width: box.width, height: box.height }
   const target = Math.min(size, Math.max(meta.width, meta.height)) // never upscale
-  await crop
+  const resized = crop
     .resize({
       width: target,
       height: target,
@@ -109,8 +111,13 @@ async function fitted(image: Sharp, box: Box, size: number, out: string) {
       withoutEnlargement: true,
     })
     .flatten({ background: SURFACE })
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(BRAND_DIR, out))
+  if (out.endsWith('.webp')) {
+    // Displayed at half its pixel size, so this quality is indistinguishable from the
+    // PNG (checked at 2x zoom) at a tenth of the bytes.
+    await resized.webp({ quality: 90, effort: 6 }).toFile(path.join(BRAND_DIR, out))
+  } else {
+    await resized.png({ compressionLevel: 9 }).toFile(path.join(BRAND_DIR, out))
+  }
   process.stdout.write(`wrote ${out} (${target}px)\n`)
 }
 
@@ -171,6 +178,10 @@ async function main() {
   await fitted(image, { left: 0, top: 0, width, height }, 512, 'logo-512.png')
   await fitted(image, mark, 192, 'logo-mark-192.png')
   await fitted(image, mark, 64, 'logo-mark-64.png')
+  // What the pages actually display (2x for high-density screens), as small WebP files:
+  // the home page logo tile (192px) and the header/footer mark (44–56px).
+  await fitted(image, full, 384, 'logo-full-384.webp')
+  await fitted(image, mark, 128, 'logo-mark-128.webp')
   await fitted(image, mark, 32, 'favicon-32.png')
   await fitted(image, mark, 16, 'favicon-16.png')
   await fitted(image, mark, 180, 'apple-touch-icon.png')

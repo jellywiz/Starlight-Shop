@@ -27,6 +27,7 @@
     "owner:reset-password": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_DB_MODE=migration tsx scripts/reset-owner-password.ts",
     "seed:dev": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/seed-dev.ts",
     "backup:storage": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/backup-storage.ts",
+    "restore:storage": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/restore-storage.ts",
     "brand:assets": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/brand-assets.ts",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
     "typecheck": "tsc --noEmit",

@@ -1,5 +1,6 @@
 import config from '@payload-config'
 import { getPayload, type Payload, type Where } from 'payload'
+import { cache } from 'react'
 
 import { pickTranslation } from '@/hooks/localized'
 import { LOCALES, LOCALE_META, type Locale } from '@/i18n/config'
@@ -30,6 +31,11 @@ import {
  * Payload's access control (`overrideAccess: false`) with an explicit publication filter
  * and `draft: false`; `context.catalogRead` unlocks the derived search fields needed
  * for ranking. Database failures surface as CatalogUnavailableError (HTTP 503).
+ *
+ * Every round trip to the database costs real time on the serverless host (see
+ * docs/decisions.md "Performance"), so the readers below never ask for totals they do
+ * not use (`pagination: false` skips Payload's count query) and are wrapped in React's
+ * `cache` so a layout, a page and its metadata share one result per request.
  */
 
 export async function getPayloadClient(): Promise<Payload> {
@@ -175,7 +181,7 @@ export async function listProducts(query: CatalogQuery): Promise<CatalogResult> 
 }
 
 /** Published product detail by slug, or null when unknown/unpublished (HTTP 404). */
-export async function getProductBySlug(
+export const getProductBySlug = cache(async function getProductBySlug(
   slug: string,
   locale: Locale,
 ): Promise<ProductDetail | null> {
@@ -186,12 +192,13 @@ export async function getProductBySlug(
       where: { and: [PUBLISHED, { slug: { equals: slug } }] },
       depth: 1,
       limit: 1,
+      pagination: false,
       ...CATALOG_READ_ARGS,
     })
     const doc = result.docs[0]
     return doc ? toProductDetail(doc, locale) : null
   })
-}
+})
 
 /**
  * Latest saved revision (draft or published) for an authenticated owner's preview.
@@ -209,6 +216,7 @@ export async function getProductPreview(
       where: { slug: { equals: slug } },
       depth: 1,
       limit: 1,
+      pagination: false,
       draft: true,
       overrideAccess: false,
       user,
@@ -220,7 +228,7 @@ export async function getProductPreview(
 }
 
 /** Up to four published products from the same category, excluding the current one. */
-export async function getRelatedProducts(
+export const getRelatedProducts = cache(async function getRelatedProducts(
   product: ProductDetail,
   locale: Locale,
 ): Promise<CatalogItem[]> {
@@ -237,6 +245,7 @@ export async function getRelatedProducts(
       },
       depth: 1,
       limit: 4,
+      pagination: false,
       sort: ['-publishedAt', '-id'],
       ...CATALOG_READ_ARGS,
     })
@@ -244,10 +253,12 @@ export async function getRelatedProducts(
       .map((doc) => toCatalogItem(doc, locale))
       .filter((item): item is CatalogItem => item !== null)
   })
-}
+})
 
 /** Up to eight explicitly featured published products for the home page. */
-export async function getFeaturedProducts(locale: Locale): Promise<CatalogItem[]> {
+export const getFeaturedProducts = cache(async function getFeaturedProducts(
+  locale: Locale,
+): Promise<CatalogItem[]> {
   return guard(async () => {
     const payload = await getPayloadClient()
     const result = await payload.find({
@@ -255,6 +266,7 @@ export async function getFeaturedProducts(locale: Locale): Promise<CatalogItem[]
       where: { and: [PUBLISHED, { featured: { equals: true } }] },
       depth: 1,
       limit: 8,
+      pagination: false,
       sort: ['-publishedAt', '-id'],
       ...CATALOG_READ_ARGS,
     })
@@ -262,13 +274,15 @@ export async function getFeaturedProducts(locale: Locale): Promise<CatalogItem[]
       .map((doc) => toCatalogItem(doc, locale))
       .filter((item): item is CatalogItem => item !== null)
   })
-}
+})
 
 /**
  * Categories offered in customer navigation and filters: active AND used by at least one
  * published product (spec section 6). Empty categories stay in the admin for future use.
  */
-export async function getCatalogFilters(locale: Locale): Promise<CatalogFilters> {
+export const getCatalogFilters = cache(async function getCatalogFilters(
+  locale: Locale,
+): Promise<CatalogFilters> {
   return guard(async () => {
     const payload = await getPayloadClient()
     const [categories, published] = await Promise.all([
@@ -307,10 +321,12 @@ export async function getCatalogFilters(locale: Locale): Promise<CatalogFilters>
         .map((c) => ({ slug: c.slug, name: pickTranslation(c.name, locale) ?? c.slug })),
     }
   })
-}
+})
 
 /** Resolves an old slug through the redirects collection to the current published slug. */
-export async function resolveRedirect(oldSlug: string): Promise<string | null> {
+export const resolveRedirect = cache(async function resolveRedirect(
+  oldSlug: string,
+): Promise<string | null> {
   return guard(async () => {
     const payload = await getPayloadClient()
     const result = await payload.find({
@@ -318,6 +334,7 @@ export async function resolveRedirect(oldSlug: string): Promise<string | null> {
       where: { oldSlug: { equals: oldSlug } },
       depth: 1,
       limit: 1,
+      pagination: false,
       overrideAccess: false,
       draft: false,
     })
@@ -330,7 +347,7 @@ export async function resolveRedirect(oldSlug: string): Promise<string | null> {
     }
     return target.slug
   })
-}
+})
 
 /** Slugs and update times of every published product, for the sitemap. */
 export async function listPublishedProductSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
@@ -358,7 +375,9 @@ export async function listPublishedProductSlugs(): Promise<{ slug: string; updat
  * name, then id (spec section 6). Independent of product records. An empty list means
  * the query succeeded and no city is active; failures throw CatalogUnavailableError.
  */
-export async function listDeliveryCities(locale: Locale): Promise<DeliveryCity[]> {
+export const listDeliveryCities = cache(async function listDeliveryCities(
+  locale: Locale,
+): Promise<DeliveryCity[]> {
   return guard(async () => {
     const payload = await getPayloadClient()
     const result = await payload.find({
@@ -387,7 +406,7 @@ export async function listDeliveryCities(locale: Locale): Promise<DeliveryCity[]
       })
       .map((row) => row.city)
   })
-}
+})
 
 export type ShopSettingsResult = { settings: PublicShopSettings; fromFallback: boolean }
 
@@ -412,7 +431,9 @@ function text(value: unknown): string | null {
  * confirmed static values are returned so the contact page and Instagram action keep
  * working.
  */
-export async function getShopSettings(locale: Locale): Promise<ShopSettingsResult> {
+export const getShopSettings = cache(async function getShopSettings(
+  locale: Locale,
+): Promise<ShopSettingsResult> {
   try {
     const payload = await getPayloadClient()
     const doc = (await payload.findGlobal({
@@ -448,4 +469,4 @@ export async function getShopSettings(locale: Locale): Promise<ShopSettingsResul
     console.error(`[catalog] shop settings unavailable: ${message.slice(0, 200)}`)
     return { settings: fallbackSettings(), fromFallback: true }
   }
-}
+})

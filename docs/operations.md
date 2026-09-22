@@ -65,6 +65,14 @@ between light and dark and remembers the choice in their browser; until they tou
 site follows their device. Neither choice is stored on the server, so it never needs
 resetting for anyone.
 
+**Speed.** Product pages, About and Contact are served from Netlify's cache and refreshed
+automatically when you publish or change something, so they open quickly even when the
+site has been idle. The home page and the catalogue with filters are built on every visit
+and depend on the database; after a quiet spell the first visit may take a couple of
+seconds while the hosting starts the site (a free uptime ping keeps it awake, see
+docs/deployment.md). If everything feels slow again, check the two regions (functions and
+database) described there first.
+
 ## Weekly checks (owner or maintainer)
 
 - Netlify → Usage: stay below 70 % of the monthly credits (300 on Free). Production
@@ -105,9 +113,9 @@ confidential.
    pg_restore --no-owner --no-privileges --dbname "$SCRATCH_SESSION_POOLER_URI" backups/<timestamp>/db.dump
    ```
 
-3. Images: upload `backups/<timestamp>/storage/**` to the scratch bucket keeping the same
-   object keys (the `products/` prefix is part of the key), e.g. with the Supabase dashboard
-   or `aws s3 sync` pointed at the S3 endpoint.
+3. Images: with the scratch bucket's `S3_*` values in `.env`, run
+   `pnpm restore:storage backups/<timestamp>/storage`; it uploads every object under its
+   original key (the `products/` prefix is part of the key).
 4. Point a preview deploy at the scratch project, sign in, verify product, category and
    city counts, fees, image samples and a search. Only then switch production configuration.
 

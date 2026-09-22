@@ -5,19 +5,19 @@ rechecked on 15 September 2026 and must be rechecked at launch.
 
 ## Environment contract
 
-| Variable | Where it lives | Purpose |
-| --- | --- | --- |
-| `DATABASE_URI` | Netlify site env, maintainer `.env` | Runtime PostgreSQL connection (Supabase **transaction pooler**, port 6543) |
-| `DATABASE_MIGRATION_URI` | maintainer `.env` only | Migration connection (Supabase **session pooler**, port 5432). Never stored in Netlify |
-| `PAYLOAD_SECRET` | Netlify, maintainer `.env` | 32+ character random secret for admin authentication |
-| `SITE_URL` | Netlify, maintainer `.env` | Canonical HTTPS origin, e.g. `https://starlight-jewellery.netlify.app` |
-| `S3_ENDPOINT` | Netlify, maintainer `.env` | Supabase S3 endpoint `https://<ref>.storage.supabase.co/storage/v1/s3` |
-| `S3_REGION` | Netlify, maintainer `.env` | Region shown in Supabase → Storage → S3 settings |
-| `S3_BUCKET` | Netlify, maintainer `.env` | Public bucket name, e.g. `product-images` |
-| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Netlify, maintainer `.env` | S3 access keys created in Supabase Storage settings |
-| `MEDIA_PUBLIC_BASE_URL` | Netlify, maintainer `.env` | `https://<ref>.supabase.co/storage/v1/object/public/<bucket>` |
-| `ENABLE_PASSWORD_RESET` | optional | Keep `false` until an email provider exists |
-| `REQUIRE_S3_STORAGE` | set by `netlify.toml` | Fails the build if storage is not configured |
+| Variable                                   | Where it lives                      | Purpose                                                                                |
+| ------------------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `DATABASE_URI`                             | Netlify site env, maintainer `.env` | Runtime PostgreSQL connection (Supabase **transaction pooler**, port 6543)             |
+| `DATABASE_MIGRATION_URI`                   | maintainer `.env` only              | Migration connection (Supabase **session pooler**, port 5432). Never stored in Netlify |
+| `PAYLOAD_SECRET`                           | Netlify, maintainer `.env`          | 32+ character random secret for admin authentication                                   |
+| `SITE_URL`                                 | Netlify, maintainer `.env`          | Canonical HTTPS origin, e.g. `https://starlight-jewellery.netlify.app`                 |
+| `S3_ENDPOINT`                              | Netlify, maintainer `.env`          | Supabase S3 endpoint `https://<ref>.storage.supabase.co/storage/v1/s3`                 |
+| `S3_REGION`                                | Netlify, maintainer `.env`          | Region shown in Supabase → Storage → S3 settings                                       |
+| `S3_BUCKET`                                | Netlify, maintainer `.env`          | Public bucket name, e.g. `product-images`                                              |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Netlify, maintainer `.env`          | S3 access keys created in Supabase Storage settings                                    |
+| `MEDIA_PUBLIC_BASE_URL`                    | Netlify, maintainer `.env`          | `https://<ref>.supabase.co/storage/v1/object/public/<bucket>`                          |
+| `ENABLE_PASSWORD_RESET`                    | optional                            | Keep `false` until an email provider exists                                            |
+| `REQUIRE_S3_STORAGE`                       | set by `netlify.toml`               | Fails the build if storage is not configured                                           |
 
 Never use a `NEXT_PUBLIC_` prefix for any of these. Production and preview contexts on
 Netlify can hold different values (`SITE_URL` differs); preview deploys must never receive
@@ -39,6 +39,7 @@ local database for that.
 
    `.env`, `.data/`, `media/` and `backups/` are git-ignored; `pnpm-lock.yaml` and
    `src/migrations` are committed.
+
 3. The included GitHub Actions workflow runs typecheck, lint, unit and integration tests on
    every push (free for private repos within the monthly minutes).
 
@@ -50,8 +51,8 @@ local database for that.
 2. **Database connection strings** (Project settings → Database → Connect):
    - Transaction pooler (port 6543, IPv4) → `DATABASE_URI`
    - Session pooler (port 5432, IPv4) → `DATABASE_MIGRATION_URI`
-   The direct connection host is IPv6-only and will not work from most home networks or
-   from Netlify; always use the poolers.
+     The direct connection host is IPv6-only and will not work from most home networks or
+     from Netlify; always use the poolers.
 3. **Storage**: create a bucket `product-images`, tick **Public bucket**. In Storage →
    Settings → S3 connection, enable S3 and create an access key pair. Note the endpoint and
    region → `S3_*` variables. `MEDIA_PUBLIC_BASE_URL` is
@@ -97,6 +98,43 @@ registration is blocked in code; only this script can create the first account.
    use deploy previews and branch deploys (unlimited) for testing and promote to production
    only at milestones.
 
+### Where the functions and the database run
+
+Netlify runs the site's serverless functions in **Ohio (`cmh`)** unless told otherwise,
+and the Supabase project was created in **Frankfurt**. Every database round trip then
+crosses the Atlantic (about 100 ms), and a page or an admin action makes several of them
+in a row — this was the main reason the site felt slow (docs/decisions.md "Performance").
+Put the two in the same place, in one of these ways:
+
+- **Netlify Pro** ($19 per member per month): Cloud compute → Functions → Region →
+  Configure → **Frankfurt (fra)**, Save, then redeploy. Region selection is not offered
+  on the free plan.
+- **Free: move Supabase next to the functions.** Create a new Supabase project in **East
+  US (Ohio)**, then move the data:
+  1. `./scripts/backup.sh` against the current project (database dump + images).
+  2. In the new project: create the public bucket `product-images`, enable S3 access and
+     create a key pair (Storage → Settings), note the pooler connection strings.
+  3. Restore the database into the new project's session pooler (the dump carries the
+     `starlight` schema and the migration history, so no `pnpm migrate` is needed):
+     `pg_restore --no-owner --no-privileges --dbname "$NEW_SESSION_POOLER_URI" backups/<timestamp>/db.dump`
+  4. Upload the images with the new project's `S3_*` values in your `.env`:
+     `pnpm restore:storage backups/<timestamp>/storage`
+  5. Netlify → Environment variables: `DATABASE_URI`, `S3_ENDPOINT`, `S3_REGION`,
+     `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `MEDIA_PUBLIC_BASE_URL` → the new project;
+     redeploy. Update `DATABASE_MIGRATION_URI` in your `.env`. Verify (section 4), then
+     pause or delete the Frankfurt project.
+
+Either way, expect admin actions and uncached pages to lose roughly half a second each.
+Product, About and Contact pages are served by the CDN without touching the function at
+all after the first visit (they are refreshed the moment content changes), so they are
+fast in both setups.
+
+**Keep the function warm.** The free plan cannot keep a function running between
+visits; after a quiet spell the first visitor waits for a cold start (one to two extra
+seconds). A free uptime monitor (for example UptimeRobot) requesting
+`https://starlight-jewellery.netlify.app/en` every 5 minutes keeps it warm most of the
+time and doubles as a downtime alert. Set it up once in the owner's account.
+
 ## 4. Hosting proof (do this before loading real content)
 
 The spec requires proving the free deployment before full implementation. With a test
@@ -107,7 +145,8 @@ Supabase project and a preview deploy:
 2. Create one category, one product in all three languages and one delivery city; upload
    one image (JPEG, 2–3 MB) — the file appears in the Supabase bucket and renders on the
    public page with the `w320/w640/w1280` variants.
-3. Publish, then open `/en/products/<slug>` in a private window: fresh values, no cache.
+3. Publish, then open `/en/products/<slug>` in a private window: fresh values (product
+   pages are cached by the CDN, and publishing invalidates them).
    Select the city on the home page and check the fee; open the Instagram action on a phone
    and on a desktop.
 4. Measure a cold request to the admin and to a catalog page (Netlify function logs show

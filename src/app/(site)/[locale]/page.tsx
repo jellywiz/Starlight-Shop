@@ -22,8 +22,11 @@ import {
   CatalogUnavailableError,
   type DeliveryCity,
 } from '@/lib/catalog/types'
+import { settle } from '@/lib/settle'
 import { SITE_NAME, pageMetadata } from '@/lib/site/metadata'
 
+// The delivery selector reads `?city=` on the server so it works without JavaScript, which
+// keeps this page dynamic; its data loads in parallel and the shared readers are cached.
 export const dynamic = 'force-dynamic'
 
 type Props = {
@@ -60,35 +63,36 @@ export default async function HomePage({ params, searchParams }: Props) {
   }
   const dict = getDictionary(locale)
   const sp = await searchParams
-  const { settings } = await getShopSettings(locale)
+
+  // Everything the page needs is requested at once: the settings, the catalogue parts
+  // and the delivery fees are independent, and each round trip to the database is paid
+  // in full on the serverless host. Delivery fees fail independently of products
+  // (spec section 8).
+  const [{ settings }, catalog, delivery] = await Promise.all([
+    getShopSettings(locale),
+    settle(Promise.all([getFeaturedProducts(locale), getCatalogFilters(locale)])),
+    settle(listDeliveryCities(locale)),
+  ])
 
   let featured: CatalogItem[] = []
   let filters: CatalogFilters = { categories: [] }
   let unavailable = false
-  try {
-    ;[featured, filters] = await Promise.all([
-      getFeaturedProducts(locale),
-      getCatalogFilters(locale),
-    ])
-  } catch (error) {
-    if (error instanceof CatalogUnavailableError) {
-      unavailable = true
-    } else {
-      throw error
-    }
+  if (catalog.ok) {
+    ;[featured, filters] = catalog.value
+  } else if (catalog.error instanceof CatalogUnavailableError) {
+    unavailable = true
+  } else {
+    throw catalog.error
   }
 
-  // Delivery fees are fetched independently of products (spec section 8).
   let cities: DeliveryCity[] = []
   let citiesFailed = false
-  try {
-    cities = await listDeliveryCities(locale)
-  } catch (error) {
-    if (error instanceof CatalogUnavailableError) {
-      citiesFailed = true
-    } else {
-      throw error
-    }
+  if (delivery.ok) {
+    cities = delivery.value
+  } else if (delivery.error instanceof CatalogUnavailableError) {
+    citiesFailed = true
+  } else {
+    throw delivery.error
   }
   const requestedCity = cityParam(sp)
   const initialCity =
@@ -132,10 +136,12 @@ export default async function HomePage({ params, searchParams }: Props) {
           {/* The supplied logo, unchanged, on its own light surface (never on purple). */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/logo-full-512.png"
+            src="/brand/logo-full-384.webp"
             alt=""
             width={192}
             height={192}
+            // Lazy: the tile is hidden on phones, which then never download it.
+            loading="lazy"
             className="hidden h-48 w-48 rounded-3xl bg-[#fdfdfd] object-contain p-2 shadow-card-hover sm:block"
           />
         </div>

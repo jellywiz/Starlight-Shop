@@ -180,6 +180,50 @@ schema; the old `dler` schema, if present in a local database, is simply left un
 - Fonts stay Noto Sans / Noto Sans Arabic (verified Sorani coverage); no serif display
   font was added because it would need a matching Arabic-script face.
 
+## Performance
+
+Measured from the owner's location on 22 September 2026: a warm request for the home
+page took about 1.4 s before the first byte and a cold one 2 s (plus 3 s to open the TLS
+connection, which is the network, not the site); a trivial API call took 1 s; every
+static file took about 0.4 s. Causes, and what was done about each:
+
+- **The functions and the database were on different continents.** Netlify runs
+  functions in Ohio by default; Supabase is in Frankfurt; a page ran 9–15 statements in
+  a row, each paying the crossing. Region selection needs Netlify's Pro plan, so the
+  choice (pay, or move the Supabase project to Ohio for free) is the owner's; both are
+  described in docs/deployment.md with the migration steps. The code now needs far fewer
+  round trips anyway: the readers in `src/lib/catalog/queries.ts` are wrapped in React's
+  `cache` (a layout, its page and the page's metadata share one result instead of loading
+  settings and products twice), never request totals they do not use (`pagination:
+false` skips Payload's count query), and the pages load their independent parts with
+  `Promise.all`. Home went from 9 statements to 7, a product page from 15 to 8, and the
+  remaining ones overlap. Database connections are kept alive between invocations
+  (`idleTimeoutMillis` 4 minutes in production, below the host's 350 s NAT limit) so a
+  container serving several visitors does not renegotiate TLS to the pooler each time.
+- **Nothing was cached** (`force-dynamic` everywhere). Product pages, About and Contact
+  are now cached: rendered on first visit, stored by the CDN (`revalidate` is a day-long
+  safety net; an empty `generateStaticParams` keeps the build away from the database while
+  still allowing on-demand caching), and invalidated by `src/hooks/revalidate.ts` on any
+  product, category, photo or settings change — one `revalidatePath` on the site layout,
+  coarse on purpose — so nothing is ever stale. Outage renders call `connection()` so a
+  database failure is never frozen into the cache. The home page (`?city=` served without
+  JavaScript) and the catalogue listing (filters) stay per-request. The owner's preview
+  moved to its own always-fresh route (`/products/<slug>/preview`) so the public page no
+  longer reads request headers.
+- **Every first visit was made twice.** `withPayload` sends `Critical-CH` on every route,
+  and Chrome then restarts the navigation with the colour-scheme hint attached. The public
+  site never uses the hint (its theme is set in the page), so `next.config.ts` cancels the
+  header outside `/admin` and `/api`; the admin keeps Payload's behaviour.
+- **Bytes.** The Arabic font shipped 770 unused presentation-form glyphs (166 KB → 77 KB,
+  pixel-identical text, see src/fonts/README.md); the home page tile and the header mark
+  are WebP files at the size they are displayed (130 KB + 27 KB → 12 KB + 2 KB), and the
+  tile is lazy so phones, which hide it, never download it. Uploaded photos are told to
+  stay in the browser for a year (`src/hooks/mediaCache.ts` rewrites each new object's
+  cache metadata; names are unique and never rewritten), so returning visitors do not
+  re-request them.
+- **Cold starts** remain a property of the free plan; a free uptime ping every 5 minutes
+  keeps the function warm (docs/deployment.md).
+
 ## Security and operations
 
 - First-user registration is blocked by a hook; only `pnpm owner:create` can create the

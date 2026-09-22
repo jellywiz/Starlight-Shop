@@ -9,6 +9,8 @@ import sharp, { type Metadata as SharpMetadata } from 'sharp'
 
 import { anyone, ownerOnly } from '@/access'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
+import { mediaCacheHeaders } from '@/hooks/mediaCache'
+import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -198,6 +200,8 @@ export const Media: CollectionConfig = {
     withMetadata: false,
   },
   hooks: {
+    afterChange: [mediaCacheHeaders, revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
     beforeOperation: [
       async ({ operation, req }) => {
         if (operation === 'create' || operation === 'update') {

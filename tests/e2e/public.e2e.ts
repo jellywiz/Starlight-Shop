@@ -199,6 +199,24 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByText(/^\d+ products$/)).toBeVisible()
   })
 
+  test('product pages come from the cache, the preview route is owner-only', async ({ page }) => {
+    // Two requests: the second is served without rendering (next start reports the cache
+    // state; the CDN does the same in production).
+    const first = await page.request.get(`/en/products/${SAMPLE_SLUG}`)
+    expect(first.ok()).toBe(true)
+    const second = await page.request.get(`/en/products/${SAMPLE_SLUG}`)
+    expect(second.headers()['x-nextjs-cache']).toBe('HIT')
+    expect(second.headers()['cache-control']).toMatch(/s-maxage=/)
+    // The home page and the catalogue depend on the URL and are never cached.
+    const home = await page.request.get('/en')
+    expect(home.headers()['cache-control']).toMatch(/no-store/)
+
+    // A visitor who is not the owner is sent to the public page.
+    await page.goto(`/en/products/${SAMPLE_SLUG}/preview`)
+    await expect(page).toHaveURL(new RegExp(`/en/products/${SAMPLE_SLUG}$`))
+    await expect(page.getByRole('status')).toHaveCount(0)
+  })
+
   test('unknown product and unsupported locale return a 404 page with a catalogue link', async ({
     page,
   }) => {

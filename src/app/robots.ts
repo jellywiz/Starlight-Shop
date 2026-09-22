@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         // Robots rules complement authorization; they never replace it (spec section 15).
-        disallow: ['/admin', '/api/', '/*?preview=', '/*/products?*'],
+        disallow: ['/admin', '/api/', '/*/products/*/preview', '/*/products?*'],
       },
     ],
     sitemap: `${base}/sitemap.xml`,
