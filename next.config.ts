@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Do not write AGENTS.md / CLAUDE.md into the repository on every `next dev`.
   agentRules: false,
+  experimental: {
+    // Turbopack's persistent build cache can serialize server environment values.
+    // Keep Netlify secret scanning enabled without producing that cache artifact.
+    // This does not disable Next.js page/data caching or browser asset caching.
+    turbopackFileSystemCacheForBuild: false,
+  },
   async headers() {
     return [
       {

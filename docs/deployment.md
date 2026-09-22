@@ -24,6 +24,11 @@ Netlify can hold different values (`SITE_URL` differs); preview deploys must nev
 production write credentials for experiments — use a second free Supabase project or the
 local database for that.
 
+Netlify is the only place the production values are stored (the maintainer's `.env` holds
+local-development values). Keep a copy of every production value in the owner's password
+manager: if the Netlify account or site is deleted, the values go with it (see "If the
+Netlify site is lost" below).
+
 ## 1. GitHub
 
 1. Create a **private** repository (e.g. `starlight-jewellery`) under the owner's account.
@@ -97,6 +102,41 @@ registration is blocked in code; only this script can create the first account.
 4. Deploy. Production deploys cost 15 credits each on the free plan (300 credits/month), so
    use deploy previews and branch deploys (unlimited) for testing and promote to production
    only at milestones.
+
+### If the Netlify site is lost
+
+Deleting the Netlify site or account removes only the hosting and its environment
+variables: the code is on GitHub, and the products, photos and the owner account are in
+Supabase, untouched. To rebuild (about fifteen minutes):
+
+1. Sign up again at netlify.com (with GitHub is simplest) → Add new project → Import an
+   existing project → GitHub → authorise Netlify for the `Starlight-Shop` repository (if it
+   is not listed: Configure the Netlify app on GitHub and add the repository).
+2. Project name `starlight-jewellery` if it is free, otherwise the nearest free name; branch
+   `main`; the build command and publish directory come from `netlify.toml`.
+3. Add the environment variables **before the first deploy** (a build without them fails
+   on purpose). Same value for all deploy contexts is fine while there is one Supabase
+   project:
+   - `SITE_URL` — `https://<project-name>.netlify.app`, exactly the address Netlify gives
+     the site. Admin login (cookies, CSRF) and copied product links depend on it.
+   - `PAYLOAD_SECRET` — a new random value is fine (generate one with the command shown in
+     `.env.example`). It signs login sessions only; passwords live in the database, so the
+     owner logs in as before.
+   - `DATABASE_URI` — Supabase → Connect → Transaction pooler (port 6543). If the database
+     password is unknown, reset it under Project settings → Database (then also use the new
+     password in `DATABASE_MIGRATION_URI` on the maintainer's machine).
+   - `S3_ENDPOINT`, `S3_REGION` — Supabase → Storage → Settings → S3 connection.
+   - `S3_BUCKET` — `product-images` (check the bucket name under Storage).
+   - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` — the secret is shown once at creation, so
+     create a new key pair (Storage → Settings → S3 access keys) and delete the old one.
+   - `MEDIA_PUBLIC_BASE_URL` — `https://<project-ref>.supabase.co/storage/v1/object/public/product-images`.
+   - `ENABLE_PASSWORD_RESET` — `false`.
+4. Deploy, then check: `/en` shows the products with their photos, `/admin` login works,
+   a test photo upload succeeds (delete it afterwards), a product page opens after
+   Publish.
+5. If the project name changed: update `SITE_URL` and redeploy, re-point the uptime
+   monitor, and replace the old address in `.env.example` and this file.
+6. Save every value in the owner's password manager this time.
 
 ### Where the functions and the database run
 
