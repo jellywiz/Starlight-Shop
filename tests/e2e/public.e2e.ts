@@ -217,6 +217,56 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByRole('status')).toHaveCount(0)
   })
 
+  test('the home hero shows the featured pieces one by one, by itself and by hand', async ({
+    page,
+  }) => {
+    await page.goto('/en')
+    const show = page.getByTestId('hero-slideshow')
+    await expect(show).toHaveAttribute('data-index', '0')
+    await expect(show).toHaveAttribute('data-rotating', 'true')
+    const dots = show.getByRole('button', { name: /^Show piece \d of \d$/ })
+    const total = await dots.count()
+    expect(total).toBeGreaterThan(1)
+    const name = show.locator('a.font-semibold')
+    const first = await name.innerText()
+
+    // By hand: arrows and dots, with the name and link following the piece shown.
+    await show.getByRole('button', { name: 'Next piece' }).click()
+    await expect(show).toHaveAttribute('data-index', '1')
+    await expect(name).not.toHaveText(first)
+    await expect(dots.nth(1)).toHaveAttribute('aria-current', 'true')
+    await expect(name).toHaveAttribute('href', /\/en\/products\//)
+    await show.getByRole('button', { name: 'Previous piece' }).click()
+    await expect(show).toHaveAttribute('data-index', '0')
+    await dots.nth(total - 1).click()
+    await expect(show).toHaveAttribute('data-index', String(total - 1))
+
+    // A horizontal drag on the photo is a swipe to the next piece (wrapping round).
+    const frame = show.locator('.touch-pan-y')
+    const box = (await frame.boundingBox())!
+    const y = box.y + box.height / 2
+    await page.mouse.move(box.x + box.width * 0.8, y)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.2, y, { steps: 6 })
+    await page.mouse.up()
+    await expect(show).toHaveAttribute('data-index', '0')
+    await expect(page).toHaveURL(/\/en$/)
+
+    // By itself: with the pointer away from the tile it moves on within a few seconds,
+    // and the pause button stops it.
+    await page.mouse.move(0, 0)
+    await expect(show).toHaveAttribute('data-rotating', 'true')
+    await expect(show).toHaveAttribute('data-index', '1', { timeout: 9000 })
+    const toggle = show.getByRole('button', { name: 'Pause the slideshow' })
+    await toggle.click()
+    await page.mouse.move(0, 0)
+    await expect(show).toHaveAttribute('data-rotating', 'false')
+    await expect(show.getByRole('button', { name: 'Resume the slideshow' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
   test('the gallery swipes between photos and the enlarged view pinches, pans and double-taps', async ({
     page,
     context,

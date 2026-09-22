@@ -38,18 +38,20 @@ on the deployed site (screenshot, log line or URL) and the owner reviews.
 pnpm test:unit     # 44 tests: whole-dinar parsing/formatting, normalization table, ranking, URL parameter validation, photo cache headers, browser photo preparation, publish checklist, outage cache-drop signatures
 pnpm test:int      # 29 tests on a throwaway PostgreSQL: publication rules, access, search, filters, categories, cities, redirects, uploads
 pnpm build && pnpm start &&  pnpm seed:dev --owner
-PLAYWRIGHT_CHROME_PATH=... pnpm test:e2e   # 66 browser journeys: 22 on each of desktop, phone (Pixel 7) and iPad
+PLAYWRIGHT_CHROME_PATH=... pnpm test:e2e   # 69 browser journeys: 23 on each of desktop, phone (Pixel 7) and iPad
 ```
 
 The browser journeys cover the public site (search, filters and their synchronisation with
-the URL, product page, gallery swipe and pinch-zoom through Chrome's touch events, language
-switch, delivery fees, theme switch, photo fallback, cached product pages and the owner-only
-preview) and the admin (login, price and fee changes reaching the site, category creation,
-an oversized photo reduced in the browser before upload, uploading a photo from the product
-form with the publish checklist going from "things to fill in" to "Ready to publish", then
-publishing, editing and removing the product, the Appearance switch). GitHub Actions runs all of them on every push and pull
-request (`.github/workflows/ci.yml`, job `browser`) against a production build with the
-development seed; failed runs keep Playwright traces as a downloadable artifact.
+the URL, the home hero slideshow — arrows, dots, swipe, auto-play and pause — the product
+page, gallery swipe and pinch-zoom through Chrome's touch events, language switch, delivery
+fees, theme switch, photo fallback, cached product pages and the owner-only preview) and the
+admin (login, price and fee changes reaching the site, category creation, an oversized photo
+reduced in the browser before upload, uploading a photo from the product form with the
+publish checklist going from "things to fill in" to "Ready to publish", then publishing,
+editing and removing the product, the Appearance switch). GitHub Actions runs all of them on
+every push and pull request (`.github/workflows/ci.yml`, job `browser`) against a production
+build with the development seed; failed runs keep Playwright traces as a downloadable
+artifact.
 
 ## Non-functional checks before launch (spec section 11)
 

@@ -48,6 +48,12 @@ must be kept; plural entries list one line per form.
 | `home.instagramAction` | Message us on Instagram | لە ئینستاگرام نامەمان بۆ بنێرە | راسلنا عبر إنستغرام | ☐ |
 | `home.categoriesHeading` | Categories | پۆلەکان | الفئات | ☐ |
 | `home.featuredHeading` | Featured pieces | پارچە دیارەکان | قطع مميزة | ☐ |
+| `home.previousPiece` | Previous piece | پارچەی پێشوو | القطعة السابقة | ☐ |
+| `home.nextPiece` | Next piece | پارچەی داهاتوو | القطعة التالية | ☐ |
+| `home.slideLabel` | Show piece {index} of {total} | پارچەی {index} لە {total} پیشان بدە | عرض القطعة {index} من {total} | ☐ |
+| `home.slideCounter` | Piece {index} of {total} | پارچەی {index} لە {total} | القطعة {index} من {total} | ☐ |
+| `home.pauseSlideshow` | Pause the slideshow | پیشاندانەکە ڕابگرە | إيقاف العرض مؤقتًا | ☐ |
+| `home.playSlideshow` | Resume the slideshow | پیشاندانەکە دەستپێبکەرەوە | استئناف العرض | ☐ |
 | `home.aboutHeading` | About Starlight Jewellery | دەربارەی ستارلایت جوێلەری | عن ستارلايت جوليري | ☐ |
 | `home.contactHeading` | Enquire on Instagram | لە ئینستاگرام پرسیار بکە | استفسر عبر إنستغرام | ☐ |
 | `delivery.heading` | Delivery fees | کرێی گەیاندن | أجور التوصيل | ☐ |
@@ -175,4 +181,4 @@ must be kept; plural entries list one line per form.
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-167 strings.
+173 strings.

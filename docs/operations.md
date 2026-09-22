@@ -31,6 +31,13 @@ arrows and thumbnails), and tapping a photo opens it large: pinch or double-tap 
 drag to move around, swipe for the next photo; on a computer the mouse wheel zooms and the
 arrow keys, `+`, `-` and `0` do the same.
 
+**The home page's featured pieces.** Tick **Featured** on a product (under Price and
+availability) and Publish: the piece joins the tile at the top of the home page, which
+shows the featured pieces one after another (newest first, up to eight, changing every few
+seconds; visitors can also flick through them or pause), and the Featured pieces row below
+it. Untick Featured and Publish to take it out again. A featured product without a photo is
+skipped by the tile.
+
 **Change a price or availability.** Open the product, change the value, then Publish. Save
 Draft alone does not change the public page. A fresh page load shows the new value.
 

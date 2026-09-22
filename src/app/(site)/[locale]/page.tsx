@@ -5,13 +5,13 @@ import { notFound } from 'next/navigation'
 import { CatalogUnavailable } from '@/components/site/CatalogUnavailable'
 import { DeliveryFees } from '@/components/site/DeliveryFees'
 import { InstagramLink } from '@/components/site/InstagramLink'
-import { Price } from '@/components/site/Price'
-import { ResponsiveImage } from '@/components/site/ResponsiveImage'
+import { HeroSlideshow } from '@/components/site/HeroSlideshow'
 import { ProductGrid } from '@/components/site/ProductGrid'
 import { SparkleIcon, Sparkles } from '@/components/site/Sparkles'
 import { isLocale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionary'
 import { catalogPath } from '@/lib/catalog/params'
+import { heroPieces } from '@/lib/site/hero'
 import {
   getCatalogFilters,
   getFeaturedProducts,
@@ -101,11 +101,11 @@ export default async function HomePage({ params, searchParams }: Props) {
     requestedCity !== null ? (cities.find((c) => c.id === requestedCity) ?? null) : null
   const initialNotListed = requestedCity !== null && !citiesFailed && initialCity === null
 
-  const spotlight = featured.find((item) => item.cover)
+  const pieces = heroPieces(featured)
 
   return (
     <div className="flex flex-col gap-12 sm:gap-14">
-      {/* A real featured piece gives the first screen a useful, shoppable focal point. */}
+      {/* The featured pieces, one at a time, give the first screen a shoppable focal point. */}
       <section className="home-hero relative overflow-hidden rounded-[2rem] px-6 py-8 text-heading sm:px-10 sm:py-12">
         <Sparkles
           count={10}
@@ -143,40 +143,13 @@ export default async function HomePage({ params, searchParams }: Props) {
               />
             </div>
           </div>
-          {spotlight?.cover ? (
-            <div className="hero-piece mx-auto w-full max-w-[300px] rounded-[1.75rem] bg-surface p-3 shadow-card-hover">
-              <div className="relative overflow-hidden rounded-[1.25rem] bg-white">
-                <div className="aspect-[4/3] md:aspect-square">
-                  <ResponsiveImage
-                    image={spotlight.cover}
-                    sizes="(min-width: 1024px) 276px, (min-width: 768px) 236px, (min-width: 380px) 276px, calc(100vw - 104px)"
-                    labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
-                    priority
-                    className="h-full w-full object-contain p-4"
-                  />
-                </div>
-                <Link
-                  href={`/${locale}/products/${spotlight.slug}`}
-                  className="absolute inset-0"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="px-2 pb-2 pt-4">
-                <p className="mb-1 text-xs font-medium text-accent">{dict.home.featuredHeading}</p>
-                <Link
-                  href={`/${locale}/products/${spotlight.slug}`}
-                  className="font-semibold text-heading hover:underline"
-                >
-                  {spotlight.name}
-                </Link>
-                <Price
-                  amount={spotlight.priceIqd}
-                  dict={dict}
-                  className="mt-2 block text-sm text-ink-soft"
-                />
-              </div>
-            </div>
+          {pieces.length ? (
+            <HeroSlideshow
+              pieces={pieces}
+              locale={locale}
+              dict={dict}
+              sizes="(min-width: 1024px) 276px, (min-width: 768px) 236px, (min-width: 380px) 276px, calc(100vw - 104px)"
+            />
           ) : null}
         </div>
       </section>

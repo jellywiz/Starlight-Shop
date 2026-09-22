@@ -170,7 +170,7 @@ export interface Product {
    */
   isAvailable: boolean;
   /**
-   * Show on the home page (up to eight featured products are displayed).
+   * Show on the home page: in the slideshow at the top (needs a photo) and in the Featured pieces row. Up to eight, newest first.
    */
   featured?: boolean | null;
   slug?: string | null;

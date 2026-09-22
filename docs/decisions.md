@@ -229,9 +229,17 @@ schema; the old `dler` schema, if present in a local database, is simply left un
 - Fonts stay Noto Sans / Noto Sans Arabic (verified Sorani coverage); no serif display
   font was added because it would need a matching Arabic-script face.
 - **Softer, more playful home page** (owner decision, 2026-09-22). The plum gradient hero
-  became a pastel one — lilac to rose with a warm peach glow — that shows a real piece
-  instead of the logo: the first featured product with a photo, on a slightly tilted white
-  tile (mirrored in RTL) linking to its page, so the first screen is shoppable. Category
+  became a pastel one — lilac to rose with a warm peach glow — that shows real pieces
+  instead of the logo: every featured product with a photo (newest first, at most eight),
+  one at a time on a slightly tilted white tile (mirrored in RTL) that links to the piece
+  shown, so the first screen is shoppable. The tile (`src/components/site/HeroSlideshow.tsx`)
+  moves on by itself every six seconds and by hand — arrows, dots, a swipe on a phone —
+  and plays by the accessibility rules for auto-rotating content: it pauses while hovered
+  or focused, has a pause/resume button, never rotates for visitors who prefer reduced
+  motion, and announces changes only when it is not rotating. The first piece is in the
+  server-rendered HTML (and is the page's priority image); only the current and the next
+  photo are in the page at any time, so eight featured pieces are not eight downloads up
+  front. A swipe that ends on the photo does not open the piece it landed on. Category
   chips became pastel tiles that cycle lilac / peach / mint / rose; product cards carry a
   faint surface gradient and tighter padding on phones; card corners are rounder
   (`--radius-card` 1.5rem) and there are fewer sparkles. The four pastels have muted dark
