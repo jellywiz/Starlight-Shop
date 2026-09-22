@@ -1006,6 +1006,151 @@ body {
   margin-top: 0.25rem;
 }
 
+/* ---------- Publishing checklist (product form) ---------- */
+.sl-checklist {
+  margin-bottom: calc(var(--base) * 1.2);
+  padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
+  border-radius: var(--style-radius-l);
+  border: 1px solid var(--sl-line);
+  background: var(--sl-surface);
+  box-shadow: var(--sl-shadow);
+}
+
+.sl-checklist--ready {
+  border-color: color-mix(in srgb, var(--theme-success-500) 45%, transparent);
+  background: color-mix(in srgb, var(--theme-success-500) 8%, var(--sl-surface));
+}
+
+.sl-checklist__title {
+  margin: 0 0 calc(var(--base) * 0.5);
+  font-weight: 700;
+  color: var(--sl-heading);
+}
+
+.sl-checklist__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (min-width: 769px) {
+  .sl-checklist__items {
+    grid-template-columns: 1fr 1fr;
+    column-gap: calc(var(--base) * 1.5);
+  }
+}
+
+.sl-checklist__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.35;
+  color: var(--sl-text);
+}
+
+.sl-checklist__item--ok {
+  color: var(--sl-text-soft);
+}
+
+.sl-checklist__item--ok .sl-checklist__icon {
+  color: var(--theme-success-500);
+}
+
+.sl-checklist__item--missing {
+  font-weight: 600;
+}
+
+.sl-checklist__item--missing .sl-checklist__icon {
+  color: var(--sl-accent-soft);
+}
+
+.sl-checklist__icon {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+}
+
+.sl-checklist__missing {
+  font-weight: 400;
+  color: var(--sl-text-muted);
+}
+
+.sl-checklist__hint {
+  margin: calc(var(--base) * 0.6) 0 0;
+  font-size: 0.9rem;
+  color: var(--sl-text-muted);
+}
+
+/* ---------- Photo preparation (media form: resize before upload, progress) ---------- */
+.sl-photo-prep {
+  margin-bottom: calc(var(--base) * 1.2);
+  padding: calc(var(--base) * 0.9) calc(var(--base) * 1);
+  border-radius: var(--style-radius-l);
+  border: 1px solid var(--sl-line);
+  background: var(--sl-surface);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(var(--base) * 0.9);
+  align-items: center;
+}
+
+.sl-photo-prep__preview {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--style-radius-m);
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--sl-line);
+}
+
+.sl-photo-prep__title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--sl-heading);
+}
+
+.sl-photo-prep__detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  color: var(--sl-text-soft);
+}
+
+.sl-photo-prep__bar {
+  margin-top: 0.5rem;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sl-surface-3);
+  overflow: hidden;
+}
+
+.sl-photo-prep__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sl-primary);
+  transition: width 120ms linear;
+}
+
+.sl-photo-prep__bar-fill--busy {
+  width: 40% !important;
+  animation: sl-photo-prep-busy 1.2s ease-in-out infinite;
+}
+
+@keyframes sl-photo-prep-busy {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.sl-photo-prep--warning {
+  border-color: color-mix(in srgb, var(--theme-warning-500) 50%, transparent);
+}
+
 /* ---------- Phone and iPad (portrait) ---------- */
 @media (max-width: 768px) {
   /* iOS zooms into inputs smaller than 16px; keep every text input at 16px. */

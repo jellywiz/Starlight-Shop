@@ -154,8 +154,9 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await removeCategories(page, 'e2e-brooches')
   })
 
-  test('an oversized photo is refused with the reason shown in the toast', async ({ page }) => {
+  test('an oversized photo is reduced in the browser before it is uploaded', async ({ page }) => {
     await login(page)
+    await removeMedia(page, 'e2e-oversized')
     await page.goto('/admin/collections/media/create')
     await page.setInputFiles('input[type="file"]', {
       name: 'big.png',
@@ -163,11 +164,23 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
       buffer: await oversizedPng(),
     })
     await expect(page.locator('input[value="big.png"]')).toBeVisible()
+    // 4+ MB of noise cannot stay a PNG under 3 MB, so it is re-encoded (the server's own
+    // 3 MB rule is covered by tests/int/publishing.test.ts).
+    const panel = page.locator('.sl-photo-prep')
+    await expect(panel).toContainText(/Ready to upload — \d+(\.\d)? (KB|MB)/, { timeout: 30_000 })
+    await expect(panel).toContainText(/Reduced from 1200 × 1200 \(\d+\.\d MB\)/)
+    await page.locator('#field-altText').fill('e2e-oversized')
+    const uploaded = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && /\/api\/media(\?|$)/.test(r.url()),
+    )
     await page.getByRole('button', { name: 'Save', exact: true }).click()
-
-    // The multipart parser cuts the file at 3 MB; the owner must still learn the real reason.
-    await expect(page.getByText(/larger than 3 MB \(about \d+\.\d MB\)/)).toBeVisible()
-    await expect(page).toHaveURL(/\/admin\/collections\/media\/create/)
+    const response = await uploaded
+    expect(response.ok()).toBe(true)
+    const doc = (await response.json()).doc
+    expect(doc.filesize).toBeLessThan(3 * 1024 * 1024)
+    expect(doc.width).toBe(1200)
+    await expect(page.getByText(/successfully/i).first()).toBeVisible()
+    await removeMedia(page, 'e2e-oversized')
   })
 
   test('a product is created with a photo uploaded from the form, published, edited and removed', async ({
@@ -182,6 +195,9 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await removeMedia(page, `e2e-${suffix}`)
 
     await page.goto('/admin/collections/products/create')
+    // The live checklist starts with everything missing and empties as fields are filled.
+    const checklist = page.locator('.sl-checklist')
+    await expect(checklist).toContainText('5 things to fill in before publishing')
     await page.locator('#field-name__ckb').fill(`ملوانکەی تاقیکردنەوە ${suffix}`)
     await page.locator('#field-name__ar').fill(`قلادة تجريبية ${suffix}`)
     await page.locator('#field-name__en').fill(englishName)
@@ -190,6 +206,8 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await page.locator('#field-description__en').fill('An automated test description.')
     await page.locator('#field-category .rs__control').click()
     await page.getByRole('option', { name: /^Necklaces/ }).click()
+    await expect(checklist).toContainText('2 things to fill in before publishing')
+    await expect(checklist).toContainText('add at least one photo')
 
     // Photos: the "Create New" drawer uploads straight from the product form.
     await page.getByRole('button', { name: 'Create New' }).click()
@@ -200,6 +218,8 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
       buffer: await samplePng(),
     })
     await expect(drawer.locator(`input[value="e2e-${suffix}.png"]`)).toBeVisible()
+    // A small photo is sent as it is; the preparation panel still shows the preview.
+    await expect(drawer.locator('.sl-photo-prep')).toContainText('Ready to upload')
     // The shared image description doubles as the marker that identifies test photos
     // (uploaded files get random names, see src/collections/Media.ts).
     await drawer.locator('#field-altText').fill(`e2e-${suffix}`)
@@ -217,6 +237,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
 
     await page.getByLabel('Price (IQD)').fill('15000')
     await page.locator('#field-isAvailable').check()
+    await expect(checklist).toContainText('Ready to publish')
 
     const created = page.waitForResponse(
       (r) => r.request().method() === 'POST' && /\/api\/products(\?|$)/.test(r.url()),

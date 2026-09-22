@@ -11,14 +11,25 @@ under Categories if missing), then enter the name and description: each has thre
 the same page — Sorani (کوردی), Arabic (العربية) and English — so everything is written on one
 form and saved once. Further down, enter the price in whole Iraqi dinars (e.g. `25000`,
 no decimals), tick **Available** if the piece can be ordered, and under Photos add the
-pictures (JPEG/PNG/WebP, up to 3 MB and 20 megapixels each; the first photo is the cover).
-Each picture is uploaded once and shared by all three languages; the optional "Image
-description" under Media is a single text for all languages, and when it is empty the site
-uses the product name in the page's language. **Save Draft** at any
-time; drafts are private. **Publish** makes the product public — if anything is missing, the
-error lists exactly which fields and languages. Use the preview button (arrow icon next to
-Save Draft) to see the latest draft on the site as an administrator, then check the public
-page and the Instagram action.
+pictures (JPEG/PNG/WebP; the first photo is the cover). Photos straight from a phone camera
+are fine: a large photo is reduced automatically in the browser before it is uploaded — the
+panel above the file shows a preview, "Preparing…", what it was reduced to, and a progress
+bar while it uploads. Photos that are already small (up to 3 MB and 20 megapixels) are sent
+exactly as they are. Each picture is uploaded once and shared by all three languages; the
+optional "Image description" under Media is a single text for all languages, and when it is
+empty the site uses the product name in the page's language. The checklist at the top of
+the form shows what Publish still needs — the languages of the name and description, a
+category, photos, the price, Available ticked or unticked — and updates as you type.
+**Save Draft** at any time; drafts are private. **Publish** makes the product public once
+the checklist reads "Ready to publish" — if anything is still missing, the error lists
+exactly which fields and languages. Use the preview button (arrow icon next to Save Draft)
+to see the latest draft on the site as an administrator, then check the public page and the
+Instagram action.
+
+**Photos on the website.** Visitors swipe between a product's photos on a phone (or use the
+arrows and thumbnails), and tapping a photo opens it large: pinch or double-tap to zoom,
+drag to move around, swipe for the next photo; on a computer the mouse wheel zooms and the
+arrow keys, `+`, `-` and `0` do the same.
 
 **Change a price or availability.** Open the product, change the value, then Publish. Save
 Draft alone does not change the public page. A fresh page load shows the new value.
@@ -140,10 +151,16 @@ still works.
   and whether the project is paused; the Instagram fallback and static logo keep working.
 - **Delivery fees show "could not load"**: same cause; the section offers Try again and
   Instagram and never shows a zero fee by mistake.
-- **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: resize the photo
-  before uploading (any phone gallery app can export a smaller copy).
-- **Publish refuses with missing languages**: fill the listed language inputs on the Basic
-  details tab (name and description are the only per-language product fields).
+- **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: the browser
+  normally reduces a large photo before uploading, so this means the photo could not be
+  read by the browser (a very old browser, or a file that is not really a JPEG/PNG/WebP).
+  Export a smaller copy from the phone's gallery app and try again.
+- **The photo panel stays on "Preparing…"**: the browser is still decoding a very large
+  photo; on an old phone this can take several seconds. If it never finishes, reload the
+  page and choose the photo again.
+- **Publish refuses with missing languages**: the checklist at the top of the product form
+  names them; fill the listed language inputs (name and description are the only
+  per-language product fields).
 - **City cannot be activated**: fill all three names and a valid whole-dinar fee; a zero
   fee needs the free-delivery confirmation.
 - **Locked document**: another session is editing the same record; Payload warns about

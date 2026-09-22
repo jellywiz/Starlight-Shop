@@ -217,6 +217,78 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByRole('status')).toHaveCount(0)
   })
 
+  test('the gallery swipes between photos and the enlarged view pinches, pans and double-taps', async ({
+    page,
+    context,
+  }) => {
+    await page.goto(`/en/products/${SAMPLE_SLUG}`)
+    const counter = page.getByText(/^Photo \d of \d$/).first()
+    await expect(counter).toHaveText('Photo 1 of 2')
+
+    // A horizontal drag on the main photo is a swipe (pointer events, so mouse or touch).
+    const frame = page.locator('section[aria-label="Product photos"] .touch-pan-y')
+    const box = (await frame.boundingBox())!
+    const y = box.y + box.height / 2
+    await page.mouse.move(box.x + box.width * 0.8, y)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.2, y, { steps: 6 })
+    await page.mouse.up()
+    await expect(counter).toHaveText('Photo 2 of 2')
+    // A mostly vertical drag (scrolling) is not.
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.8, { steps: 6 })
+    await page.mouse.up()
+    await expect(counter).toHaveText('Photo 2 of 2')
+
+    await page.getByRole('button', { name: 'Enlarge photo' }).click()
+    const stage = page.locator('dialog[open] [data-zoom]')
+    await expect(stage).toHaveAttribute('data-zoom', '1.00')
+    const sb = (await stage.boundingBox())!
+    const cx = sb.x + sb.width / 2
+    const cy = sb.y + sb.height / 2
+    // Two fingers, spreading: a pinch.
+    const cdp = await context.newCDPSession(page)
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', points: [number, number][]) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: points.map(([x, y]) => ({ x, y })),
+      })
+    await touch('touchStart', [
+      [cx - 30, cy],
+      [cx + 30, cy],
+    ])
+    for (let step = 1; step <= 4; step += 1) {
+      await touch('touchMove', [
+        [cx - 30 - step * 10, cy],
+        [cx + 30 + step * 10, cy],
+      ])
+    }
+    await touch('touchEnd', [])
+    const pinched = Number(await stage.getAttribute('data-zoom'))
+    expect(pinched).toBeGreaterThan(1.5)
+    // One finger while zoomed pans the photo.
+    await touch('touchStart', [[cx, cy]])
+    await touch('touchMove', [[cx - 60, cy - 30]])
+    await touch('touchEnd', [])
+    await expect(stage.locator('> div')).toHaveCSS('transform', /matrix\(/)
+    await page.getByRole('button', { name: 'Reset zoom' }).click()
+    await expect(stage).toHaveAttribute('data-zoom', '1.00')
+    // A double tap zooms in on that spot; another brings it back.
+    for (const _ of [1, 2]) {
+      await touch('touchStart', [[cx + 40, cy]])
+      await touch('touchEnd', [])
+    }
+    await expect(stage).toHaveAttribute('data-zoom', '2.50')
+    for (const _ of [1, 2]) {
+      await touch('touchStart', [[cx + 40, cy]])
+      await touch('touchEnd', [])
+    }
+    await expect(stage).toHaveAttribute('data-zoom', '1.00')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('dialog[open]')).toHaveCount(0)
+  })
+
   test('unknown product and unsupported locale return a 404 page with a catalogue link', async ({
     page,
   }) => {

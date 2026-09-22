@@ -76,6 +76,54 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   seeds, builds, serves the production build and runs every journey, keeping traces of
   failures as an artifact. Layout branches in the tests key off the viewport width (the
   iPad has the desktop filters but the collapsed header menu).
+- **Photos are reduced in the browser before they are uploaded** (2026-09-22). A phone
+  photo is 4000+ px and 5–8 MB, over the 3 MB limit, so the owner had to export a smaller
+  copy by hand first. The Media form now starts with a UI field
+  (`src/components/admin/PhotoPrep.tsx`; being a field of the collection it also appears in
+  the upload drawer opened from the product form) that watches the chosen file in the form
+  state, decodes it with `createImageBitmap(…, { imageOrientation: 'from-image' })` so a
+  phone photo comes out the right way up (`<img>` fallback for older browsers), scales it
+  to at most 2000 px on the long side and 20 MP, and re-encodes it until it is under 3 MB
+  (`src/lib/photo-prep.ts`: JPEG at quality 0.86 → 0.80 → 0.72, then 20 % smaller, up to
+  four passes; a PNG stays PNG so a transparent logo survives, then WebP, then JPEG), then
+  replaces the file in the form. Photos already within the limits are sent untouched — no
+  second lossy encode. The panel shows a preview, "Preparing…", what was reduced from what,
+  and an upload progress bar: `fetch` cannot report upload progress, so
+  `src/lib/upload-progress.ts` installs a shim that sends multipart bodies containing a
+  file through an `XMLHttpRequest` (credentials and headers copied) and hands the result
+  back as a `Response`; every other request keeps the browser's `fetch`. The server rules
+  in `src/collections/Media.ts` are unchanged — a browser without canvas, or a file the
+  browser cannot decode, still gets the same refusal — and the limits live in
+  `src/lib/upload-limits.ts` so both sides read one number. Two React details cost time:
+  the upload drawer hands out a new `setValue` on every render, and React StrictMode runs
+  effects twice in development, so the effect keys off the file alone (the setter goes
+  through `useEffectEvent`), remembers in a ref which file it is working on or produced,
+  and keeps the preview object URL in a ref that is revoked only when the next file
+  arrives or the panel unmounts; without this the panel sat on "Preparing" for ever
+  inside the drawer.
+- **The product form shows a live "ready to publish" checklist** (2026-09-22). Pressing
+  Publish used to be the first moment the owner learned what was missing. The rules moved
+  to `src/lib/catalog/publication.ts` (name and description in all three languages within
+  their limits, a category, 1–8 photos, a whole-dinar price, availability decided) and are
+  applied on both sides: the server hook in `src/hooks/products.ts` still refuses an
+  incomplete publication and also checks what only the database knows (the category is
+  active, every photo still exists), while the UI field at the top of the product form
+  (`src/components/admin/PublishChecklist.tsx`) reads the form state with `useFormFields`
+  and lists every item with what is missing in the owner's words ("missing in Kurdish,
+  Arabic"), updating as they type; complete forms read "Ready to publish" or, for a
+  published product, "Complete — publishing will update the website". Save Draft is never
+  blocked.
+- **The product gallery swipes and zooms on touch screens** (2026-09-22).
+  `src/components/site/ProductGallery.tsx` had buttons and thumbnails only. The main photo
+  now swipes between photos (pointer events, 40 px threshold, mirrored in RTL) and carries a
+  "Photo 2 of 5" chip; the enlarged view pinches to zoom (two pointers tracked by id, up to
+  4×, zooming at the point between the fingers), drags to pan while zoomed, swipes to the
+  next photo when not zoomed, double-taps to 2.5× and back, and has −/+/Reset and
+  phone-sized previous/next buttons; the keyboard keeps the arrows plus `+`, `-` and `0`.
+  It is all pointer events on a `touch-none` stage (the main frame keeps `touch-pan-y` so
+  the page still scrolls past it), so a mouse, a trackpad (the wheel zooms) and fingers
+  behave alike. Playwright has no pinch API, so the phone test drives it through Chrome's
+  `Input.dispatchTouchEvent`.
 - **Light and dark themes on both sides, chosen by the user** (owner decision,
   2026-09-16). Every colour on the public site is a semantic Tailwind token
   (`page`, `surface`, `line`, `ink`, `heading`, `accent`, `primary`…, `src/app/(site)/globals.css`)
@@ -146,7 +194,8 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   names need not be unique) and never change automatically; a first save in Sorani or
   Arabic waits for the English name.
 - **Publication completeness** and **draft-over-published** behaviour are unchanged from
-  the previous build (collection hooks reading every locale; Payload versions).
+  the previous build (collection hooks reading every locale; Payload versions); since
+  2026-09-22 the same rules also drive the live checklist in the product form (above).
 - **Shop settings** hold only name, logo, Instagram URL (validated as HTTPS `instagram.com`
   with a username path), introduction text and default locale; the handle shown on the site
   is derived from the URL. `updatedBy` is stamped on settings, categories and cities.

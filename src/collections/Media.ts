@@ -11,13 +11,13 @@ import { anyone, ownerOnly } from '@/access'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { mediaCacheHeaders } from '@/hooks/mediaCache'
 import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_PIXELS } from '@/lib/upload-limits'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 /** Upload limits (spec section 11): 3 MB and 20 megapixels per image. */
-export const MAX_UPLOAD_BYTES = 3 * 1024 * 1024
-export const MAX_UPLOAD_PIXELS = 20_000_000
+export { MAX_UPLOAD_BYTES, MAX_UPLOAD_PIXELS } from '@/lib/upload-limits'
 
 const ALLOWED: Record<string, { ext: string; mime: string }> = {
   'image/jpeg': { ext: 'jpg', mime: 'image/jpeg' },
@@ -63,7 +63,7 @@ async function sanitizeUpload(req: PayloadRequest): Promise<void> {
   if (truncated || file.size > MAX_UPLOAD_BYTES || file.data.length > MAX_UPLOAD_BYTES) {
     const approx = truncated ? requestMegabytes(req) : (file.size / (1024 * 1024)).toFixed(1)
     throw uploadError(
-      `This image is larger than ${MAX_UPLOAD_MB} MB${approx ? ` (about ${approx} MB)` : ''}, so it was not saved. Use a smaller copy: export it as a JPEG, or resize it so the file is under ${MAX_UPLOAD_MB} MB, then upload again.`,
+      `This image is larger than ${MAX_UPLOAD_MB} MB${approx ? ` (about ${approx} MB)` : ''}, so it was not saved. Photos chosen in the admin are normally reduced automatically before upload; if this one was not, use a smaller copy (export it as a JPEG or resize it) and upload again.`,
     )
   }
   const detected = await fileTypeFromBuffer(file.data)
@@ -228,6 +228,16 @@ export const Media: CollectionConfig = {
     ],
   },
   fields: [
+    {
+      // Preview, browser-side reduction of large photos and upload progress
+      // (src/components/admin/PhotoPrep.tsx).
+      name: 'photoPrep',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/admin/PhotoPrep#PhotoPrep' },
+        disableListColumn: true,
+      },
+    },
     {
       // One optional description shared by all languages (owner decision, see
       // docs/decisions.md). When empty, the site uses the product name in the page's

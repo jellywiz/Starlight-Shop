@@ -6,8 +6,9 @@ import type {
 } from 'payload'
 import { ValidationError } from 'payload'
 
-import { LOCALES, type Locale } from '@/i18n/config'
+import { LOCALES } from '@/i18n/config'
 import { isValidIqd } from '@/lib/catalog/dinar'
+import { LIMITS, LOCALE_LABELS } from '@/lib/catalog/publication'
 import { buildNormalizedName, buildSearchText } from '@/lib/catalog/normalize'
 import { isValidSlug } from '@/lib/slug'
 import { deriveSlug } from '@/hooks/slugs'
@@ -20,19 +21,9 @@ import {
   trimTranslations,
 } from '@/hooks/localized'
 
-export const LOCALE_LABELS: Record<Locale, string> = {
-  ckb: 'Sorani Kurdish (ckb)',
-  ar: 'Arabic (ar)',
-  en: 'English (en)',
-}
-
-/** Field limits from the product data contract (spec section 5). */
-export const LIMITS = {
-  name: 160,
-  description: 5000,
-  photosMin: 1,
-  photosMax: 8,
-} as const
+// The rules the admin's live checklist evaluates in the browser (src/lib/catalog/publication.ts)
+// are the same ones enforced here.
+export { LIMITS, LOCALE_LABELS } from '@/lib/catalog/publication'
 
 type AnyDoc = Record<string, unknown>
 

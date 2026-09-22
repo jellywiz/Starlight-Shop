@@ -62,6 +62,15 @@ export const Products: CollectionConfig = {
     afterDelete: [revalidateAfterDelete],
   },
   fields: [
+    {
+      // Live checklist of what publishing still needs (src/lib/catalog/publication.ts).
+      name: 'publishChecklist',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/admin/PublishChecklist#PublishChecklist' },
+        disableListColumn: true,
+      },
+    },
     // Three sections on one page (no tabs), so nothing is hidden on a phone.
     {
       type: 'collapsible',

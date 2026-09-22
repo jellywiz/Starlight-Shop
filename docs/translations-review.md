@@ -135,6 +135,10 @@ must be kept; plural entries list one line per form.
 | `product.previousPhoto` | Previous photo | وێنەی پێشوو | الصورة السابقة | ☐ |
 | `product.nextPhoto` | Next photo | وێنەی داهاتوو | الصورة التالية | ☐ |
 | `product.photoCounter` | Photo {index} of {total} | وێنەی {index} لە {total} | الصورة {index} من {total} | ☐ |
+| `product.zoomIn` | Zoom in | گەورەکردن | تكبير | ☐ |
+| `product.zoomOut` | Zoom out | بچووککردنەوە | تصغير | ☐ |
+| `product.zoomReset` | Reset zoom | گەڕانەوە بۆ قەبارەی ئاسایی | إعادة الحجم الأصلي | ☐ |
+| `product.zoomHint` | Pinch or double-tap to zoom, swipe for the next photo | بۆ گەورەکردن دوو پەنجە بەکاربهێنە یان دوو جار دەست لێبدە، بۆ وێنەی دواتر ڕابکێشە | قرّب بإصبعين أو انقر مرتين للتكبير، واسحب للصورة التالية | ☐ |
 | `product.description` | Description | وەسف | الوصف | ☐ |
 | `product.enquire` | Enquire on Instagram | لە ئینستاگرام پرسیار بکە | استفسر عبر إنستغرام | ☐ |
 | `product.copyLink` | Copy product link | لینکی بەرهەم کۆپی بکە | نسخ رابط المنتج | ☐ |
@@ -171,4 +175,4 @@ must be kept; plural entries list one line per form.
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-163 strings.
+167 strings.
