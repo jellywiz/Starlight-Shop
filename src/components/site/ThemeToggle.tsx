@@ -7,6 +7,9 @@ export type Theme = 'dark' | 'light'
 /** localStorage key of the visitor's explicit choice; absent means "follow the system". */
 export const THEME_STORAGE_KEY = 'sl-theme'
 
+// Keep the choice for this page even when browser storage is blocked.
+let pageChoice: Theme | null = null
+
 /**
  * Runs before paint (inline in the document head) so the first frame already has the
  * right theme: the visitor's saved choice, otherwise the operating system setting.
@@ -14,11 +17,14 @@ export const THEME_STORAGE_KEY = 'sl-theme'
 export const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('${THEME_STORAGE_KEY}');var t=s==='dark'||s==='light'?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`
 
 function storedChoice(): Theme | null {
+  if (pageChoice !== null) {
+    return pageChoice
+  }
   try {
     const value = localStorage.getItem(THEME_STORAGE_KEY)
     return value === 'dark' || value === 'light' ? value : null
   } catch {
-    return null
+    return pageChoice
   }
 }
 
@@ -27,23 +33,36 @@ function currentTheme(): Theme {
 }
 
 function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme)
+  if (currentTheme() !== theme || !document.documentElement.hasAttribute('data-theme')) {
+    document.documentElement.setAttribute('data-theme', theme)
+  }
 }
 
-/** The document attribute is the single source of truth; React just mirrors it. */
+/** Keep the document in sync with the preference, including after layout navigation. */
 function subscribe(onChange: () => void) {
-  const observer = new MutationObserver(onChange)
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   const media = window.matchMedia('(prefers-color-scheme: dark)')
-  const followSystem = () => {
-    if (storedChoice() === null) {
-      applyTheme(media.matches ? 'dark' : 'light')
+  const syncTheme = () => {
+    applyTheme(storedChoice() ?? (media.matches ? 'dark' : 'light'))
+    onChange()
+  }
+  // React can remove the manually set attribute when a locale layout remounts.
+  // Restore it before paint; applyTheme is idempotent so observing it cannot loop.
+  const observer = new MutationObserver(syncTheme)
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === THEME_STORAGE_KEY || event.key === null) {
+      pageChoice = null
+      syncTheme()
     }
   }
-  media.addEventListener('change', followSystem)
+  media.addEventListener('change', syncTheme)
+  window.addEventListener('storage', onStorage)
+  // Also covers a remount that removed the attribute while no observer was subscribed.
+  syncTheme()
   return () => {
     observer.disconnect()
-    media.removeEventListener('change', followSystem)
+    media.removeEventListener('change', syncTheme)
+    window.removeEventListener('storage', onStorage)
   }
 }
 
@@ -60,6 +79,7 @@ export function ThemeToggle({ labels }: { labels: { toDark: string; toLight: str
   const label = next === 'dark' ? labels.toDark : labels.toLight
 
   const toggle = () => {
+    pageChoice = next
     applyTheme(next)
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next)
