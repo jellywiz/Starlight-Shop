@@ -149,6 +149,15 @@ still works.
 
 - **Catalogue unavailable page**: database or storage unreachable. Check Supabase status
   and whether the project is paused; the Instagram fallback and static logo keep working.
+  Product pages opened during the outage show the same state and recover by themselves on
+  the next visit once the database is back; pages that were already cached keep working
+  throughout.
+- **"This function has crashed" on every page**: the site could not start at all. Open the
+  Netlify function log (Logs → Functions → `___netlify-server-handler`). A line saying
+  "cannot connect to Postgres: password authentication failed" means `DATABASE_URI`
+  carries the wrong password (see docs/deployment.md "If the Netlify site is lost"); a
+  line saying "Missing required environment variable" names a variable that is not set
+  for the Functions scope.
 - **Delivery fees show "could not load"**: same cause; the section offers Try again and
   Instagram and never shows a zero fee by mistake.
 - **Uploads fail with "larger than 3 MB" / "more than 20 megapixels"**: the browser

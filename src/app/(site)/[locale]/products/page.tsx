@@ -163,7 +163,13 @@ export default async function ProductsPage({ params, searchParams }: Props) {
                 </div>
               ) : (
                 <>
-                  <ProductGrid items={result.items} locale={locale} dict={dict} eagerCount={4} />
+                  <ProductGrid
+                    items={result.items}
+                    locale={locale}
+                    dict={dict}
+                    eagerCount={2}
+                    layout="catalog"
+                  />
                   <Pagination
                     locale={locale}
                     dict={dict}

@@ -63,9 +63,17 @@ export type DeliveryCity = {
 
 export type LocalizedName = Record<Locale, string>
 
-/** Thrown when the database or storage dependency is unavailable (HTTP 503). */
+/** Digest of CatalogUnavailableError as the client error boundary receives it. */
+export const CATALOG_UNAVAILABLE_DIGEST = 'CATALOG_UNAVAILABLE'
+
+/**
+ * Thrown when the database or storage dependency is unavailable (HTTP 503). Next.js strips
+ * server errors before they reach the browser but keeps a `digest`, so the site's error
+ * boundary can still tell an outage from any other failure.
+ */
 export class CatalogUnavailableError extends Error {
   readonly code = 'CATALOG_UNAVAILABLE' as const
+  readonly digest = CATALOG_UNAVAILABLE_DIGEST
 
   constructor(cause?: unknown) {
     super('Catalog unavailable')

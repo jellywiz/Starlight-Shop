@@ -59,76 +59,75 @@ export type SupportedTimezones =
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
-  | 'Pacific/Fiji'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
-    users: UserAuthOperations
-  }
-  blocks: {}
+    users: UserAuthOperations;
+  };
+  blocks: {};
   collections: {
-    products: Product
-    categories: Category
-    cities: City
-    media: Media
-    redirects: Redirect
-    users: User
-    'payload-kv': PayloadKv
-    'payload-locked-documents': PayloadLockedDocument
-    'payload-preferences': PayloadPreference
-    'payload-migrations': PayloadMigration
-  }
-  collectionsJoins: {}
+    products: Product;
+    categories: Category;
+    cities: City;
+    media: Media;
+    redirects: Redirect;
+    users: User;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
+  };
+  collectionsJoins: {};
   collectionsSelect: {
-    products: ProductsSelect<false> | ProductsSelect<true>
-    categories: CategoriesSelect<false> | CategoriesSelect<true>
-    cities: CitiesSelect<false> | CitiesSelect<true>
-    media: MediaSelect<false> | MediaSelect<true>
-    redirects: RedirectsSelect<false> | RedirectsSelect<true>
-    users: UsersSelect<false> | UsersSelect<true>
-    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
-    'payload-locked-documents':
-      PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>
-    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>
-    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>
-  }
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    cities: CitiesSelect<false> | CitiesSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+  };
   db: {
-    defaultIDType: number
-  }
-  fallbackLocale: null
+    defaultIDType: number;
+  };
+  fallbackLocale: null;
   globals: {
-    'shop-settings': ShopSetting
-  }
+    'shop-settings': ShopSetting;
+  };
   globalsSelect: {
-    'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>
-  }
-  locale: null
+    'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
+  };
+  locale: null;
   widgets: {
-    collections: CollectionsWidget
-  }
-  user: User
+    collections: CollectionsWidget;
+  };
+  user: User;
   jobs: {
-    tasks: unknown
-    workflows: unknown
-  }
+    tasks: unknown;
+    workflows: unknown;
+  };
 }
 export interface UserAuthOperations {
   forgotPassword: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   login: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   registerFirstUser: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   unlock: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
 }
 /**
  * Save Draft keeps a product private. Publish puts it on the website; that needs the name and description in all three languages, at least one photo and a price.
@@ -137,52 +136,52 @@ export interface UserAuthOperations {
  * via the `definition` "products".
  */
 export interface Product {
-  id: number
+  id: number;
   /**
    * Product name in each language (1 to 160 characters).
    */
   name?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Exactly one active category.
    */
-  category: number | Category
+  category: number | Category;
   /**
    * Plain text describing the actual handmade item, in each language (1 to 5000 characters).
    */
   description?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Drag to reorder. The first image is the cover. Photos are shared by all three languages, so each image is uploaded once.
    */
-  photos?: (number | Media)[] | null
+  photos?: (number | Media)[] | null;
   /**
    * One shared price in whole Iraqi dinars for all languages, e.g. 25000. Stored exactly as entered.
    */
-  priceIqd: number
+  priceIqd: number;
   /**
    * Available or Unavailable is a public label. Unavailable products stay visible; use Unpublish to hide a product.
    */
-  isAvailable: boolean
+  isAvailable: boolean;
   /**
    * Show on the home page (up to eight featured products are displayed).
    */
-  featured?: boolean | null
-  slug?: string | null
-  publishedAt?: string | null
-  updatedBy?: (number | null) | User
-  adminTitle?: string | null
-  searchText?: string | null
-  normalizedName?: string | null
-  updatedAt: string
-  createdAt: string
-  _status?: ('draft' | 'published') | null
+  featured?: boolean | null;
+  slug?: string | null;
+  publishedAt?: string | null;
+  updatedBy?: (number | null) | User;
+  adminTitle?: string | null;
+  searchText?: string | null;
+  normalizedName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Flat list of categories, e.g. Necklaces, Bracelets, Rings. A category needs all three names before it can be activated. Deactivate instead of deleting when products still use it.
@@ -191,29 +190,29 @@ export interface Product {
  * via the `definition` "categories".
  */
 export interface Category {
-  id: number
+  id: number;
   /**
    * The category name in each language (1 to 80 characters). All three are needed before the category can be activated.
    */
   name?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
-  slug?: string | null
-  activatedAt?: string | null
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
+  slug?: string | null;
+  activatedAt?: string | null;
   /**
    * Lower numbers appear first.
    */
-  sortOrder?: number | null
+  sortOrder?: number | null;
   /**
    * Inactive categories are hidden from the public site and cannot be chosen for products. Activation requires all three names.
    */
-  isActive?: boolean | null
-  updatedBy?: (number | null) | User
-  adminTitle?: string | null
-  updatedAt: string
-  createdAt: string
+  isActive?: boolean | null;
+  updatedBy?: (number | null) | User;
+  adminTitle?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Administrator accounts. Only the owner can manage accounts.
@@ -222,29 +221,29 @@ export interface Category {
  * via the `definition` "users".
  */
 export interface User {
-  id: number
+  id: number;
   /**
    * Only the owner role exists in the first release.
    */
-  role: 'owner'
-  updatedAt: string
-  createdAt: string
-  email: string
-  resetPasswordToken?: string | null
-  resetPasswordExpiration?: string | null
-  salt?: string | null
-  hash?: string | null
-  loginAttempts?: number | null
-  lockUntil?: string | null
+  role: 'owner';
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
   sessions?:
     | {
-        id: string
-        createdAt?: string | null
-        expiresAt: string
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
       }[]
-    | null
-  password?: string | null
-  collection: 'users'
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * Product photos and the shop logo. Upload each image once: the same file is used in all three languages. JPEG, PNG or WebP up to 3 MB and 20 megapixels.
@@ -253,49 +252,49 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: number
+  id: number;
   /**
    * Optional, one text for all languages: a short description for screen readers and search engines, e.g. "Silver star necklace on a white background". Leave it empty and the product name is used automatically.
    */
-  altText?: string | null
-  prefix?: string | null
-  updatedAt: string
-  createdAt: string
-  url?: string | null
-  thumbnailURL?: string | null
-  filename?: string | null
-  mimeType?: string | null
-  filesize?: number | null
-  width?: number | null
-  height?: number | null
-  focalX?: number | null
-  focalY?: number | null
+  altText?: string | null;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
   sizes?: {
     w320?: {
-      url?: string | null
-      width?: number | null
-      height?: number | null
-      mimeType?: string | null
-      filesize?: number | null
-      filename?: string | null
-    }
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
     w640?: {
-      url?: string | null
-      width?: number | null
-      height?: number | null
-      mimeType?: string | null
-      filesize?: number | null
-      filename?: string | null
-    }
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
     w1280?: {
-      url?: string | null
-      width?: number | null
-      height?: number | null
-      mimeType?: string | null
-      filesize?: number | null
-      filename?: string | null
-    }
-  }
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * Cities and their delivery fees in whole Iraqi dinars. Fees are information only; they are never added to product prices. Only active cities appear on the website.
@@ -304,40 +303,40 @@ export interface Media {
  * via the `definition` "cities".
  */
 export interface City {
-  id: number
+  id: number;
   /**
    * The city name in each language (1 to 100 characters). All three are needed before the city can be activated.
    */
   name?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
   /**
    * Current delivery charge for this city in whole dinars, e.g. 5000. Enter 0 only for intentional free delivery.
    */
-  feeIqd?: number | null
+  feeIqd?: number | null;
   /**
    * Required when the fee is 0, so free delivery is never shown by accident. The website then displays "Free delivery".
    */
-  freeDeliveryConfirmed?: boolean | null
+  freeDeliveryConfirmed?: boolean | null;
   /**
    * Lower numbers appear first in the city list.
    */
-  sortOrder?: number | null
+  sortOrder?: number | null;
   /**
    * Only active cities are shown on the website. Activation requires all three names and a valid fee.
    */
-  isActive?: boolean | null
-  updatedBy?: (number | null) | User
-  adminTitle?: string | null
+  isActive?: boolean | null;
+  updatedBy?: (number | null) | User;
+  adminTitle?: string | null;
   normalizedName?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
-  updatedAt: string
-  createdAt: string
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Old product addresses that redirect to the current product.
@@ -346,101 +345,101 @@ export interface City {
  * via the `definition` "redirects".
  */
 export interface Redirect {
-  id: number
-  oldSlug: string
-  product: number | Product
-  updatedAt: string
-  createdAt: string
+  id: number;
+  oldSlug: string;
+  product: number | Product;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number
-  key: string
+  id: number;
+  key: string;
   data:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number
+  id: number;
   document?:
     | ({
-        relationTo: 'products'
-        value: number | Product
+        relationTo: 'products';
+        value: number | Product;
       } | null)
     | ({
-        relationTo: 'categories'
-        value: number | Category
+        relationTo: 'categories';
+        value: number | Category;
       } | null)
     | ({
-        relationTo: 'cities'
-        value: number | City
+        relationTo: 'cities';
+        value: number | City;
       } | null)
     | ({
-        relationTo: 'media'
-        value: number | Media
+        relationTo: 'media';
+        value: number | Media;
       } | null)
     | ({
-        relationTo: 'redirects'
-        value: number | Redirect
+        relationTo: 'redirects';
+        value: number | Redirect;
       } | null)
     | ({
-        relationTo: 'users'
-        value: number | User
-      } | null)
-  globalSlug?: string | null
+        relationTo: 'users';
+        value: number | User;
+      } | null);
+  globalSlug?: string | null;
   user: {
-    relationTo: 'users'
-    value: number | User
-  }
-  updatedAt: string
-  createdAt: string
+    relationTo: 'users';
+    value: number | User;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number
+  id: number;
   user: {
-    relationTo: 'users'
-    value: number | User
-  }
-  key?: string | null
+    relationTo: 'users';
+    value: number | User;
+  };
+  key?: string | null;
   value?:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
-  updatedAt: string
-  createdAt: string
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number
-  name?: string | null
-  batch?: number | null
-  updatedAt: string
-  createdAt: string
+  id: number;
+  name?: string | null;
+  batch?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -450,31 +449,31 @@ export interface ProductsSelect<T extends boolean = true> {
   name?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  category?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  category?: T;
   description?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  photos?: T
-  priceIqd?: T
-  isAvailable?: T
-  featured?: T
-  slug?: T
-  publishedAt?: T
-  updatedBy?: T
-  adminTitle?: T
-  searchText?: T
-  normalizedName?: T
-  updatedAt?: T
-  createdAt?: T
-  _status?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  photos?: T;
+  priceIqd?: T;
+  isAvailable?: T;
+  featured?: T;
+  slug?: T;
+  publishedAt?: T;
+  updatedBy?: T;
+  adminTitle?: T;
+  searchText?: T;
+  normalizedName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -484,18 +483,18 @@ export interface CategoriesSelect<T extends boolean = true> {
   name?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  slug?: T
-  activatedAt?: T
-  sortOrder?: T
-  isActive?: T
-  updatedBy?: T
-  adminTitle?: T
-  updatedAt?: T
-  createdAt?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  slug?: T;
+  activatedAt?: T;
+  sortOrder?: T;
+  isActive?: T;
+  updatedBy?: T;
+  adminTitle?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -505,151 +504,151 @@ export interface CitiesSelect<T extends boolean = true> {
   name?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  feeIqd?: T
-  freeDeliveryConfirmed?: T
-  sortOrder?: T
-  isActive?: T
-  updatedBy?: T
-  adminTitle?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  feeIqd?: T;
+  freeDeliveryConfirmed?: T;
+  sortOrder?: T;
+  isActive?: T;
+  updatedBy?: T;
+  adminTitle?: T;
   normalizedName?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  updatedAt?: T
-  createdAt?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  altText?: T
-  prefix?: T
-  updatedAt?: T
-  createdAt?: T
-  url?: T
-  thumbnailURL?: T
-  filename?: T
-  mimeType?: T
-  filesize?: T
-  width?: T
-  height?: T
-  focalX?: T
-  focalY?: T
+  altText?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
   sizes?:
     | T
     | {
         w320?:
           | T
           | {
-              url?: T
-              width?: T
-              height?: T
-              mimeType?: T
-              filesize?: T
-              filename?: T
-            }
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
         w640?:
           | T
           | {
-              url?: T
-              width?: T
-              height?: T
-              mimeType?: T
-              filesize?: T
-              filename?: T
-            }
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
         w1280?:
           | T
           | {
-              url?: T
-              width?: T
-              height?: T
-              mimeType?: T
-              filesize?: T
-              filename?: T
-            }
-      }
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
-  oldSlug?: T
-  product?: T
-  updatedAt?: T
-  createdAt?: T
+  oldSlug?: T;
+  product?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  role?: T
-  updatedAt?: T
-  createdAt?: T
-  email?: T
-  resetPasswordToken?: T
-  resetPasswordExpiration?: T
-  salt?: T
-  hash?: T
-  loginAttempts?: T
-  lockUntil?: T
+  role?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
   sessions?:
     | T
     | {
-        id?: T
-        createdAt?: T
-        expiresAt?: T
-      }
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
-  key?: T
-  data?: T
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
-  document?: T
-  globalSlug?: T
-  user?: T
-  updatedAt?: T
-  createdAt?: T
+  document?: T;
+  globalSlug?: T;
+  user?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
 export interface PayloadPreferencesSelect<T extends boolean = true> {
-  user?: T
-  key?: T
-  value?: T
-  updatedAt?: T
-  createdAt?: T
+  user?: T;
+  key?: T;
+  value?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
 export interface PayloadMigrationsSelect<T extends boolean = true> {
-  name?: T
-  batch?: T
-  updatedAt?: T
-  createdAt?: T
+  name?: T;
+  batch?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * Public shop name, logo, Instagram destination and the introduction text. Changes are live on the next page request.
@@ -658,52 +657,52 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  * via the `definition` "shop-settings".
  */
 export interface ShopSetting {
-  id: number
-  publicName: string
+  id: number;
+  publicName: string;
   /**
    * Optional replacement logo image. Leave empty to use the built-in Starlight logo files.
    */
-  logo?: (number | null) | Media
+  logo?: (number | null) | Media;
   /**
    * Language shown when a visitor opens the site root.
    */
-  defaultLocale: 'ckb' | 'ar' | 'en'
+  defaultLocale: 'ckb' | 'ar' | 'en';
   /**
    * The confirmed contact destination. Every "Enquire on Instagram" action opens this profile; the handle shown on the site is taken from it. Test the public link after saving.
    */
-  instagramUrl: string
+  instagramUrl: string;
   /**
    * Short factual introduction to the handmade jewellery shop, shown on the About page and the home page. A language left empty shows the built-in text.
    */
   aboutText?: {
-    ckb?: string | null
-    ar?: string | null
-    en?: string | null
-  }
-  updatedBy?: (number | null) | User
-  updatedAt?: string | null
-  createdAt?: string | null
+    ckb?: string | null;
+    ar?: string | null;
+    en?: string | null;
+  };
+  updatedBy?: (number | null) | User;
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "shop-settings_select".
  */
 export interface ShopSettingsSelect<T extends boolean = true> {
-  publicName?: T
-  logo?: T
-  defaultLocale?: T
-  instagramUrl?: T
+  publicName?: T;
+  logo?: T;
+  defaultLocale?: T;
+  instagramUrl?: T;
   aboutText?:
     | T
     | {
-        ckb?: T
-        ar?: T
-        en?: T
-      }
-  updatedBy?: T
-  updatedAt?: T
-  createdAt?: T
-  globalType?: T
+        ckb?: T;
+        ar?: T;
+        en?: T;
+      };
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -711,17 +710,18 @@ export interface ShopSettingsSelect<T extends boolean = true> {
  */
 export interface CollectionsWidget {
   data?: {
-    [k: string]: unknown
-  }
-  width: 'full'
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
-  [k: string]: unknown
+  [k: string]: unknown;
 }
+
 
 declare module 'payload' {
   export interface GeneratedTypes extends Config {}

@@ -295,20 +295,20 @@ export const getCatalogFilters = cache(async function getCatalogFilters(
         limit: 0,
         overrideAccess: false,
       }),
-      payload.find({
+      payload.findDistinct({
         collection: 'products',
+        field: 'category',
         where: PUBLISHED,
         depth: 0,
-        pagination: false,
         limit: 0,
-        draft: false,
         overrideAccess: false,
-        select: { category: true },
+        context: { catalogRead: true },
       }),
     ])
+    // One DISTINCT query instead of reading every published product's category.
     const used = new Set<number>()
-    for (const doc of published.docs) {
-      const id = relationId(doc.category)
+    for (const value of published.values) {
+      const id = relationId(value.category)
       if (id !== null) {
         used.add(id)
       }

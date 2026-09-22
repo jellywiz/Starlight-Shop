@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation'
 import { CatalogUnavailable } from '@/components/site/CatalogUnavailable'
 import { DeliveryFees } from '@/components/site/DeliveryFees'
 import { InstagramLink } from '@/components/site/InstagramLink'
+import { Price } from '@/components/site/Price'
+import { ResponsiveImage } from '@/components/site/ResponsiveImage'
 import { ProductGrid } from '@/components/site/ProductGrid'
 import { SparkleIcon, Sparkles } from '@/components/site/Sparkles'
 import { isLocale } from '@/i18n/config'
@@ -99,14 +101,16 @@ export default async function HomePage({ params, searchParams }: Props) {
     requestedCity !== null ? (cities.find((c) => c.id === requestedCity) ?? null) : null
   const initialNotListed = requestedCity !== null && !citiesFailed && initialCity === null
 
+  const spotlight = featured.find((item) => item.cover)
+
   return (
-    <div className="flex flex-col gap-14">
-      {/* Plum gradient hero with sparkles: one heading, one line, two actions, the logo. */}
-      <section className="relative overflow-hidden rounded-card bg-gradient-to-br from-plum-950 via-plum-800 to-plum-600 px-6 py-10 text-white shadow-glow sm:px-12 sm:py-16">
+    <div className="flex flex-col gap-12 sm:gap-14">
+      {/* A real featured piece gives the first screen a useful, shoppable focal point. */}
+      <section className="home-hero relative overflow-hidden rounded-[2rem] px-6 py-8 text-heading sm:px-10 sm:py-12">
         <Sparkles
-          count={30}
+          count={10}
           seed={11}
-          className="text-star"
+          className="text-accent-muted/50"
           minSize={5}
           maxSize={20}
           avoidTopStart
@@ -115,35 +119,65 @@ export default async function HomePage({ params, searchParams }: Props) {
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -end-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
         />
-        <div className="relative grid items-center gap-8 sm:grid-cols-[1fr_auto]">
+        <div className="relative grid items-center gap-8 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_300px]">
           <div className="max-w-2xl">
-            <h1 className="text-3xl font-bold leading-tight sm:text-4xl">{dict.home.heroTitle}</h1>
-            <p className="mt-4 max-w-prose text-base text-plum-100 sm:text-lg">
+            <p className="mb-4 flex items-center gap-2 text-sm font-medium text-accent">
+              <SparkleIcon className="h-4 w-4" />
+              {dict.footer.tagline}
+            </p>
+            <h1 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+              {dict.home.heroTitle}
+            </h1>
+            <p className="mt-4 max-w-prose text-base leading-relaxed text-ink-soft sm:text-lg">
               {dict.home.heroLead}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/${locale}/products`} className="btn-on-dark px-6 py-3 text-base">
+              <Link href={`/${locale}/products`} className="btn-primary px-6 py-3 text-base">
                 {dict.home.browseProducts}
               </Link>
               <InstagramLink
                 href={settings.instagramUrl}
                 label={dict.home.instagramAction}
                 dict={dict}
-                className="btn-outline-light px-6 py-3 text-base"
+                className="btn-secondary px-6 py-3 text-base"
               />
             </div>
           </div>
-          {/* The supplied logo, unchanged, on its own light surface (never on purple). */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/logo-full-384.webp"
-            alt=""
-            width={192}
-            height={192}
-            // Lazy: the tile is hidden on phones, which then never download it.
-            loading="lazy"
-            className="hidden h-48 w-48 rounded-3xl bg-[#fdfdfd] object-contain p-2 shadow-card-hover sm:block"
-          />
+          {spotlight?.cover ? (
+            <div className="hero-piece mx-auto w-full max-w-[300px] rounded-[1.75rem] bg-surface p-3 shadow-card-hover">
+              <div className="relative overflow-hidden rounded-[1.25rem] bg-white">
+                <div className="aspect-[4/3] md:aspect-square">
+                  <ResponsiveImage
+                    image={spotlight.cover}
+                    sizes="(min-width: 1024px) 276px, (min-width: 768px) 236px, (min-width: 380px) 276px, calc(100vw - 104px)"
+                    labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
+                    priority
+                    className="h-full w-full object-contain p-4"
+                  />
+                </div>
+                <Link
+                  href={`/${locale}/products/${spotlight.slug}`}
+                  className="absolute inset-0"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="px-2 pb-2 pt-4">
+                <p className="mb-1 text-xs font-medium text-accent">{dict.home.featuredHeading}</p>
+                <Link
+                  href={`/${locale}/products/${spotlight.slug}`}
+                  className="font-semibold text-heading hover:underline"
+                >
+                  {spotlight.name}
+                </Link>
+                <Price
+                  amount={spotlight.priceIqd}
+                  dict={dict}
+                  className="mt-2 block text-sm text-ink-soft"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -154,12 +188,12 @@ export default async function HomePage({ params, searchParams }: Props) {
           <h2 id="home-categories" className="section-title">
             {dict.home.categoriesHeading}
           </h2>
-          <ul className="mt-4 flex flex-wrap gap-2.5" role="list">
+          <ul className="category-list mt-5 flex flex-wrap gap-3" role="list">
             {filters.categories.map((category) => (
               <li key={category.slug}>
                 <Link
                   href={catalogPath(locale, { category: category.slug })}
-                  className="chip hover:bg-surface-2"
+                  className="category-tile inline-flex items-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold text-heading ring-1 ring-line-soft transition-shadow hover:shadow-card-hover"
                 >
                   <SparkleIcon className="h-3 w-3 text-accent-muted" />
                   {category.name}
@@ -182,7 +216,7 @@ export default async function HomePage({ params, searchParams }: Props) {
             </Link>
           </div>
           <div className="mt-5">
-            <ProductGrid items={featured} locale={locale} dict={dict} eagerCount={4} />
+            <ProductGrid items={featured} locale={locale} dict={dict} eagerCount={2} />
           </div>
         </section>
       ) : null}
@@ -194,7 +228,7 @@ export default async function HomePage({ params, searchParams }: Props) {
         className="panel-lilac relative scroll-mt-24 overflow-hidden p-6 sm:p-8"
       >
         <Sparkles
-          count={14}
+          count={5}
           seed={23}
           className="text-accent-muted/70"
           minSize={5}
@@ -233,7 +267,7 @@ export default async function HomePage({ params, searchParams }: Props) {
         </div>
         <div className="card relative overflow-hidden p-6 sm:p-8">
           <Sparkles
-            count={8}
+            count={4}
             seed={5}
             className="text-accent-muted/60"
             minSize={6}

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   useCallback,
@@ -37,6 +38,16 @@ type FieldValues = {
 }
 
 const FIELD_NAMES = ['q', 'category', 'min', 'max', 'availability', 'sort'] as const
+
+/** What Clear all shows: every field empty (availability "all"). */
+const EMPTY_FIELDS: FieldValues = {
+  q: '',
+  category: '',
+  min: '',
+  max: '',
+  availability: 'all',
+  sort: '',
+}
 
 function fieldsFromRaw(raw: RawCatalogParams): FieldValues {
   return {
@@ -168,6 +179,7 @@ function FilterForm({
       method="get"
       action={`/${locale}/products`}
       onSubmit={onSubmit}
+      aria-busy={pending}
       className="flex flex-col gap-5"
       aria-describedby={errors.length ? id('errors') : undefined}
     >
@@ -329,9 +341,21 @@ function FilterForm({
         <button type="submit" className="btn-primary">
           {dict.catalog.applyFilters}
         </button>
-        <a href={`/${locale}/products`} className="btn-secondary" onClick={() => onApplied?.()}>
+        {/* A link, so it also works without JavaScript; with it, the fields clear at once
+            and the results follow through a client-side navigation instead of a reload. */}
+        <Link
+          href={`/${locale}/products`}
+          className="btn-secondary"
+          onClick={() => {
+            if (timer.current) {
+              clearTimeout(timer.current)
+            }
+            setValues(EMPTY_FIELDS)
+            onApplied?.()
+          }}
+        >
           {dict.catalog.clearFilters}
-        </a>
+        </Link>
         <span className="text-sm text-ink-soft" aria-live="polite">
           {pending ? dict.common.updating : ''}
         </span>

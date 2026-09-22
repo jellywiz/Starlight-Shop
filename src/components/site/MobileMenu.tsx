@@ -65,6 +65,9 @@ export function MobileMenu({
         id={id}
         aria-label={navLabel}
         hidden={!open}
+        onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest('a')) setOpen(false)
+        }}
         className="absolute inset-x-0 top-full z-40 border-t border-line bg-surface shadow-lg"
       >
         <ul className="flex flex-col p-2">

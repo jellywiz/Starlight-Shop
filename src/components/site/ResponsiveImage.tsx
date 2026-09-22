@@ -32,7 +32,11 @@ function retried(url: string, attempt: number): string {
  * be loaded (storage down, file gone, flaky connection) the same frame shows a Starlight
  * placeholder with a "try again" action instead of the browser's broken-image icon.
  */
-export function ResponsiveImage({
+export function ResponsiveImage(props: Props) {
+  return <ImageFrame key={props.image.src} {...props} />
+}
+
+function ImageFrame({
   image,
   sizes,
   labels,

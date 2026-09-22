@@ -228,6 +228,26 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   replaced by the original 992×1056 file by re-running `pnpm brand:assets`.
 - Fonts stay Noto Sans / Noto Sans Arabic (verified Sorani coverage); no serif display
   font was added because it would need a matching Arabic-script face.
+- **Softer, more playful home page** (owner decision, 2026-09-22). The plum gradient hero
+  became a pastel one — lilac to rose with a warm peach glow — that shows a real piece
+  instead of the logo: the first featured product with a photo, on a slightly tilted white
+  tile (mirrored in RTL) linking to its page, so the first screen is shoppable. Category
+  chips became pastel tiles that cycle lilac / peach / mint / rose; product cards carry a
+  faint surface gradient and tighter padding on phones; card corners are rounder
+  (`--radius-card` 1.5rem) and there are fewer sparkles. The four pastels have muted dark
+  values so dark mode keeps the same structure, and the logo stays in the header and the
+  footer. Sparkles no longer declare `will-change` (dozens of compositor layers for a
+  gentle twinkle cost more than they saved).
+- **Product images ask for their real size** (2026-09-22). `ProductGrid` passes each card a
+  `sizes` attribute that mirrors the grid's actual column formula (the catalogue grid is
+  three columns beside the filters, the home grid four), so phones stop downloading the
+  desktop variant; `ResponsiveImage` is keyed by its source so a swapped photo (the hero
+  tile, the gallery) resets its retry state.
+- **Catalogue chores** (2026-09-22): the category filter list runs one `DISTINCT` query
+  (`findDistinct`) instead of reading every published product's category; Clear all is a
+  client-side navigation that empties the fields at once and cancels a pending debounce,
+  while staying a plain link for visitors without JavaScript; the phone menu closes when a
+  link in it is tapped.
 
 ## Performance
 
@@ -254,9 +274,9 @@ false` skips Payload's count query), and the pages load their independent parts 
   safety net; an empty `generateStaticParams` keeps the build away from the database while
   still allowing on-demand caching), and invalidated by `src/hooks/revalidate.ts` on any
   product, category, photo or settings change — one `revalidatePath` on the site layout,
-  coarse on purpose — so nothing is ever stale. Outage renders call `connection()` so a
-  database failure is never frozen into the cache. The home page (`?city=` served without
-  JavaScript) and the catalogue listing (filters) stay per-request. The owner's preview
+  coarse on purpose — so nothing is ever stale. A database failure is never frozen into
+  the cache either, see "Outages on the serverless host" below. The home page (`?city=`
+  served without JavaScript) and the catalogue listing (filters) stay per-request. The owner's preview
   moved to its own always-fresh route (`/products/<slug>/preview`) so the public page no
   longer reads request headers.
 - **Every first visit was made twice.** `withPayload` sends `Critical-CH` on every route,
@@ -272,6 +292,36 @@ false` skips Payload's count query), and the pages load their independent parts 
   re-request them.
 - **Cold starts** remain a property of the free plan; a free uptime ping every 5 minutes
   keeps the function warm (docs/deployment.md).
+
+### Outages on the serverless host (2026-09-22)
+
+Two things went wrong the first time the site ran against a wrong database password on
+Netlify, and both are now handled:
+
+- **The function crashed instead of showing the outage state.** Payload's Postgres adapter
+  creates an `initializing` promise that it rejects — with no reason — when the first
+  connection fails, and only ever awaits it when a transaction starts. When no transaction
+  follows, that rejection is unhandled; `next start` merely logs it, but the serverless
+  runtime treats an unhandled rejection as a crash and every request answered "This
+  function has crashed". `withHandledConnectionFailure` (`src/lib/db.ts`) attaches a
+  handler to that promise; every caller still receives the connection error as before.
+- **Cached pages could not opt out of the cache.** The product, About and Contact pages
+  used `connection()` to make an outage render per-request, but a cached (ISR) route
+  rejects every such API at request time — `connection()`, `revalidatePath()` and a
+  `no-store` fetch, even from `after()` — with "Dynamic server usage", which ends in a bare
+  "Internal Server Error"; and a thrown error ends the same way because the error
+  boundary is not used for cached renders. Now an outage render is sent normally (About
+  and Contact from their built-in values, a product page as the "unavailable" state) and,
+  once the response is out, `after()` asks the site's own `/site-cache/drop` route
+  (`src/lib/site/outage.ts`) to invalidate that path — a route handler may call
+  `revalidatePath`. The request is signed with the application secret and sent with
+  Node's HTTP client (Next's `fetch` is tracked too), and only the cached public routes
+  can be dropped. Verified with a wrong password under `pnpm start`: every outage render
+  is a cache MISS, the first visit after the password is fixed serves the real page, and
+  no unhandled rejection is logged. Pages that were already cached before an outage keep
+  being served from the cache throughout it. `CatalogUnavailableError` carries a
+  `digest` so the client error boundary can show the outage wording should such an error
+  ever reach it from a per-request page.
 
 ## Security and operations
 

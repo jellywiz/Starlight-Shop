@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { connection } from 'next/server'
 
 import { InstagramLink } from '@/components/site/InstagramLink'
 import { isLocale } from '@/i18n/config'
@@ -9,6 +8,7 @@ import { getDictionary } from '@/i18n/dictionary'
 import { deliveryFeesPath } from '@/lib/catalog/links'
 import { getShopSettings } from '@/lib/catalog/queries'
 import { pageMetadata } from '@/lib/site/metadata'
+import { dropFromCacheAfterResponse } from '@/lib/site/outage'
 
 // Served from the cache and refreshed when the settings change (see the layout).
 // Served from the cache and refreshed when the settings change (see the layout). Nothing
@@ -44,7 +44,9 @@ export default async function AboutPage({ params }: Props) {
   const dict = getDictionary(locale)
   const { settings, fromFallback } = await getShopSettings(locale)
   if (fromFallback) {
-    await connection()
+    // Built-in values keep this page useful during a database outage; the render is
+    // dropped from the cache right after it is sent (src/lib/site/outage.ts).
+    dropFromCacheAfterResponse(`/${locale}/about`)
   }
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
-import { connection } from 'next/server'
 
 import { CatalogUnavailable } from '@/components/site/CatalogUnavailable'
 import { ProductView } from '@/components/site/ProductView'
@@ -13,6 +12,7 @@ import {
   resolveRedirect,
 } from '@/lib/catalog/queries'
 import { type CatalogItem, CatalogUnavailableError, type ProductDetail } from '@/lib/catalog/types'
+import { dropFromCacheAfterResponse } from '@/lib/site/outage'
 import { SLUG_RE, productMetadata } from '@/lib/site/product'
 
 /**
@@ -81,13 +81,16 @@ export default async function ProductPage({ params }: Props) {
   if ('redirectTo' in loaded) {
     permanentRedirect(loaded.redirectTo)
   }
-  // A database outage must never be frozen into the cache: any render that shows the
-  // outage state, fallback settings or missing neighbours is made per-request instead.
+  // A database outage must never be frozen into the cache. This route is cached (ISR)
+  // and cannot opt out per request, so any render touched by the outage — the outage
+  // state itself, fallback settings, missing neighbours — is dropped from the cache as
+  // soon as it has been sent (src/lib/site/outage.ts).
+  const path = `/${locale}/products/${slug}`
   if (fromFallback) {
-    await connection()
+    dropFromCacheAfterResponse(path)
   }
   if ('unavailable' in loaded) {
-    await connection()
+    dropFromCacheAfterResponse(path)
     return <CatalogUnavailable dict={dict} settings={settings} />
   }
   const { product } = loaded
@@ -96,8 +99,7 @@ export default async function ProductPage({ params }: Props) {
   try {
     related = await getRelatedProducts(product, locale)
   } catch {
-    await connection()
-    related = []
+    dropFromCacheAfterResponse(path)
   }
 
   return (

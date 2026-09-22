@@ -16,7 +16,7 @@ import { Users } from '@/collections/Users'
 import { catalogEndpoint } from '@/endpoints/catalog'
 import { deliveryCitiesEndpoint } from '@/endpoints/deliveryCities'
 import { ShopSettings } from '@/globals/ShopSettings'
-import { SCHEMA_NAME } from '@/lib/db'
+import { SCHEMA_NAME, withHandledConnectionFailure } from '@/lib/db'
 import { databaseUri, env, payloadSecret, s3Settings, siteUrl } from '@/lib/env'
 
 const filename = fileURLToPath(import.meta.url)
@@ -76,44 +76,46 @@ export default buildConfig({
     },
   },
   sharp,
-  db: postgresAdapter({
-    pool: {
-      connectionString: databaseUri(),
-      max: env.isProduction ? 3 : 10,
-      // On the serverless host a container serves many requests in a row; opening a new
-      // TLS connection to the pooler for each of them costs several round trips, so
-      // idle connections are kept for a few minutes (below the host's 350 s NAT limit,
-      // after which a silent drop would be worse than a reconnect).
-      idleTimeoutMillis: env.isProduction ? 240_000 : 10_000,
-      connectionTimeoutMillis: 10_000,
-      keepAlive: true,
-    },
-    schemaName: SCHEMA_NAME,
-    migrationDir: path.resolve(dirname, 'migrations'),
-    // Schema changes are applied through committed migrations only (spec section 6).
-    push: false,
-    afterSchemaInit: [
-      ({ schema, extendTable }) => {
-        // Unique normalized delivery-city name per language at database level (spec
-        // section 6 "City delivery data"); the hook gives the friendly message first.
-        extendTable({
-          table: schema.tables.cities,
-          extraConfig: (table) => ({
-            cities_normalized_name_ckb_unique: uniqueIndex('cities_normalized_name_ckb_unique').on(
-              table.normalizedName_ckb,
-            ),
-            cities_normalized_name_ar_unique: uniqueIndex('cities_normalized_name_ar_unique').on(
-              table.normalizedName_ar,
-            ),
-            cities_normalized_name_en_unique: uniqueIndex('cities_normalized_name_en_unique').on(
-              table.normalizedName_en,
-            ),
-          }),
-        })
-        return schema
+  db: withHandledConnectionFailure(
+    postgresAdapter({
+      pool: {
+        connectionString: databaseUri(),
+        max: env.isProduction ? 3 : 10,
+        // On the serverless host a container serves many requests in a row; opening a new
+        // TLS connection to the pooler for each of them costs several round trips, so
+        // idle connections are kept for a few minutes (below the host's 350 s NAT limit,
+        // after which a silent drop would be worse than a reconnect).
+        idleTimeoutMillis: env.isProduction ? 240_000 : 10_000,
+        connectionTimeoutMillis: 10_000,
+        keepAlive: true,
       },
-    ],
-  }),
+      schemaName: SCHEMA_NAME,
+      migrationDir: path.resolve(dirname, 'migrations'),
+      // Schema changes are applied through committed migrations only (spec section 6).
+      push: false,
+      afterSchemaInit: [
+        ({ schema, extendTable }) => {
+          // Unique normalized delivery-city name per language at database level (spec
+          // section 6 "City delivery data"); the hook gives the friendly message first.
+          extendTable({
+            table: schema.tables.cities,
+            extraConfig: (table) => ({
+              cities_normalized_name_ckb_unique: uniqueIndex(
+                'cities_normalized_name_ckb_unique',
+              ).on(table.normalizedName_ckb),
+              cities_normalized_name_ar_unique: uniqueIndex('cities_normalized_name_ar_unique').on(
+                table.normalizedName_ar,
+              ),
+              cities_normalized_name_en_unique: uniqueIndex('cities_normalized_name_en_unique').on(
+                table.normalizedName_en,
+              ),
+            }),
+          })
+          return schema
+        },
+      ],
+    }),
+  ),
   plugins: [
     s3Storage({
       enabled: s3 !== null,

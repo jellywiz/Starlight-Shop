@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { connection } from 'next/server'
 import type { ReactNode } from 'react'
 
 import { SiteFooter } from '@/components/site/SiteFooter'
@@ -58,14 +57,15 @@ export default async function LocaleLayout({ children, params }: Props) {
   const locale = isLocale(raw) ? raw : DEFAULT_LOCALE
   const meta = LOCALE_META[locale]
   const dict = getDictionary(locale)
-  const { settings, fromFallback } = await getShopSettings(locale)
-  if (fromFallback) {
-    // Fallback settings mean the database was unavailable: never cache such a render.
-    await connection()
-  }
+  // Fallback settings mean the database was unavailable. The per-request pages (home,
+  // catalogue) simply render with them; the cached pages drop such a render from the
+  // cache as soon as it has been sent (src/lib/site/outage.ts), so a fallback shell is
+  // never served twice.
+  const { settings } = await getShopSettings(locale)
 
   return (
     <html
+      data-scroll-behavior="smooth"
       lang={meta.htmlLang}
       dir={meta.dir}
       className={`${notoSans.variable} ${notoSansArabic.variable}`}
