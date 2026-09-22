@@ -1,0 +1,354 @@
+# Implementation decisions
+
+Where the code refines or deliberately departs from the letter of the specification
+(Starlight Jewellery "Website implementation" v2.0, 15 September 2026), and why. Everything
+else follows the spec as written.
+
+## Versions pinned
+
+Payload 3.89.0, Next.js 16.3.5 (Payload's peer range), React 19.3.0, Node 22 LTS or newer
+(the owner's Mac runs Node 26), pnpm 10, Tailwind CSS 4.3, PostgreSQL 17 (embedded locally;
+Supabase runs 17). Exact versions are in `package.json` and `pnpm-lock.yaml`.
+
+## Converted from the Dler Camera build
+
+The Starlight site reuses the infrastructure of the earlier Dler Camera implementation
+(Payload/Next setup, security hooks, media pipeline, search normalization, translation
+helpers, tests, deployment layout) and replaces the shop model. Because nothing was deployed,
+the old migration was discarded and a single fresh migration creates the `starlight`
+schema; the old `dler` schema, if present in a local database, is simply left untouched.
+
+## Prices and delivery fees
+
+- **Whole dinars stored as integers**: `priceIqd` and `feeIqd` are stored exactly as entered
+  (25000), validated as safe integers in 0/1…999,999,999 on the server (also for draft
+  saves, which Payload would otherwise skip) and in the admin field. Fractions, negatives,
+  non-finite values and overflow are rejected before storage.
+- **Display digits** (agreed with the owner): the amount is always ASCII digits with comma
+  grouping and zero fraction digits, wrapped in a translated label — `IQD 25,000`,
+  `25,000 دینار`, `25,000 د.ع` — inside a left-to-right isolate. Interface counts still use
+  locale digits through `Intl`. Locale-aware grouping with Arabic-Indic digits was offered
+  and declined so amounts read identically when switching language.
+- **Zero fee** must be confirmed with a checkbox before a city can be activated; the site
+  then shows "Free delivery" (never a blank or a missing amount).
+
+## Search
+
+- The product `searchText` holds every translation of the name and description; every
+  query token must appear in it. `normalizedName` holds the normalized name per language as
+  separate segments so ranking can test exact and prefix matches per language.
+- **Relevance ranking is done in memory** over the bounded candidate set: exact name,
+  name prefix, other name match, description match; ties newest-first, then id. At the
+  spec's scale (about 100 products) this is deterministic and cheap.
+- The normalization table (kaf/keheh, yeh variants, alef forms, teh marbuta, heh
+  doachashmee, digits, diacritics, tatweel) is unchanged from the previous build and
+  documented in `src/lib/catalog/normalize.ts`; distinct Sorani letters are never folded.
+
+## Content model
+
+- **Categories**: activation requires all three names; deactivation is refused while a
+  published product uses the category (drafts may keep it but cannot be published until
+  they get an active category); deletion is refused while any product, draft included,
+  uses it, and the message shows the count. Public navigation and filters list only active
+  categories that have at least one published product; a URL naming a missing or inactive
+  category is a distinct `CATEGORY_UNAVAILABLE` state with a Clear category action, while
+  an active but empty category simply shows zero results.
+- **Catalogue filter fields follow the URL** (2026-09-22). The filter form used to keep its
+  own state (uncontrolled inputs), so removing a chip, Clear all or the Back button changed
+  the results but left the old selection in the form. The fields are now controlled and
+  mirror the results' query (`src/components/site/CatalogFilters.tsx`): when new results
+  arrive from anywhere other than the form itself, the fields are reset to them; results
+  for the form's own navigations never reset it, so a visitor typing faster than the
+  results arrive is never interrupted (the form remembers which navigations are its own).
+  The relevance sort option now appears as soon as something is typed.
+- **Photos that fail to load show a Starlight placeholder with "Try again"** (2026-09-22).
+  `src/components/site/ResponsiveImage.tsx` is a client component: on error (and for images
+  the browser already gave up on before hydration) the same frame shows the sparkle mark,
+  a translated message and a retry button that reloads the image with a `retry=N` marker so
+  the failed response is not reused; thumbnails show the mark only. In product cards the
+  link is an overlay over the frame rather than a wrapper, so the button is never nested
+  inside a link.
+- **Browser journeys run in CI on three devices** (2026-09-22). Playwright has desktop,
+  phone (Pixel 7) and iPad projects — Chromium plays the iPad so one browser install covers
+  local runs and CI — and the admin journeys no longer skip small screens; a journey uploads
+  a photo from the product form, publishes, edits and removes the product on each device.
+  The `browser` job in `.github/workflows/ci.yml` starts the embedded database, migrates,
+  seeds, builds, serves the production build and runs every journey, keeping traces of
+  failures as an artifact. Layout branches in the tests key off the viewport width (the
+  iPad has the desktop filters but the collapsed header menu).
+- **Photos are reduced in the browser before they are uploaded** (2026-09-22). A phone
+  photo is 4000+ px and 5–8 MB, over the 3 MB limit, so the owner had to export a smaller
+  copy by hand first. The Media form now starts with a UI field
+  (`src/components/admin/PhotoPrep.tsx`; being a field of the collection it also appears in
+  the upload drawer opened from the product form) that watches the chosen file in the form
+  state, decodes it with `createImageBitmap(…, { imageOrientation: 'from-image' })` so a
+  phone photo comes out the right way up (`<img>` fallback for older browsers), scales it
+  to at most 2000 px on the long side and 20 MP, and re-encodes it until it is under 3 MB
+  (`src/lib/photo-prep.ts`: JPEG at quality 0.86 → 0.80 → 0.72, then 20 % smaller, up to
+  four passes; a PNG stays PNG so a transparent logo survives, then WebP, then JPEG), then
+  replaces the file in the form. Photos already within the limits are sent untouched — no
+  second lossy encode. The panel shows a preview, "Preparing…", what was reduced from what,
+  and an upload progress bar: `fetch` cannot report upload progress, so
+  `src/lib/upload-progress.ts` installs a shim that sends multipart bodies containing a
+  file through an `XMLHttpRequest` (credentials and headers copied) and hands the result
+  back as a `Response`; every other request keeps the browser's `fetch`. The server rules
+  in `src/collections/Media.ts` are unchanged — a browser without canvas, or a file the
+  browser cannot decode, still gets the same refusal — and the limits live in
+  `src/lib/upload-limits.ts` so both sides read one number. Two React details cost time:
+  the upload drawer hands out a new `setValue` on every render, and React StrictMode runs
+  effects twice in development, so the effect keys off the file alone (the setter goes
+  through `useEffectEvent`), remembers in a ref which file it is working on or produced,
+  and keeps the preview object URL in a ref that is revoked only when the next file
+  arrives or the panel unmounts; without this the panel sat on "Preparing" for ever
+  inside the drawer.
+- **The product form shows a live "ready to publish" checklist** (2026-09-22). Pressing
+  Publish used to be the first moment the owner learned what was missing. The rules moved
+  to `src/lib/catalog/publication.ts` (name and description in all three languages within
+  their limits, a category, 1–8 photos, a whole-dinar price, availability decided) and are
+  applied on both sides: the server hook in `src/hooks/products.ts` still refuses an
+  incomplete publication and also checks what only the database knows (the category is
+  active, every photo still exists), while the UI field at the top of the product form
+  (`src/components/admin/PublishChecklist.tsx`) reads the form state with `useFormFields`
+  and lists every item with what is missing in the owner's words ("missing in Kurdish,
+  Arabic"), updating as they type; complete forms read "Ready to publish" or, for a
+  published product, "Complete — publishing will update the website". Save Draft is never
+  blocked.
+- **The product gallery swipes and zooms on touch screens** (2026-09-22).
+  `src/components/site/ProductGallery.tsx` had buttons and thumbnails only. The main photo
+  now swipes between photos (pointer events, 40 px threshold, mirrored in RTL) and carries a
+  "Photo 2 of 5" chip; the enlarged view pinches to zoom (two pointers tracked by id, up to
+  4×, zooming at the point between the fingers), drags to pan while zoomed, swipes to the
+  next photo when not zoomed, double-taps to 2.5× and back, and has −/+/Reset and
+  phone-sized previous/next buttons; the keyboard keeps the arrows plus `+`, `-` and `0`.
+  It is all pointer events on a `touch-none` stage (the main frame keeps `touch-pan-y` so
+  the page still scrolls past it), so a mouse, a trackpad (the wheel zooms) and fingers
+  behave alike. Playwright has no pinch API, so the phone test drives it through Chrome's
+  `Input.dispatchTouchEvent`.
+- **Light and dark themes on both sides, chosen by the user** (owner decision,
+  2026-09-16). Every colour on the public site is a semantic Tailwind token
+  (`page`, `surface`, `line`, `ink`, `heading`, `accent`, `primary`…, `src/app/(site)/globals.css`)
+  with a second value under `html[data-theme='dark']`; the plum brand scale, the hero and
+  the footer are the same in both, and product photos keep their white frame. The header
+  moon/sun button (`src/components/site/ThemeToggle.tsx`) saves the visitor's choice in
+  this browser (`localStorage` key `sl-theme`); until they choose, the site follows the
+  device setting, live. An inline script in `<head>` applies the theme before the first
+  paint, so there is no flash. Without JavaScript the site is light. The admin uses
+  Payload's own theme support (`admin.theme: 'all'`): the Light / Dark / Auto switch in
+  the menu (`src/components/admin/AppearanceSwitch.tsx`) stores the choice in Payload's
+  `payload-theme` cookie, so the server renders the right theme on the next request, and
+  `custom.scss` gives every semantic token a dark value. Two Payload quirks are worked
+  around in `src/app/(payload)/layout.tsx` + `src/lib/admin-theme.ts`: the admin renders
+  entirely in the browser (the served page is blank until its JavaScript runs), and on
+  unauthenticated pages (login) Payload never applies the device setting because the
+  unauthenticated client config carries no theme. So while no choice is saved the layout
+  marks `<html>` with `data-theme-auto`, and a `prefers-color-scheme: dark` rule replays
+  the dark variables for that case — a dark phone is dark from the first byte, login page
+  included. (A `providers` component that injects a script cannot do this: scripts inside
+  React components never run when rendered in the browser.)
+- **Admin look and feel** (owner decision, 2026-09-16): the admin is used on a phone and an
+  iPad, so it is restyled and simplified rather than left as Payload's default. The
+  Starlight theme is applied through Payload's CSS variables in
+  `src/app/(payload)/custom.scss` (light and dark, see the theme decision above), with
+  16px inputs (no iOS zoom), 44px touch targets and one column below 768px. The dashboard is replaced
+  by a task-based home (`src/components/admin/Home.tsx`: Add a product, tiles with live
+  counts, View the website). Every collection and global uses `SIMPLE_DOCUMENT_VIEW`
+  (`src/lib/admin.ts`): no API or Versions tabs (version history still exists for drafts
+  and stays reachable through the REST API), hidden `publishedAt`/`updatedBy`, and the
+  Last Modified/Created line hidden by CSS while the Draft/Published status stays. The
+  product form is three stacked sections instead of tabs so nothing is hidden on a
+  phone. Class names are Payload 3.89's; re-check the stylesheet after a Payload upgrade.
+- **Web addresses (slugs) are generated and hidden from the admin** (owner decision,
+  2026-09-16; the spec let the owner enter or change the slug by hand, with a redirect on
+  change). A product's slug follows its English name while the product has never been
+  published — a typo fixed while drafting fixes the address — and is frozen at the first
+  publication; a category's slug is frozen at its first activation (`activatedAt`).
+  Duplicates get a numeric suffix; an English name with no Latin letters gets a readable
+  fallback (`item-a1b2c3`, `category-…`). Because addresses no longer change, nothing
+  creates redirects any more; the Redirects collection stays for legacy rows, hidden from
+  the admin menu (`src/hooks/slugs.ts`).
+- **Translations are edited on one form, not through Payload locales** (owner decision,
+  2026-09-16). Payload's localization made the owner switch the locale selector and save
+  once per language; the spec's "complete in all three languages" rule stays, but every
+  translated field (product name and description, category name, city name, About text)
+  is now a group with `ckb`, `ar` and `en` inputs on the same page, saved together
+  (`src/fields/translated.ts`). The public site picks the page language from the group
+  (`pickTranslation`), the search fields are built from all three as before, and a
+  computed `adminTitle` ("English · Kurdish") is the list and picker title. Duplicate city
+  names are still refused per language, now by three unique indexes. The migration copies
+  the old locale rows (including product version history) and deliberately keeps the old
+  `*_locales` tables and the `_products_v.snapshot`/`published_locale` columns so the
+  previously deployed build keeps working until the new one is live; drop them in the next
+  schema migration (see the note in `20260916_113912_translations_on_one_form.ts`).
+- **Image descriptions are one optional text per image, shared by all languages** (owner
+  decision, 2026-09-16; the spec asked for alt text in all three languages). The public
+  site uses the product name in the page's language when the description is empty, and
+  the shop name for the logo, so every image still has language-correct alt text.
+  Publishing no longer checks descriptions. (`media_locales` was kept by that migration
+  for the then-live build and dropped by the next one.)
+- **Delivery cities** are the Payload collection `cities` (labelled "Delivery cities") so
+  that the public fixed-projection endpoint can live at `GET /api/delivery-cities` without
+  colliding with Payload's generated `/api/<collection>` routes. Public reads (generated or
+  custom) are active-only. Duplicate normalized names are rejected per language by a hook
+  and by a database unique index on the localized table.
+- **Slugs** are derived once from the English name (numeric suffix on collision, since
+  names need not be unique) and never change automatically; a first save in Sorani or
+  Arabic waits for the English name.
+- **Publication completeness** and **draft-over-published** behaviour are unchanged from
+  the previous build (collection hooks reading every locale; Payload versions); since
+  2026-09-22 the same rules also drive the live checklist in the product form (above).
+- **Shop settings** hold only name, logo, Instagram URL (validated as HTTPS `instagram.com`
+  with a username path), introduction text and default locale; the handle shown on the site
+  is derived from the URL. `updatedBy` is stamped on settings, categories and cities.
+
+## Instagram and delivery UI
+
+- The Instagram action is a plain HTTPS link to the confirmed profile with
+  `rel="noopener noreferrer external"`, `target="_blank"` and an "opens Instagram" hint. No
+  prefilling, API or tracking. "Copy product link" copies the canonical URL built from
+  `SITE_URL`; when the clipboard is unavailable a selectable read-only field appears.
+- The home delivery selector keeps the chosen city in `?city=<id>` through
+  `history.replaceState`, so the language switcher (which copies the query string)
+  preserves the selection by internal id. Only an id of a currently active city is
+  accepted; anything else clears the selection with the "no longer listed" message.
+  Without JavaScript the same form submits as a GET to `/<locale>#delivery`.
+
+## Visual design (agreed with the owner)
+
+- White/off-white pages, the logo's dark plum (#482044) for buttons, links and accents,
+  lilac panels, a plum gradient hero and a deep-plum footer, and decorative four-point
+  "sparkle" stars that twinkle gently. Sparkles are `aria-hidden`, positioned with logical
+  insets (so they mirror in RTL), kept away from headings and buttons, and completely
+  still under `prefers-reduced-motion`. Product photos always sit on white with contain
+  sizing.
+- **Logo**: the supplied raster (light, non-transparent background) is used as-is on light
+  surfaces; on purple it sits in a white rounded tile. `scripts/brand-assets.ts` produces
+  the website derivatives — crops and downscales only, never upscaled or recoloured. The
+  favicon and header mark are a crop of the SL monogram with its stars. The copy shipped in
+  this build was extracted from the specification PDF (794×845 JPEG) and should be
+  replaced by the original 992×1056 file by re-running `pnpm brand:assets`.
+- Fonts stay Noto Sans / Noto Sans Arabic (verified Sorani coverage); no serif display
+  font was added because it would need a matching Arabic-script face.
+- **Softer, more playful home page** (owner decision, 2026-09-22). The plum gradient hero
+  became a pastel one — lilac to rose with a warm peach glow — that shows real pieces
+  instead of the logo: every featured product with a photo (newest first, at most eight),
+  one at a time on a slightly tilted white tile (mirrored in RTL) that links to the piece
+  shown, so the first screen is shoppable. The tile (`src/components/site/HeroSlideshow.tsx`)
+  moves on by itself every six seconds and by hand — arrows, dots, a swipe on a phone —
+  and plays by the accessibility rules for auto-rotating content: it pauses while hovered
+  or focused, has a pause/resume button, never rotates for visitors who prefer reduced
+  motion, and announces changes only when it is not rotating. The first piece is in the
+  server-rendered HTML (and is the page's priority image); only the current and the next
+  photo are in the page at any time, so eight featured pieces are not eight downloads up
+  front. A swipe that ends on the photo does not open the piece it landed on. Category
+  chips became pastel tiles that cycle lilac / peach / mint / rose; product cards carry a
+  faint surface gradient and tighter padding on phones; card corners are rounder
+  (`--radius-card` 1.5rem) and there are fewer sparkles. The four pastels have muted dark
+  values so dark mode keeps the same structure, and the logo stays in the header and the
+  footer. Sparkles no longer declare `will-change` (dozens of compositor layers for a
+  gentle twinkle cost more than they saved).
+- **Product images ask for their real size** (2026-09-22). `ProductGrid` passes each card a
+  `sizes` attribute that mirrors the grid's actual column formula (the catalogue grid is
+  three columns beside the filters, the home grid four), so phones stop downloading the
+  desktop variant; `ResponsiveImage` is keyed by its source so a swapped photo (the hero
+  tile, the gallery) resets its retry state.
+- **Catalogue chores** (2026-09-22): the category filter list runs one `DISTINCT` query
+  (`findDistinct`) instead of reading every published product's category; Clear all is a
+  client-side navigation that empties the fields at once and cancels a pending debounce,
+  while staying a plain link for visitors without JavaScript; the phone menu closes when a
+  link in it is tapped.
+
+## Performance
+
+Measured from the owner's location on 22 September 2026: a warm request for the home
+page took about 1.4 s before the first byte and a cold one 2 s (plus 3 s to open the TLS
+connection, which is the network, not the site); a trivial API call took 1 s; every
+static file took about 0.4 s. Causes, and what was done about each:
+
+- **The functions and the database were on different continents.** Netlify runs
+  functions in Ohio by default; Supabase is in Frankfurt; a page ran 9–15 statements in
+  a row, each paying the crossing. Region selection needs Netlify's Pro plan, so the
+  choice (pay, or move the Supabase project to Ohio for free) is the owner's; both are
+  described in docs/deployment.md with the migration steps. The code now needs far fewer
+  round trips anyway: the readers in `src/lib/catalog/queries.ts` are wrapped in React's
+  `cache` (a layout, its page and the page's metadata share one result instead of loading
+  settings and products twice), never request totals they do not use (`pagination:
+false` skips Payload's count query), and the pages load their independent parts with
+  `Promise.all`. Home went from 9 statements to 7, a product page from 15 to 8, and the
+  remaining ones overlap. Database connections are kept alive between invocations
+  (`idleTimeoutMillis` 4 minutes in production, below the host's 350 s NAT limit) so a
+  container serving several visitors does not renegotiate TLS to the pooler each time.
+- **Nothing was cached** (`force-dynamic` everywhere). Product pages, About and Contact
+  are now cached: rendered on first visit, stored by the CDN (`revalidate` is a day-long
+  safety net; an empty `generateStaticParams` keeps the build away from the database while
+  still allowing on-demand caching), and invalidated by `src/hooks/revalidate.ts` on any
+  product, category, photo or settings change — one `revalidatePath` on the site layout,
+  coarse on purpose — so nothing is ever stale. A database failure is never frozen into
+  the cache either, see "Outages on the serverless host" below. The home page (`?city=`
+  served without JavaScript) and the catalogue listing (filters) stay per-request. The owner's preview
+  moved to its own always-fresh route (`/products/<slug>/preview`) so the public page no
+  longer reads request headers.
+- **Every first visit was made twice.** `withPayload` sends `Critical-CH` on every route,
+  and Chrome then restarts the navigation with the colour-scheme hint attached. The public
+  site never uses the hint (its theme is set in the page), so `next.config.ts` cancels the
+  header outside `/admin` and `/api`; the admin keeps Payload's behaviour.
+- **Bytes.** The Arabic font shipped 770 unused presentation-form glyphs (166 KB → 77 KB,
+  pixel-identical text, see src/fonts/README.md); the home page tile and the header mark
+  are WebP files at the size they are displayed (130 KB + 27 KB → 12 KB + 2 KB), and the
+  tile is lazy so phones, which hide it, never download it. Uploaded photos are told to
+  stay in the browser for a year (`src/hooks/mediaCache.ts` rewrites each new object's
+  cache metadata; names are unique and never rewritten), so returning visitors do not
+  re-request them.
+- **Cold starts** remain a property of the free plan; a free uptime ping every 5 minutes
+  keeps the function warm (docs/deployment.md).
+
+### Outages on the serverless host (2026-09-22)
+
+Two things went wrong the first time the site ran against a wrong database password on
+Netlify, and both are now handled:
+
+- **The function crashed instead of showing the outage state.** Payload's Postgres adapter
+  creates an `initializing` promise that it rejects — with no reason — when the first
+  connection fails, and only ever awaits it when a transaction starts. When no transaction
+  follows, that rejection is unhandled; `next start` merely logs it, but the serverless
+  runtime treats an unhandled rejection as a crash and every request answered "This
+  function has crashed". `withHandledConnectionFailure` (`src/lib/db.ts`) attaches a
+  handler to that promise; every caller still receives the connection error as before.
+- **Cached pages could not opt out of the cache.** The product, About and Contact pages
+  used `connection()` to make an outage render per-request, but a cached (ISR) route
+  rejects every such API at request time — `connection()`, `revalidatePath()` and a
+  `no-store` fetch, even from `after()` — with "Dynamic server usage", which ends in a bare
+  "Internal Server Error"; and a thrown error ends the same way because the error
+  boundary is not used for cached renders. Now an outage render is sent normally (About
+  and Contact from their built-in values, a product page as the "unavailable" state) and,
+  once the response is out, `after()` asks the site's own `/site-cache/drop` route
+  (`src/lib/site/outage.ts`) to invalidate that path — a route handler may call
+  `revalidatePath`. The request is signed with the application secret and sent with
+  Node's HTTP client (Next's `fetch` is tracked too), and only the cached public routes
+  can be dropped. Verified with a wrong password under `pnpm start`: every outage render
+  is a cache MISS, the first visit after the password is fixed serves the real page, and
+  no unhandled rejection is logged. Pages that were already cached before an outage keep
+  being served from the cache throughout it. `CatalogUnavailableError` carries a
+  `digest` so the client error boundary can show the outage wording should such an error
+  ever reach it from a per-request page.
+
+## Security and operations
+
+- First-user registration is blocked by a hook; only `pnpm owner:create` can create the
+  first owner. Password reset stays disabled until an email provider exists.
+- The application's tables live in the `starlight` schema created by the first migration
+  (Payload marks `schemaName` as experimental; a fresh Supabase project satisfies it).
+- A local `pnpm build`/`pnpm start` without S3 variables falls back to disk storage with a
+  warning; on Netlify (`REQUIRE_S3_STORAGE=true`) the build fails instead.
+- `/api/catalog` and `/api/delivery-cities` share a best-effort in-memory throttle; the
+  free hosting plan has no platform rate limiting.
+- The embedded development database is created with the user, password and database name
+  found in `.env`'s `DATABASE_URI`, so a developer's existing `.env` keeps working.
+
+## Free-tier operating notes
+
+- Netlify free plan: 300 credits/month, 15 credits per production deploy; previews are
+  unlimited. Deploy to production only at milestones.
+- Supabase free plan pauses inactive projects after about a week; the spec forbids
+  artificial keep-alive traffic, so a quiet week takes the catalogue offline until the
+  owner resumes it. The contact page and the Instagram action keep working from built-in
+  values.
