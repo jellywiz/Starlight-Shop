@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
+import { LinkDot } from './LinkPending'
+
 type Item = { href: string; label: string }
 
 /**
@@ -80,6 +82,7 @@ export function MobileMenu({
                 onClick={() => setOpen(false)}
               >
                 {item.label}
+                <LinkDot />
               </Link>
             </li>
           ))}

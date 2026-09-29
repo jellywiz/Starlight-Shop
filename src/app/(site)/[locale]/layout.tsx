@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
+import { NavigationProgress } from '@/components/site/LinkPending'
+import { PageTransition } from '@/components/site/PageTransition'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { THEME_INIT_SCRIPT } from '@/components/site/ThemeToggle'
@@ -84,13 +86,16 @@ export default async function LocaleLayout({ children, params }: Props) {
         <a href="#main-content" className="skip-link">
           {dict.nav.skipToContent}
         </a>
+        <NavigationProgress />
         <SiteHeader locale={locale} dict={dict} settings={settings} />
         <main
           id="main-content"
           className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10"
           tabIndex={-1}
         >
-          {children}
+          {/* Route changes cross-fade the page and a tapped product photo glides into its
+              gallery; browsers without view transitions just switch. */}
+          <PageTransition>{children}</PageTransition>
         </main>
         <SiteFooter locale={locale} dict={dict} settings={settings} />
         <script

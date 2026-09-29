@@ -35,16 +35,17 @@ on the deployed site (screenshot, log line or URL) and the owner reviews.
 ## Automated test commands
 
 ```bash
-pnpm test:unit     # 44 tests: whole-dinar parsing/formatting, normalization table, ranking, URL parameter validation, photo cache headers, browser photo preparation, publish checklist, outage cache-drop signatures
+pnpm test:unit     # 47 tests: whole-dinar parsing/formatting, normalization table, ranking, URL parameter validation, photo cache headers, browser photo preparation, publish checklist, outage cache-drop signatures, the proxy's 404 routing
 pnpm test:int      # 29 tests on a throwaway PostgreSQL: publication rules, access, search, filters, categories, cities, redirects, uploads
 pnpm build && pnpm start &&  pnpm seed:dev --owner
-PLAYWRIGHT_CHROME_PATH=... pnpm test:e2e   # 69 browser journeys: 23 on each of desktop, phone (Pixel 7) and iPad
+PLAYWRIGHT_CHROME_PATH=... pnpm test:e2e   # 72 browser journeys: 24 on each of desktop, phone (Pixel 7) and iPad
 ```
 
 The browser journeys cover the public site (search, filters and their synchronisation with
-the URL, the home hero slideshow — arrows, dots, swipe, auto-play and pause — the product
-page, gallery swipe and pinch-zoom through Chrome's touch events, language switch, delivery
-fees, theme switch, photo fallback, cached product pages and the owner-only preview) and the
+the URL; instant feedback on every tap: placeholders, busy links, the top bar, the
+cross-fade; the home hero slideshow: arrows, dots, swipe, auto-play and pause; the product
+page; gallery swipe and pinch-zoom through Chrome's touch events; language switch; delivery
+fees; theme switch; photo fallback; cached product pages and the owner-only preview) and the
 admin (login, price and fee changes reaching the site, category creation, an oversized photo
 reduced in the browser before upload, uploading a photo from the product form with the
 publish checklist going from "things to fill in" to "Ready to publish", then publishing,

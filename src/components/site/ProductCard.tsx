@@ -1,10 +1,13 @@
 import Link from 'next/link'
+import { ViewTransition } from 'react'
 
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionary'
 import type { CatalogItem } from '@/lib/catalog/types'
+import { photoTransitionName } from '@/lib/site/transitions'
 
 import { AvailabilityBadge } from './AvailabilityBadge'
+import { LinkSpinner } from './LinkPending'
 import { Price } from './Price'
 import { ResponsiveImage } from './ResponsiveImage'
 
@@ -32,22 +35,32 @@ export function ProductCard({
       {/* The photo's link is an overlay rather than a wrapper, so the "try again" button
           shown when a photo fails is never nested inside a link. */}
       <div className="relative bg-white">
-        <div className="aspect-square w-full">
-          {item.cover ? (
-            <ResponsiveImage
-              image={item.cover}
-              sizes={sizes}
-              labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
-              priority={priority}
-              className="h-full w-full object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-surface-2 text-sm text-ink-muted">
-              {dict.product.noPhoto}
-            </div>
-          )}
-        </div>
-        <Link href={href} className="absolute inset-0" tabIndex={-1} aria-hidden="true" />
+        <ViewTransition
+          name={photoTransitionName(item.slug)}
+          share="vt-photo"
+          enter="none"
+          exit="none"
+          update="none"
+        >
+          <div className="aspect-square w-full">
+            {item.cover ? (
+              <ResponsiveImage
+                image={item.cover}
+                sizes={sizes}
+                labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
+                priority={priority}
+                className="h-full w-full object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-surface-2 text-sm text-ink-muted">
+                {dict.product.noPhoto}
+              </div>
+            )}
+          </div>
+        </ViewTransition>
+        <Link href={href} className="absolute inset-0" tabIndex={-1} aria-hidden="true">
+          <LinkSpinner />
+        </Link>
       </div>
       <div className="flex flex-1 flex-col gap-1 border-t border-line-soft p-3 sm:p-4">
         <p className="text-xs font-medium tracking-wide text-accent-soft uppercase">

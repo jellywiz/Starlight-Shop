@@ -85,7 +85,9 @@ resetting for anyone.
 
 **Speed.** Product pages, About and Contact are served from Netlify's cache and refreshed
 automatically when you publish or change something, so they open quickly even when the
-site has been idle. The home page and the catalogue with filters are built on every visit
+site has been idle. Every tap answers immediately — a placeholder for the home page, a
+busy mark on the tapped link or photo and a thin bar at the top while a page is on its
+way — and pages cross-fade into each other, the tapped photo gliding into its page. The home page and the catalogue with filters are built on every visit
 and depend on the database; after a quiet spell the first visit may take a couple of
 seconds while the hosting starts the site (a free uptime ping keeps it awake, see
 docs/deployment.md). If everything feels slow again, check the two regions (functions and

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { CatalogUnavailable } from '@/components/site/CatalogUnavailable'
 import { DeliveryFees } from '@/components/site/DeliveryFees'
 import { InstagramLink } from '@/components/site/InstagramLink'
+import { LinkDot } from '@/components/site/LinkPending'
 import { HeroSlideshow } from '@/components/site/HeroSlideshow'
 import { ProductGrid } from '@/components/site/ProductGrid'
 import { SparkleIcon, Sparkles } from '@/components/site/Sparkles'
@@ -134,6 +135,7 @@ export default async function HomePage({ params, searchParams }: Props) {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={`/${locale}/products`} className="btn-primary px-6 py-3 text-base">
                 {dict.home.browseProducts}
+                <LinkDot />
               </Link>
               <InstagramLink
                 href={settings.instagramUrl}
@@ -186,6 +188,7 @@ export default async function HomePage({ params, searchParams }: Props) {
             </h2>
             <Link href={`/${locale}/products`} className="link-plum text-sm">
               {dict.common.viewAll}
+              <LinkDot />
             </Link>
           </div>
           <div className="mt-5">

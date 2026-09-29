@@ -4,6 +4,8 @@ import type { Locale } from '@/i18n/config'
 import { type Dictionary, t } from '@/i18n/dictionary'
 import { type CatalogQuery, catalogPath } from '@/lib/catalog/params'
 
+import { LinkDot } from './LinkPending'
+
 export function Pagination({
   locale,
   dict,
@@ -28,6 +30,7 @@ export function Pagination({
       {page > 1 ? (
         <Link href={href(page - 1)} rel="prev" className="btn-secondary">
           {dict.catalog.previousPage}
+          <LinkDot />
         </Link>
       ) : (
         <span className="btn-secondary opacity-50" aria-disabled="true">
@@ -40,6 +43,7 @@ export function Pagination({
       {page < totalPages ? (
         <Link href={href(page + 1)} rel="next" className="btn-secondary">
           {dict.catalog.nextPage}
+          <LinkDot />
         </Link>
       ) : (
         <span className="btn-secondary opacity-50" aria-disabled="true">

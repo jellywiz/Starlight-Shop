@@ -301,6 +301,47 @@ false` skips Payload's count query), and the pages load their independent parts 
 - **Cold starts** remain a property of the free plan; a free uptime ping every 5 minutes
   keeps the function warm (docs/deployment.md).
 
+### Every tap answers at once (2026-09-29)
+
+Between a tap and the next page there used to be nothing — on the free plan that can be
+one or two seconds after a quiet spell — so taps felt ignored. Now:
+
+- **Placeholders.** The home page has a `loading.tsx` (`src/app/(site)/[locale]/(home)/`)
+  whose skeleton mirrors the real layout, so it appears the instant a visitor heads there
+  and the content settles into place. The catalogue deliberately has none: Next shows a
+  route's loading placeholder for every navigation into it, including a search-parameter
+  change, which would blank the results on every keystroke in the filters; its results
+  keep updating in place with "Updating results…" as before. The route group exists only
+  so the placeholder applies to the home page and not to every page under `[locale]`.
+- **Busy links.** `src/components/site/LinkPending.tsx` reads Next's `useLinkStatus`: a
+  spinner over the tapped product photo, a dot after a tapped header, menu, pagination or
+  hero link, and a thin bar along the top of the page while any of them is pending. All
+  appear only after 150 ms, so an instant (prefetched) navigation never flashes; a
+  navigation that lands on a placeholder ends the pending state at once, so the skeleton
+  is the feedback there.
+- **Route changes cross-fade and the tapped photo glides into its gallery** through
+  React's `ViewTransition` (stable in React 19.3, no Next flag needed).
+  `src/components/site/PageTransition.tsx` keys a boundary by the pathname — a new route
+  mounts a new boundary (old page fades out, new one fades in) while a search-parameter
+  change updates the same boundary with `update="none"`, because a view transition freezes
+  the page for its duration and swallowed keystrokes while the results followed the
+  filters (found by the typing-race test). A product's card frame and its gallery frame
+  share the name `product-photo-<slug>` (`src/lib/site/transitions.ts`) with `share` only
+  — `enter`, `exit` and `update` are `none`, so results changing or a photo swap in the
+  gallery never start a transition. Verified: zero transitions while typing, filtering,
+  hydrating or while the hero slideshow advances; exactly one per route change. Reduced
+  motion disables every transition animation in CSS; browsers without the API just
+  switch. The home slideshow tile is deliberately unnamed (its piece may also be in the
+  Featured pieces grid, and names must be unique per page).
+- **Unknown languages get a real 404 again** (`src/proxy.ts`). With a placeholder in the
+  route, the shell is streamed before the page can say "not found", so `/fr`,
+  `/fr/products` or `/wp-admin` would answer 200 with only a `noindex` tag — a soft 404 for
+  every scanner and crawler. The proxy sends any path whose first segment is not a
+  language to the default language's catch-all page, which renders the translated 404
+  with the right status; the admin, the API, Next's assets, the cache-drop route and files
+  are never touched. It runs as an edge function on Netlify (well within the free plan's
+  allowance).
+
 ### Outages on the serverless host (2026-09-22)
 
 Two things went wrong the first time the site ran against a wrong database password on

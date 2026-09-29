@@ -165,6 +165,9 @@ Put the two in the same place, in one of these ways:
      pause or delete the Frankfurt project.
 
 Either way, expect admin actions and uncached pages to lose roughly half a second each.
+`src/proxy.ts` (unknown-language paths → 404) runs as a Netlify edge function on every
+page request; the free plan's edge allowance (a million invocations a month) is far above
+this catalogue's traffic.
 Product, About and Contact pages are served by the CDN without touching the function at
 all after the first visit (they are refreshed the moment content changes), so they are
 fast in both setups.

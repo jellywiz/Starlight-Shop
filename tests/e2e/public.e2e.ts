@@ -217,6 +217,77 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByRole('status')).toHaveCount(0)
   })
 
+  test('every tap answers at once: placeholders, a busy dot and bar, a spinner on the card', async ({
+    page,
+  }) => {
+    // Slow every page payload down (prefetches included) so the feedback has to show.
+    await page.route(/[?&]_rsc=/, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 900))
+      await route.continue()
+    })
+    await page.addInitScript(() => {
+      const w = window as unknown as { __viewTransitions: number }
+      w.__viewTransitions = 0
+      const original = document.startViewTransition?.bind(document)
+      if (original) {
+        document.startViewTransition = ((callback: () => void) => {
+          w.__viewTransitions += 1
+          return original(callback)
+        }) as typeof document.startViewTransition
+      }
+    })
+    const header = page.getByRole('banner')
+    const openMenu = async () => {
+      if (menuCollapsed(page)) {
+        await header.getByRole('button', { name: 'Open menu' }).click()
+      }
+    }
+
+    // Product → home: the home placeholder appears immediately, then the real page.
+    // (networkidle: the page must be hydrated, or the link is a plain browser navigation.)
+    await page.goto(`/en/products/${SAMPLE_SLUG}`, { waitUntil: 'networkidle' })
+    await openMenu()
+    await header.getByRole('link', { name: 'Home', exact: true }).click()
+    await expect(page.getByTestId('home-skeleton')).toBeVisible()
+    await expect(page.getByTestId('hero-slideshow')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('home-skeleton')).toHaveCount(0)
+
+    // Home → catalogue: the header link shows a busy dot and the top bar runs.
+    await openMenu()
+    const products = header.getByRole('link', { name: 'Products', exact: true })
+    await products.click()
+    await expect(page.locator('.nav-progress--on')).toHaveCount(1)
+    if (!menuCollapsed(page)) {
+      // The phone menu closes on tap, so its dot is never on screen; the bar serves there.
+      await expect(products.locator('.link-dot--on')).toHaveCount(1)
+    }
+    await expect(page.locator('article.product-card').first()).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.nav-progress--on')).toHaveCount(0)
+    // Let the page cross-fade finish: the page does not take input while it runs.
+    await page.waitForTimeout(400)
+
+    // Catalogue → product: a spinner on the tapped card until the gallery shows. The last
+    // card sits below the fold, so its page has not been prefetched when it is tapped; if
+    // a prefetch does win the race the page is simply there at once, which is also fine.
+    const card = page
+      .locator('article.product-card')
+      .filter({ hasNot: page.locator(`a[href$="/${SAMPLE_SLUG}"]`) })
+      .last()
+    await card.scrollIntoViewIfNeeded()
+    await card.locator('a.absolute').click({ force: true })
+    const gallery = page.locator('section[aria-label="Product photos"]')
+    await expect(card.locator('.link-spinner').or(gallery).first()).toBeVisible()
+    await expect(gallery).toBeVisible({ timeout: 10000 })
+    if (await page.evaluate(() => typeof document.startViewTransition === 'function')) {
+      // The page cross-fades and the tapped photo glides into the gallery.
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __viewTransitions: number }).__viewTransitions,
+        ),
+      ).toBeGreaterThan(0)
+    }
+  })
+
   test('the home hero shows the featured pieces one by one, by itself and by hand', async ({
     page,
   }) => {

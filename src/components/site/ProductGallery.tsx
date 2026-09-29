@@ -8,6 +8,7 @@ import {
   useId,
   useRef,
   useState,
+  ViewTransition,
 } from 'react'
 
 import type { Dictionary } from '@/i18n/dictionary'
@@ -96,7 +97,16 @@ const Chevron = ({ direction }: { direction: 'previous' | 'next' }) => (
  * and the enlarged view zooms with a pinch, a double tap, the mouse wheel or the buttons,
  * then pans with a drag, so the details of a piece can be inspected up close.
  */
-export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: Dictionary }) {
+export function ProductGallery({
+  photos,
+  dict,
+  transitionName,
+}: {
+  photos: PublicImage[]
+  dict: Dictionary
+  /** View-transition name shared with the product's card, so the photo glides in. */
+  transitionName?: string
+}) {
   const [index, setIndex] = useState(0)
   const [zoom, setZoom] = useState<Zoom>(NO_ZOOM)
   const [dragging, setDragging] = useState(false)
@@ -295,22 +305,30 @@ export function ProductGallery({ photos, dict }: { photos: PublicImage[]; dict: 
   return (
     <section aria-label={dict.product.galleryLabel} className="flex flex-col gap-3">
       <div className="card relative overflow-hidden bg-white">
-        <div
-          className="aspect-square w-full touch-pan-y select-none sm:aspect-[4/3]"
-          onPointerDown={onMainPointerDown}
-          onPointerUp={onMainPointerUp}
-          onPointerCancel={() => {
-            mainSwipe.current = null
-          }}
+        <ViewTransition
+          name={transitionName}
+          share="vt-photo"
+          enter="none"
+          exit="none"
+          update="none"
         >
-          <ResponsiveImage
-            image={current}
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            labels={labels}
-            priority
-            className="pointer-events-none h-full w-full object-contain p-6"
-          />
-        </div>
+          <div
+            className="aspect-square w-full touch-pan-y select-none sm:aspect-[4/3]"
+            onPointerDown={onMainPointerDown}
+            onPointerUp={onMainPointerUp}
+            onPointerCancel={() => {
+              mainSwipe.current = null
+            }}
+          >
+            <ResponsiveImage
+              image={current}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              labels={labels}
+              priority
+              className="pointer-events-none h-full w-full object-contain p-6"
+            />
+          </div>
+        </ViewTransition>
         {total > 1 ? (
           <p
             className="pointer-events-none absolute start-3 top-3 rounded-full bg-plum-950/70 px-2.5 py-1 text-xs font-semibold text-white"

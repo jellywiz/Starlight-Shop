@@ -7,6 +7,7 @@ import { deliveryFeesPath } from '@/lib/catalog/links'
 import type { PublicShopSettings } from '@/lib/shop'
 
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { LinkDot } from './LinkPending'
 import { MobileMenu } from './MobileMenu'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -69,6 +70,7 @@ export function SiteHeader({
                   className="rounded-full px-3 py-2 text-sm font-medium text-ink-soft hover:bg-surface-2 hover:text-heading"
                 >
                   {item.label}
+                  <LinkDot />
                 </Link>
               </li>
             ))}

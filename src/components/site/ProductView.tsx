@@ -9,6 +9,7 @@ import { ProductGrid } from '@/components/site/ProductGrid'
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionary'
 import { canonicalProductUrl, deliveryFeesPath } from '@/lib/catalog/links'
+import { photoTransitionName } from '@/lib/site/transitions'
 import { catalogPath } from '@/lib/catalog/params'
 import type { CatalogItem, ProductDetail } from '@/lib/catalog/types'
 import { jsonLdScript } from '@/lib/site/metadata'
@@ -83,7 +84,11 @@ export function ProductView({
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
-        <ProductGallery photos={product.photos} dict={dict} />
+        <ProductGallery
+          photos={product.photos}
+          dict={dict}
+          transitionName={photoTransitionName(product.slug)}
+        />
         <div className="flex flex-col gap-5">
           <p className="text-sm font-medium tracking-wide text-accent-soft uppercase">
             <Link
