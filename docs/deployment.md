@@ -207,6 +207,18 @@ Supabase project and a preview deploy:
 3. Merge to `main` → Netlify builds a production deploy (15 credits). Verify the live site.
 4. Roll back with "Publish deploy" on a previous known-good deploy in Netlify if needed.
 
+One-off after the release of 4 October 2026 (blurred photo stand-ins), after `pnpm migrate`:
+
+```bash
+DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' \
+MEDIA_PUBLIC_BASE_URL='https://<project-ref>.supabase.co/storage/v1/object/public/product-images' \
+pnpm media:previews
+```
+
+Only those two values are needed (no storage keys): the photos are read from the public
+bucket address. Without them the script works on the local development database and the
+`media/` folder. Photos uploaded from then on get their stand-in automatically.
+
 ## 6. Custom domain later
 
 Buy the domain, add it in Netlify (Domain management), then update `SITE_URL` and redeploy.

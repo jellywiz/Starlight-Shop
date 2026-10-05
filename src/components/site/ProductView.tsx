@@ -5,6 +5,7 @@ import { CopyButton } from '@/components/site/CopyButton'
 import { InstagramLink } from '@/components/site/InstagramLink'
 import { Price } from '@/components/site/Price'
 import { ProductGallery } from '@/components/site/ProductGallery'
+import { StickyEnquire } from '@/components/site/StickyEnquire'
 import { ProductGrid } from '@/components/site/ProductGrid'
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionary'
@@ -49,7 +50,8 @@ export function ProductView({
 }) {
   const canonical = canonicalProductUrl(locale, product.slug)
   return (
-    <article className="flex flex-col gap-10">
+    // Bottom padding on small screens makes room for the sticky enquiry bar.
+    <article className="flex flex-col gap-10 pb-24 lg:pb-0">
       {preview ? (
         <p
           role="status"
@@ -107,7 +109,7 @@ export function ProductView({
             <AvailabilityBadge available={product.isAvailable} dict={dict} />
           </div>
           <p className="text-sm text-ink-soft">{dict.common.currencyNote}</p>
-          <div className="flex flex-col gap-3">
+          <div id="product-actions" className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-3">
               <InstagramLink
                 href={settings.instagramUrl}
@@ -131,6 +133,21 @@ export function ProductView({
           </div>
         </div>
       </div>
+
+      <StickyEnquire anchorId="product-actions">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 flex-col">
+            <Price amount={product.priceIqd} dict={dict} className="text-lg text-heading" />
+            <span className="truncate text-xs text-ink-soft">{product.name}</span>
+          </div>
+          <InstagramLink
+            href={settings.instagramUrl}
+            label={dict.product.enquire}
+            dict={dict}
+            className="btn-instagram shrink-0 px-5 py-2.5 text-sm"
+          />
+        </div>
+      </StickyEnquire>
 
       <section aria-labelledby="product-description" className="card p-6 sm:p-8">
         <h2 id="product-description" className="section-title">

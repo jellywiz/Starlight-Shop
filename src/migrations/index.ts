@@ -2,6 +2,7 @@ import * as migration_20260915_194057_initial from './20260915_194057_initial'
 import * as migration_20260916_102258_media_description_shared from './20260916_102258_media_description_shared'
 import * as migration_20260916_113912_translations_on_one_form from './20260916_113912_translations_on_one_form'
 import * as migration_20260916_195225_generated_addresses from './20260916_195225_generated_addresses'
+import * as migration_20261004_130717_blur_previews from './20261004_130717_blur_previews'
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_20260916_195225_generated_addresses.up,
     down: migration_20260916_195225_generated_addresses.down,
     name: '20260916_195225_generated_addresses',
+  },
+  {
+    up: migration_20261004_130717_blur_previews.up,
+    down: migration_20261004_130717_blur_previews.down,
+    name: '20261004_130717_blur_previews',
   },
 ]

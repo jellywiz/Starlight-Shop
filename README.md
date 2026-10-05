@@ -31,22 +31,23 @@ Open http://localhost:3000 (site, redirects to `/ckb`) and http://localhost:3000
 
 ## Commands
 
-| Command                                           | Purpose                                                                                                  |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                        | Local development: embedded PostgreSQL + migrations + `next dev`                                         |
-| `pnpm db:start` / `pnpm db:reset`                 | Run (or wipe and run) the local database alone                                                           |
-| `pnpm migrate` / `pnpm migrate:create <name>`     | Apply / generate committed migrations (`src/migrations`)                                                 |
-| `pnpm generate:types` / `pnpm generate:importmap` | Regenerate `src/payload-types.ts` / the admin import map after config changes                            |
-| `pnpm owner:create`                               | Create the first owner account (see docs/deployment.md)                                                  |
-| `pnpm owner:reset-password`                       | Maintainer password reset (no email provider is configured)                                              |
-| `pnpm seed:dev [--owner]`                         | Synthetic sample content (products, two sample cities) for local work only                               |
-| `pnpm brand:assets`                               | Regenerate logo derivatives and favicons from `public/brand/logo.png`                                    |
-| `pnpm typecheck` / `pnpm lint`                    | TypeScript and ESLint                                                                                    |
-| `pnpm test:unit` / `pnpm test:int` / `pnpm test`  | Unit tests; integration tests on a throwaway database                                                    |
-| `pnpm test:e2e`                                   | Playwright browser journeys against a running site, on a desktop, a phone and an iPad (CI runs them too) |
-| `pnpm build` / `pnpm start`                       | Production build / serve                                                                                 |
-| `./scripts/backup.sh`                             | Database dump + storage copy with manifest                                                               |
-| `pnpm restore:storage <folder>`                   | Upload a storage backup into the bucket named in `.env` (restore, or move regions)                       |
+| Command                                           | Purpose                                                                                                                                                |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`                                        | Local development: embedded PostgreSQL + migrations + `next dev`                                                                                       |
+| `pnpm db:start` / `pnpm db:reset`                 | Run (or wipe and run) the local database alone                                                                                                         |
+| `pnpm migrate` / `pnpm migrate:create <name>`     | Apply / generate committed migrations (`src/migrations`)                                                                                               |
+| `pnpm generate:types` / `pnpm generate:importmap` | Regenerate `src/payload-types.ts` / the admin import map after config changes                                                                          |
+| `pnpm owner:create`                               | Create the first owner account (see docs/deployment.md)                                                                                                |
+| `pnpm owner:reset-password`                       | Maintainer password reset (no email provider is configured)                                                                                            |
+| `pnpm seed:dev [--owner]`                         | Synthetic sample content (products, two sample cities) for local work only                                                                             |
+| `pnpm brand:assets`                               | Regenerate logo derivatives and favicons from `public/brand/logo.png`                                                                                  |
+| `pnpm typecheck` / `pnpm lint`                    | TypeScript and ESLint                                                                                                                                  |
+| `pnpm test:unit` / `pnpm test:int` / `pnpm test`  | Unit tests; integration tests on a throwaway database                                                                                                  |
+| `pnpm test:e2e`                                   | Playwright browser journeys against a running site, on a desktop, a phone and an iPad (CI runs them too)                                               |
+| `pnpm build` / `pnpm start`                       | Production build / serve                                                                                                                               |
+| `./scripts/backup.sh`                             | Database dump + storage copy with manifest                                                                                                             |
+| `pnpm restore:storage <folder>`                   | Upload a storage backup into the bucket named in `.env` (restore, or move regions)                                                                     |
+| `pnpm media:previews`                             | Blurred stand-ins for photos uploaded before they existed (live site: pass `DATABASE_MIGRATION_URI` and `MEDIA_PUBLIC_BASE_URL`; `--force` redoes all) |
 
 ## Repository layout
 

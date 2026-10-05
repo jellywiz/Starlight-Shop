@@ -342,6 +342,37 @@ one or two seconds after a quiet spell — so taps felt ignored. Now:
   are never touched. It runs as an edge function on Netlify (well within the free plan's
   allowance).
 
+### Search, enquiry and photos on a phone (2026-10-04)
+
+- **The header search works on phones and suggests pieces.** The magnifier used to be a
+  link to the catalogue, where the visitor then had to open Filters to type. It now opens
+  the search field across the header, focused (`src/components/site/SiteSearch.tsx`), and
+  from the second character matching pieces appear underneath — the public catalogue API
+  (`/api/catalog`, relevance order, six at most) called 200 ms after the last keystroke
+  with stale answers dropped — each a row with photo, name, category and price that opens
+  the piece with a tap, an arrow key or Enter; the last row runs the full catalogue
+  search, which Enter does too when nothing is chosen. The same component is the inline
+  field on wider screens. It is a WAI-ARIA combobox (listbox, `aria-activedescendant`),
+  closes on Escape or a tap elsewhere, is a plain GET form without JavaScript, and takes
+  only the strings it needs rather than the whole dictionary.
+- **The enquiry stays within reach on product pages.** Below the `lg` breakpoint the price
+  and "Enquire on Instagram" sit in a bar fixed to the bottom of the screen
+  (`src/components/site/StickyEnquire.tsx`), with the safe-area inset respected. An
+  IntersectionObserver hides it while the page's own action block is on screen, so the
+  button never appears twice, and it is `inert` while hidden. The server renders it hidden
+  and the page keeps bottom padding for it.
+- **Photos no longer pop in from white.** Every upload now gets a blurred stand-in: a 24 px
+  WebP made by sharp from the sanitized file (`src/lib/media-preview.ts`, about 300 bytes)
+  stored in `media.blurDataUrl` (migration `20261004_130717_blur_previews`, a nullable
+  column — the previous build ignores it) and inlined into the page through the public
+  projection. `ResponsiveImage` paints it blurred behind the photo and fades it out once
+  the photo has pixels (also for photos the browser finished before React attached its
+  handlers). `pnpm media:previews` adds it to photos uploaded earlier, reading the 320 px
+  variant from the public bucket address (`MEDIA_PUBLIC_BASE_URL`, no storage keys needed —
+  the owner cannot read secret values back out of Netlify) or the local media folder; it
+  skips photos that already have one. Pages cached before that run show the previews after the next publish or
+  within the day-long revalidation. The field is hidden in the admin.
+
 ### Outages on the serverless host (2026-09-22)
 
 Two things went wrong the first time the site ran against a wrong database password on

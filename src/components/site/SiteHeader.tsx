@@ -9,16 +9,8 @@ import type { PublicShopSettings } from '@/lib/shop'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { LinkDot } from './LinkPending'
 import { MobileMenu } from './MobileMenu'
+import { SiteSearch } from './SiteSearch'
 import { ThemeToggle } from './ThemeToggle'
-
-function SearchIcon({ className }: { className: string }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  )
-}
 
 /**
  * Sticky header (spec section 2): logo, Home, Products, Delivery fees, About, Contact,
@@ -76,41 +68,21 @@ export function SiteHeader({
             ))}
           </ul>
         </nav>
-        <form
-          action={`/${locale}/products`}
-          method="get"
-          role="search"
-          className="ms-auto hidden min-w-0 flex-1 items-center sm:flex sm:max-w-xs"
-        >
-          <label htmlFor="header-search" className="sr-only">
-            {dict.catalog.searchLabel}
-          </label>
-          <div className="relative w-full">
-            <input
-              id="header-search"
-              type="search"
-              name="q"
-              maxLength={120}
-              placeholder={dict.catalog.searchPlaceholder}
-              className="w-full min-w-0 rounded-full bg-surface-2 py-2 ps-4 pe-11 text-sm text-ink ring-1 ring-line ring-inset placeholder:text-ink-muted focus:bg-surface focus:ring-2 focus:ring-focus focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="absolute end-1 top-1/2 -translate-y-1/2 rounded-full bg-primary p-1.5 text-on-primary hover:bg-primary-hover"
-              aria-label={dict.catalog.searchButton}
-            >
-              <SearchIcon className="h-4 w-4 fill-none stroke-current stroke-2" />
-            </button>
-          </div>
-        </form>
-        <div className="ms-auto flex items-center gap-1 sm:ms-2">
-          <Link
-            href={`/${locale}/products`}
-            className="rounded-full p-2 text-emphasis hover:bg-surface-2 sm:hidden"
-            aria-label={dict.nav.search}
-          >
-            <SearchIcon className="h-6 w-6 fill-none stroke-current stroke-2" />
-          </Link>
+        <SiteSearch
+          locale={locale}
+          labels={{
+            search: dict.catalog.searchLabel,
+            placeholder: dict.catalog.searchPlaceholder,
+            button: dict.catalog.searchButton,
+            suggestions: dict.search.suggestions,
+            searchFor: dict.search.searchFor,
+            noMatches: dict.search.noMatches,
+            close: dict.search.close,
+            loading: dict.search.loading,
+            currencyFormat: dict.common.currencyFormat,
+          }}
+        />
+        <div className="flex items-center gap-1 sm:ms-2">
           <div className="hidden lg:block">
             <Suspense fallback={<span className="text-sm text-ink-soft">{dict.nav.language}</span>}>
               <LanguageSwitcher current={locale} label={dict.nav.language} />

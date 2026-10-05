@@ -46,6 +46,8 @@ function ImageFrame({
 }: Props) {
   const [attempt, setAttempt] = useState(0)
   const [failed, setFailed] = useState(false)
+  // True once the real photo has pixels; the blurred stand-in then fades away.
+  const [loaded, setLoaded] = useState(false)
 
   if (failed) {
     const retry = () => {
@@ -80,15 +82,19 @@ function ImageFrame({
   }
 
   const srcSet = image.sources.map((s) => `${retried(s.url, attempt)} ${s.width}w`).join(', ')
-  return (
+  const photo = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       key={attempt}
-      // The page is server-rendered, so the browser may have given up on the image before
-      // React attached onError; a finished image with no pixels is that case.
+      // The page is server-rendered, so the browser may have finished the image before
+      // React attached its handlers: no pixels means it failed, pixels mean it is there.
       ref={(node) => {
-        if (node && node.complete && node.naturalWidth === 0) {
-          setFailed(true)
+        if (node && node.complete) {
+          if (node.naturalWidth === 0) {
+            setFailed(true)
+          } else {
+            setLoaded(true)
+          }
         }
       }}
       src={retried(image.src, attempt)}
@@ -100,8 +106,27 @@ function ImageFrame({
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : 'auto'}
       decoding="async"
-      className={className}
+      className={`${className} relative`}
+      onLoad={() => setLoaded(true)}
       onError={() => setFailed(true)}
     />
+  )
+  if (!image.placeholder) {
+    return photo
+  }
+  // The blurred stand-in (made at upload, ~300 bytes inline) paints the frame at once and
+  // fades once the photo has arrived; the real <img> keeps its own layout and sizes.
+  return (
+    <span className="relative block h-full w-full">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image.placeholder}
+        alt=""
+        aria-hidden="true"
+        data-placeholder={loaded ? 'done' : 'showing'}
+        className={`${className} blur-preview absolute inset-0 ${loaded ? 'blur-preview--done' : ''}`}
+      />
+      {photo}
+    </span>
   )
 }

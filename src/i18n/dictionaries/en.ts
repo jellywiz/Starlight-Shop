@@ -212,6 +212,13 @@ export const en = {
     body: 'We could not load the catalogue right now. Please try again in a few minutes, or message us on Instagram.',
     retry: 'Try again',
   },
+  search: {
+    suggestions: 'Suggestions',
+    searchFor: 'Search for “{query}”',
+    noMatches: 'No matches yet — try another word.',
+    close: 'Close search',
+    loading: 'Searching…',
+  },
   footer: {
     tagline: 'Handmade jewellery and accessories.',
     rights: '© {year} Starlight Jewellery. All rights reserved.',

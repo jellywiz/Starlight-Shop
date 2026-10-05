@@ -9,6 +9,8 @@ export type PublicImage = {
   alt: string
   /** Candidates for srcset, ascending by width. */
   sources: { url: string; width: number }[]
+  /** Tiny blurred stand-in (data URL) painted in the frame until the photo arrives. */
+  placeholder?: string
 }
 
 export type PublicCategory = {

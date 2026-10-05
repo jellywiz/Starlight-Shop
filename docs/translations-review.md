@@ -178,7 +178,12 @@ must be kept; plural entries list one line per form.
 | `unavailable.heading` | Catalogue temporarily unavailable | کاتالۆگەکە بۆ ماوەیەک بەردەست نییە | الكتالوج غير متاح مؤقتًا | ☐ |
 | `unavailable.body` | We could not load the catalogue right now. Please try again in a few minutes, or message us on Instagram. | ئێستا نەمانتوانی کاتالۆگەکە بار بکەین. تکایە دوای چەند خولەکێک دووبارە هەوڵ بدەرەوە، یان لە ئینستاگرام نامەمان بۆ بنێرە. | تعذّر تحميل الكتالوج الآن. يرجى المحاولة بعد بضع دقائق أو مراسلتنا عبر إنستغرام. | ☐ |
 | `unavailable.retry` | Try again | دووبارە هەوڵ بدەرەوە | إعادة المحاولة | ☐ |
+| `search.suggestions` | Suggestions | پێشنیارەکان | اقتراحات | ☐ |
+| `search.searchFor` | Search for “{query}” | گەڕان بۆ «{query}» | البحث عن «{query}» | ☐ |
+| `search.noMatches` | No matches yet — try another word. | هێشتا هیچ ئەنجامێک نییە — وشەیەکی تر تاقی بکەرەوە. | لا نتائج بعد — جرّب كلمة أخرى. | ☐ |
+| `search.close` | Close search | داخستنی گەڕان | إغلاق البحث | ☐ |
+| `search.loading` | Searching… | گەڕان… | جارٍ البحث… | ☐ |
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-173 strings.
+178 strings.

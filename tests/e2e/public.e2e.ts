@@ -45,14 +45,20 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await page.getByRole('link', { name: 'Sample star necklace' }).click()
     await expect(page).toHaveURL(new RegExp(`/en/products/${SAMPLE_SLUG}$`))
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sample star necklace')
-    await expect(page.getByText('IQD 25,000')).toBeVisible()
+    // (On the page and, on small screens, in the bottom enquiry bar.)
+    await expect(page.getByText('IQD 25,000').first()).toBeVisible()
     // No delivery fee or total inside the product pricing block (spec section 2).
     await expect(page.getByRole('main').getByText(/delivery to|free delivery/i)).toHaveCount(0)
 
+    // The page's own action and, on small screens, the one in the bottom bar: both are the
+    // confirmed profile, opened in a new tab, never an automated message.
     const enquire = page.getByRole('main').getByRole('link', { name: /Enquire on Instagram/ })
-    await expect(enquire).toHaveAttribute('href', INSTAGRAM)
-    await expect(enquire).toHaveAttribute('target', '_blank')
-    await expect(enquire).toHaveAttribute('rel', /noopener/)
+    for (const link of await enquire.all()) {
+      await expect(link).toHaveAttribute('href', INSTAGRAM)
+      await expect(link).toHaveAttribute('target', '_blank')
+      await expect(link).toHaveAttribute('rel', /noopener/)
+    }
+    expect(await enquire.count()).toBeGreaterThan(0)
 
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.getByRole('button', { name: 'Copy product link' }).click()
@@ -73,7 +79,7 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('قلادة نجمة تجريبية')
     // Same digits, translated dinar label, readable in RTL (A10).
-    await expect(page.getByText('25,000 د.ع')).toBeVisible()
+    await expect(page.getByText('25,000 د.ع').first()).toBeVisible()
   })
 
   test('returning to the catalogue keeps filters in the URL', async ({ page }) => {
@@ -164,7 +170,7 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await page.unroute('**/api/media/file/**')
     const first = placeholders.first()
     await first.getByRole('button', { name: 'Try again' }).click()
-    const img = cards.first().locator('img')
+    const img = cards.first().locator('img:not([data-placeholder])')
     await expect(img).toHaveCount(1)
     await expect(img).toHaveJSProperty('complete', true)
     expect(await img.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
@@ -178,7 +184,10 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(gallery.getByRole('group', { name: 'تعذّر تحميل الصورة' }).first()).toBeVisible()
     await page.unroute('**/api/media/file/**')
     await gallery.getByRole('button', { name: 'إعادة المحاولة' }).first().click()
-    await expect(gallery.locator('img').first()).toHaveJSProperty('complete', true)
+    await expect(gallery.locator('img:not([data-placeholder])').first()).toHaveJSProperty(
+      'complete',
+      true,
+    )
   })
 
   test('invalid filters show translated messages and keep typed values', async ({ page }) => {
@@ -286,6 +295,75 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
         ),
       ).toBeGreaterThan(0)
     }
+  })
+
+  test('the header search suggests pieces as the visitor types and opens them (A07)', async ({
+    page,
+  }) => {
+    await page.goto('/en/about')
+    const header = page.getByRole('banner')
+    const input = header.getByRole('combobox', { name: 'Search products' })
+    if (width(page) < 640) {
+      // On a phone the magnifier opens the field across the header, already focused.
+      await header.getByRole('link', { name: 'Search products' }).click()
+      await expect(input).toBeFocused()
+    } else {
+      await input.click()
+    }
+    const list = header.getByRole('listbox', { name: 'Suggestions' })
+    await input.pressSequentially('moon', { delay: 30 })
+    const piece = list.getByRole('option', { name: /Sample moon necklace/ })
+    await expect(piece).toBeVisible()
+    await expect(piece).toContainText('IQD 32,000')
+    await expect(list.getByRole('option', { name: 'Search for “moon”' })).toBeVisible()
+
+    // Arrow keys move the choice; Enter opens the chosen piece without a page reload.
+    await input.press('ArrowDown')
+    await expect(input).toHaveAttribute('aria-activedescendant', /option-0$/)
+    await input.press('Enter')
+    await expect(page).toHaveURL(/\/en\/products\/sample-moon-necklace$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sample moon necklace')
+
+    // Nothing matching says so, and Enter alone runs the full catalogue search.
+    if (width(page) < 640) {
+      await header.getByRole('link', { name: 'Search products' }).click()
+    }
+    await input.fill('zzzz')
+    await expect(list.getByText('No matches yet')).toBeVisible()
+    await input.press('Enter')
+    await expect(page).toHaveURL(/\/en\/products\?q=zzzz$/)
+    await expect(page.getByText('No products for “zzzz”')).toBeVisible()
+  })
+
+  test('a product page keeps the price and the Instagram action in reach, and photos never pop in', async ({
+    page,
+  }) => {
+    await page.goto(`/en/products/${SAMPLE_SLUG}`)
+    const bar = page.getByTestId('sticky-enquire')
+    const actions = page.locator('#product-actions')
+    if (width(page) < 1024) {
+      // Phone and tablet: the bar shows while the page's own actions are off screen …
+      await expect(bar).toHaveAttribute('data-shown', 'true')
+      await expect(bar.getByRole('link', { name: /Enquire on Instagram/ })).toBeVisible()
+      await expect(bar.getByText('IQD 25,000')).toBeVisible()
+      // … and steps aside as soon as they come into view.
+      await actions.scrollIntoViewIfNeeded()
+      await expect(bar).toHaveAttribute('data-shown', 'false')
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+      await expect(bar).toHaveAttribute('data-shown', 'true')
+    } else {
+      // Beside the gallery on a wide screen; the bar is not needed.
+      await expect(bar).toBeHidden()
+      await expect(actions.getByRole('link', { name: /Enquire on Instagram/ })).toBeVisible()
+    }
+
+    // Every photo carries its blurred stand-in, which has faded once the photo arrived.
+    const placeholders = page.locator('img[data-placeholder]')
+    expect(await placeholders.count()).toBeGreaterThan(0)
+    await expect(placeholders.first()).toHaveAttribute('data-placeholder', 'done')
+    const src = await placeholders.first().getAttribute('src')
+    expect(src).toMatch(/^data:image\/webp;base64,/)
+    expect((src ?? '').length).toBeLessThan(1000)
   })
 
   test('the home hero shows the featured pieces one by one, by itself and by hand', async ({
@@ -433,7 +511,7 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await select.selectOption({ label: 'Sample city 2' })
     await expect(page.getByText('Delivery to Sample city 2: Free delivery')).toBeVisible()
     // Product prices are unchanged by the selection.
-    await expect(page.getByText('IQD 25,000')).toBeVisible()
+    await expect(page.getByText('IQD 25,000').first()).toBeVisible()
     await expect(page.getByText(/total/i)).toHaveCount(0)
 
     if (menuCollapsed(page)) {

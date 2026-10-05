@@ -10,6 +10,7 @@ import sharp, { type Metadata as SharpMetadata } from 'sharp'
 import { anyone, ownerOnly } from '@/access'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { mediaCacheHeaders } from '@/hooks/mediaCache'
+import { blurPreview } from '@/lib/media-preview'
 import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_PIXELS } from '@/lib/upload-limits'
 
@@ -200,6 +201,20 @@ export const Media: CollectionConfig = {
     withMetadata: false,
   },
   hooks: {
+    beforeChange: [
+      // The blurred stand-in travels with the image (made from the sanitized file).
+      async ({ data, req }) => {
+        if (req.file?.data) {
+          try {
+            data.blurDataUrl = await blurPreview(req.file.data)
+          } catch (error) {
+            req.payload.logger.warn(`[media] no blur preview: ${String(error)}`)
+            data.blurDataUrl = null
+          }
+        }
+        return data
+      },
+    ],
     afterChange: [mediaCacheHeaders, revalidateAfterChange],
     afterDelete: [revalidateAfterDelete],
     beforeOperation: [
@@ -237,6 +252,13 @@ export const Media: CollectionConfig = {
         components: { Field: '@/components/admin/PhotoPrep#PhotoPrep' },
         disableListColumn: true,
       },
+    },
+    {
+      // Blurred stand-in shown while the photo loads; written by the hook above and by
+      // `pnpm media:previews` for photos uploaded before it existed.
+      name: 'blurDataUrl',
+      type: 'text',
+      admin: { hidden: true, disableListColumn: true },
     },
     {
       // One optional description shared by all languages (owner decision, see

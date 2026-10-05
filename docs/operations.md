@@ -29,7 +29,13 @@ Instagram action.
 **Photos on the website.** Visitors swipe between a product's photos on a phone (or use the
 arrows and thumbnails), and tapping a photo opens it large: pinch or double-tap to zoom,
 drag to move around, swipe for the next photo; on a computer the mouse wheel zooms and the
-arrow keys, `+`, `-` and `0` do the same.
+arrow keys, `+`, `-` and `0` do the same. While a photo is still downloading its frame shows
+a soft blurred version of it, made automatically when the photo was uploaded; nothing to do.
+
+**Finding a piece.** The magnifier in the header opens a search field on phones (on a
+computer the field is always there); from the second letter, matching pieces appear
+underneath with their photo and price and open with a tap. On a phone the price and the
+Instagram button also follow the visitor in a bar at the bottom of a product page.
 
 **The home page's featured pieces.** Tick **Featured** on a product (under Price and
 availability) and Publish: the piece joins the tile at the top of the home page, which

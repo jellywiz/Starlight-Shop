@@ -75,10 +75,10 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
 
     const publicPage = await page.context().newPage()
     await publicPage.goto(`/en/products/${SAMPLE_SLUG}`)
-    await expect(publicPage.getByText('IQD 32,000')).toBeVisible()
+    await expect(publicPage.getByText('IQD 32,000').first()).toBeVisible()
     // The owner's preview shows the draft price, marked as a preview and never indexed.
     await publicPage.goto(`/en/products/${SAMPLE_SLUG}/preview`)
-    await expect(publicPage.getByText('IQD 34,000')).toBeVisible()
+    await expect(publicPage.getByText('IQD 34,000').first()).toBeVisible()
     await expect(publicPage.getByRole('status')).toContainText('Preview')
     await expect(publicPage.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
 
@@ -87,13 +87,13 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await saveWith(page, 'Publish changes', 'products')
     await expect(page.getByText('Published', { exact: true })).toBeVisible()
     await publicPage.goto(`/en/products/${SAMPLE_SLUG}`)
-    await expect(publicPage.getByText('IQD 34,000')).toBeVisible()
+    await expect(publicPage.getByText('IQD 34,000').first()).toBeVisible()
 
     // Restore the sample price for repeatable runs.
     await price.fill('32000')
     await saveWith(page, 'Publish changes', 'products')
     await publicPage.reload()
-    await expect(publicPage.getByText('IQD 32,000')).toBeVisible()
+    await expect(publicPage.getByText('IQD 32,000').first()).toBeVisible()
     await publicPage.close()
   })
 
@@ -254,7 +254,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     const publicPage = await page.context().newPage()
     await publicPage.goto(`/en/products/${doc.slug}`)
     await expect(publicPage.getByRole('heading', { level: 1 })).toHaveText(englishName)
-    await expect(publicPage.getByText('IQD 15,000')).toBeVisible()
+    await expect(publicPage.getByText('IQD 15,000').first()).toBeVisible()
     const cover = publicPage
       .getByRole('region', { name: 'Product photos' })
       .getByRole('img', { name: `e2e-${suffix}` })
@@ -267,7 +267,7 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await page.getByLabel('Price (IQD)').fill('16500')
     await saveWith(page, 'Publish changes', 'products')
     await publicPage.reload()
-    await expect(publicPage.getByText('IQD 16,500')).toBeVisible()
+    await expect(publicPage.getByText('IQD 16,500').first()).toBeVisible()
     await publicPage.close()
 
     // Remove the test product and its photo (the photo cannot go first: it is in use).

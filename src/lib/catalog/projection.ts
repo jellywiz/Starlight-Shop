@@ -1,5 +1,6 @@
 import { pickTranslation } from '@/hooks/localized'
 import type { Locale } from '@/i18n/config'
+import { isBlurPreview } from '@/lib/media-preview'
 import type { Category, City as DeliveryCityDoc, Media, Product } from '@/payload-types'
 
 import type { CatalogItem, DeliveryCity, ProductDetail, PublicCategory, PublicImage } from './types'
@@ -51,6 +52,7 @@ export function toPublicImage(media: unknown, fallbackAlt: string): PublicImage 
     height: primary.height,
     alt,
     sources: sources.map(({ url, width }) => ({ url, width })),
+    ...(isBlurPreview(media.blurDataUrl) ? { placeholder: media.blurDataUrl } : {}),
   }
 }
 

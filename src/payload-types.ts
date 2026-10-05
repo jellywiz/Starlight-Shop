@@ -253,6 +253,7 @@ export interface User {
  */
 export interface Media {
   id: number;
+  blurDataUrl?: string | null;
   /**
    * Optional, one text for all languages: a short description for screen readers and search engines, e.g. "Silver star necklace on a white background". Leave it empty and the product name is used automatically.
    */
@@ -529,6 +530,7 @@ export interface CitiesSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  blurDataUrl?: T;
   altText?: T;
   prefix?: T;
   updatedAt?: T;

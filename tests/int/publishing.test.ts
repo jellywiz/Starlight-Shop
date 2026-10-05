@@ -628,6 +628,9 @@ describe('content model: publishing, drafts and access (A02, A04, A05, A06, A13)
     expect(media.sizes?.w320?.width).toBe(320)
     expect(media.sizes?.w640?.width).toBe(640)
     expect(media.sizes?.w1280?.width).toBe(1280)
+    // The blurred stand-in travels with the image: a tiny inline WebP.
+    expect(media.blurDataUrl).toMatch(/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/)
+    expect((media.blurDataUrl ?? '').length).toBeLessThan(1000)
 
     const small = await createMedia(payload, { width: 500, height: 400 })
     expect(small.sizes?.w320?.width).toBe(320)

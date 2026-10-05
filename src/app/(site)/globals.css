@@ -213,6 +213,64 @@
   .hero-slide-toggle {
     @apply flex h-7 w-7 items-center justify-center rounded-full text-accent transition-colors hover:bg-surface-2;
   }
+  /* Header search (components/site/SiteSearch.tsx): inline from the `sm` breakpoint; on a
+     phone hidden behind the magnifier and, when opened, laid across the whole header. */
+  .site-search__form {
+    @apply hidden items-center gap-1 sm:flex sm:flex-1;
+  }
+  .site-search--open .site-search__form {
+    @apply absolute inset-x-0 top-0 z-40 flex h-full items-center bg-surface px-2;
+  }
+  .site-search__list {
+    @apply absolute top-full z-40 mt-2 flex max-h-[60vh] flex-col overflow-y-auto rounded-2xl bg-surface p-1.5 shadow-card-hover ring-1 ring-line;
+    inset-inline-end: 0;
+    width: 26rem;
+    max-width: calc(100vw - 2rem);
+  }
+  .site-search--open .site-search__list {
+    inset-inline: 0;
+    width: auto;
+    max-width: none;
+  }
+  /* The browser's own clear button would collide with the round search button. */
+  .site-search input::-webkit-search-cancel-button {
+    appearance: none;
+  }
+  .site-search__option {
+    @apply flex items-center gap-3 rounded-xl px-2.5 py-2 text-ink;
+  }
+  .site-search__option--active {
+    @apply bg-surface-2;
+  }
+  .site-search__option--all {
+    @apply mt-1 border-t border-line-soft pt-2.5 text-emphasis;
+  }
+  .site-search__thumb {
+    @apply block h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-line-soft;
+  }
+  /* Bottom bar with the price and the Instagram action on product pages (components/site/
+     StickyEnquire.tsx); slides away while the page's own actions are on screen. */
+  .sticky-enquire {
+    @apply fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pt-2.5 shadow-[0_-8px_24px_-16px_rgb(72_32_68_/_0.35)] backdrop-blur;
+    padding-bottom: calc(0.625rem + env(safe-area-inset-bottom));
+    transition:
+      transform 220ms ease-out,
+      opacity 220ms ease-out;
+  }
+  .sticky-enquire--hidden {
+    @apply pointer-events-none opacity-0;
+    transform: translateY(100%);
+  }
+  /* The blurred stand-in behind a photo (components/site/ResponsiveImage.tsx): the tiny
+     upload-time preview, blown up and blurred, fading out once the photo has pixels. */
+  .blur-preview {
+    filter: blur(14px);
+    transform: scale(1.04);
+    transition: opacity 400ms ease-out;
+  }
+  .blur-preview--done {
+    opacity: 0;
+  }
   /* Placeholders shown while a page is being built (see components/site/Skeleton.tsx). */
   .skeleton-bar {
     @apply block rounded-lg bg-line;
