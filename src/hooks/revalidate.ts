@@ -37,6 +37,11 @@ export function revalidatePublicPages(): void {
 }
 
 export const revalidateAfterChange: CollectionAfterChangeHook = ({ doc, req }) => {
+  // Safe to call before Payload commits the save: Next.js only queues the invalidation
+  // here and applies it once the request handler has returned (route-module
+  // `resolvePendingRevalidations`, the action handler for server actions), which is after
+  // the commit. A visitor can therefore never re-cache the old version in between
+  // (verified against Next 16.4 / Payload 3.93; docs/improvements.md P1-2).
   if (!req.context?.disableRevalidate) {
     revalidatePublicPages()
   }

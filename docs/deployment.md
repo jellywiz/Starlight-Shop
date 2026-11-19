@@ -289,6 +289,11 @@ on every login, so **the owner cannot sign in to the admin until the migration h
 The columns are additive and nullable, so running the migration before the deploy is safe
 for the code that is live now. Applied to production on 19 November 2026.
 
+**Release of 19 November 2026 (sign-in throttle, Enquire copies the link): migrate first.**
+Migration `20261119_063610_login_throttle` creates the `login_throttle` table. The new code
+uses it on every sign-in, so run `pnpm migrate:live` before pushing. The table is new and
+unused by the code that is live now, so migrating first is safe.
+
 ## 6. Custom domain later
 
 Buy the domain, add it in Netlify (Domain management), then update `SITE_URL` and redeploy.

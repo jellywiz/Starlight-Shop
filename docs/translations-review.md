@@ -149,6 +149,7 @@ must be kept; plural entries list one line per form.
 | `product.enquire` | Enquire on Instagram | لە ئینستاگرام پرسیار بکە | استفسر عبر إنستغرام | ☐ |
 | `product.copyLink` | Copy product link | لینکی بەرهەم کۆپی بکە | نسخ رابط المنتج | ☐ |
 | `product.linkCopied` | Link copied | لینک کۆپی کرا | تم نسخ الرابط | ☐ |
+| `product.enquireCopied` | Product link copied. Paste it into your Instagram message. | لینکی بەرهەمەکە کۆپی کرا. لە نامەکەتدا لە ئینستاگرام دایبنێ. | تم نسخ رابط المنتج. ألصقه في رسالتك على إنستغرام. | ☐ |
 | `product.copyFailed` | Copying is not available here. Select and copy the link below: | کۆپیکردن لێرە بەردەست نییە. لینکی خوارەوە دیاری بکە و کۆپی بکە: | النسخ غير متاح هنا. حدّد الرابط أدناه وانسخه: | ☐ |
 | `product.enquiryHint` | Send us this product link in an Instagram message so we know which piece you mean. We reply from the shop account. | ئەم لینکی بەرهەمە لە نامەی ئینستاگرامدا بۆمان بنێرە تا بزانین مەبەستت کام پارچەیە. لە هەژماری دوکانەکەوە وەڵامت دەدەینەوە. | أرسل لنا رابط هذا المنتج في رسالة عبر إنستغرام لنعرف القطعة التي تقصدها. نرد من حساب المتجر. | ☐ |
 | `product.related` | More from this category | زیاتر لەم پۆلە | المزيد من هذه الفئة | ☐ |
@@ -186,4 +187,4 @@ must be kept; plural entries list one line per form.
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-178 strings.
+179 strings.

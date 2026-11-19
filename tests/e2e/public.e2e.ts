@@ -47,8 +47,11 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sample star necklace')
     // (On the page and, on small screens, in the bottom enquiry bar.)
     await expect(page.getByText('IQD 25,000').first()).toBeVisible()
-    // No delivery fee or total inside the product pricing block (spec section 2).
-    await expect(page.getByRole('main').getByText(/delivery to|free delivery/i)).toHaveCount(0)
+    // No delivery fee or total inside the product pricing block (spec section 2); fees live
+    // in their own section further down the page.
+    await expect(
+      page.getByTestId('product-pricing').getByText(/delivery|IQD .*\+|total/i),
+    ).toHaveCount(0)
 
     // The page's own action and, on small screens, the one in the bottom bar: both are the
     // confirmed profile, opened in a new tab, never an automated message.
@@ -364,6 +367,26 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
       await expect(bar).toBeHidden()
       await expect(actions.getByRole('link', { name: /Enquire on Instagram/ })).toBeVisible()
     }
+
+    // Tapping "Enquire on Instagram" also copies the product link, so the visitor only has
+    // to paste it into the message (Instagram itself is stubbed: no external traffic).
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page
+      .context()
+      .route('https://www.instagram.com/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Instagram</p>' }),
+      )
+    await page.evaluate(() => navigator.clipboard.writeText(''))
+    const enquireHost = width(page) < 1024 ? bar : actions
+    const popup = page.waitForEvent('popup')
+    await enquireHost.getByRole('link', { name: /Enquire on Instagram/ }).click()
+    await (await popup).close()
+    await expect(
+      enquireHost.getByText('Product link copied. Paste it into your Instagram message.'),
+    ).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      `http://localhost:3000/en/products/${SAMPLE_SLUG}`,
+    )
 
     // Every photo carries its blurred stand-in, which has faded once the photo arrived.
     const placeholders = page.locator('img[data-placeholder]')

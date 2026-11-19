@@ -3,6 +3,7 @@ import { Forbidden, APIError } from 'payload'
 
 import { isOwnerUser, ownerOnly } from '@/access'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
+import { blockedMessage, clearLoginAttempts, registerLoginAttempt } from '@/lib/login-throttle'
 
 /**
  * Administrators. One owner role at launch (spec sections 6, 7 and 12).
@@ -11,12 +12,16 @@ import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
  *   request carries the `allowFirstUser` context set by scripts/create-owner.ts.
  * - Password reset by email is hidden and disabled until an email transport exists;
  *   recovery is the maintainer script (docs/operations.md).
- * - Login throttling: 5 failed attempts lock the account for 15 minutes.
+ * - Sign-in throttling is per network: 10 attempts per 15 minutes from one IP address
+ *   (src/lib/login-throttle.ts), so a stranger who knows the owner's email can no longer
+ *   lock her out. Payload's per-account lockout stays only as a high backstop against a
+ *   guessing attack spread over many networks; it must stay enabled (> 0), because turning
+ *   it off removes the login_attempts / lock_until columns the deployed code reads.
  */
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: {
-    maxLoginAttempts: 5,
+    maxLoginAttempts: 100,
     lockTime: 15 * 60 * 1000,
     tokenExpiration: 8 * 60 * 60,
     cookies: {
@@ -41,7 +46,13 @@ export const Users: CollectionConfig = {
   },
   hooks: {
     beforeOperation: [
-      ({ operation, req }) => {
+      async ({ operation, req }) => {
+        if (operation === 'login') {
+          const retryAfterMs = await registerLoginAttempt(req)
+          if (retryAfterMs !== null) {
+            throw new APIError(blockedMessage(retryAfterMs), 429, undefined, true)
+          }
+        }
         if (operation === 'create' && !req.user && !req.context?.allowFirstUser) {
           // Blocks POST /api/users/first-register and the /admin/create-first-user screen.
           throw new Forbidden(req.t)
@@ -57,6 +68,12 @@ export const Users: CollectionConfig = {
             true,
           )
         }
+      },
+    ],
+    afterLogin: [
+      async ({ req, user }) => {
+        await clearLoginAttempts(req)
+        return user
       },
     ],
     beforeDelete: [

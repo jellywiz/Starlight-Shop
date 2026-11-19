@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { AvailabilityBadge } from '@/components/site/AvailabilityBadge'
 import { CopyButton } from '@/components/site/CopyButton'
 import { DeliveryFees } from '@/components/site/DeliveryFees'
-import { InstagramLink } from '@/components/site/InstagramLink'
+import { EnquireLink } from '@/components/site/EnquireLink'
 import { Price } from '@/components/site/Price'
 import { ProductGallery } from '@/components/site/ProductGallery'
 import { SparkleIcon } from '@/components/site/Sparkles'
@@ -110,18 +110,24 @@ export function ProductView({
             {product.name}
           </h1>
           {/* Pricing block: the product price only — never a delivery fee or total. */}
-          <div className="panel-lilac flex flex-wrap items-center gap-3 px-5 py-4">
+          <div
+            data-testid="product-pricing"
+            className="panel-lilac flex flex-wrap items-center gap-3 px-5 py-4"
+          >
             <Price amount={product.priceIqd} dict={dict} className="text-3xl text-heading" />
             <AvailabilityBadge available={product.isAvailable} dict={dict} />
           </div>
           <p className="text-sm text-ink-soft">{dict.common.currencyNote}</p>
           <div id="product-actions" className="flex flex-col gap-3">
             <div className="flex flex-wrap gap-3">
-              <InstagramLink
+              <EnquireLink
                 href={settings.instagramUrl}
                 label={dict.product.enquire}
-                dict={dict}
+                copyValue={canonical}
+                copiedLabel={dict.product.enquireCopied}
+                opensInNewTab={dict.common.opensInNewTab}
                 className="btn-instagram px-6 py-3 text-base"
+                toastPlacement="below"
               />
               <CopyButton
                 value={canonical}
@@ -161,10 +167,12 @@ export function ProductView({
             <Price amount={product.priceIqd} dict={dict} className="text-lg text-heading" />
             <span className="truncate text-xs text-ink-soft">{product.name}</span>
           </div>
-          <InstagramLink
+          <EnquireLink
             href={settings.instagramUrl}
             label={dict.product.enquire}
-            dict={dict}
+            copyValue={canonical}
+            copiedLabel={dict.product.enquireCopied}
+            opensInNewTab={dict.common.opensInNewTab}
             className="btn-instagram shrink-0 px-5 py-2.5 text-sm"
           />
         </div>

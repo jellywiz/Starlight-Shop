@@ -4,6 +4,7 @@ import * as migration_20260916_113912_translations_on_one_form from './20260916_
 import * as migration_20260916_195225_generated_addresses from './20260916_195225_generated_addresses'
 import * as migration_20261004_130717_blur_previews from './20261004_130717_blur_previews'
 import * as migration_20261119_053647_payload_3_93 from './20261119_053647_payload_3_93'
+import * as migration_20261119_063610_login_throttle from './20261119_063610_login_throttle'
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20261119_053647_payload_3_93.up,
     down: migration_20261119_053647_payload_3_93.down,
     name: '20261119_053647_payload_3_93',
+  },
+  {
+    up: migration_20261119_063610_login_throttle.up,
+    down: migration_20261119_063610_login_throttle.down,
+    name: '20261119_063610_login_throttle',
   },
 ]

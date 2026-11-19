@@ -9,6 +9,7 @@ import sharp from 'sharp'
 
 import { Categories } from '@/collections/Categories'
 import { DeliveryCities } from '@/collections/DeliveryCities'
+import { LoginThrottle } from '@/collections/LoginThrottle'
 import { Media, MAX_UPLOAD_BYTES } from '@/collections/Media'
 import { Products } from '@/collections/Products'
 import { Redirects } from '@/collections/Redirects'
@@ -56,7 +57,7 @@ export default buildConfig({
     // No third-party requests from the admin (Gravatar would leak the owner's email hash).
     avatar: 'default',
   },
-  collections: [Products, Categories, DeliveryCities, Media, Redirects, Users],
+  collections: [Products, Categories, DeliveryCities, Media, Redirects, Users, LoginThrottle],
   globals: [ShopSettings],
   // Content translations are explicit per-language fields on one form (src/fields/translated.ts),
   // not Payload locales, so the admin has no locale switcher (docs/decisions.md).

@@ -192,3 +192,7 @@ works.
   fee needs the free-delivery confirmation.
 - **Locked document**: another session is editing the same record; Payload warns about
   conflicting edits. Wait or take over the lock deliberately.
+- **"Too many sign-in attempts from this network"**: 10 sign-in attempts in 15 minutes
+  from the same Wi-Fi or mobile network. Wait the minutes shown, or sign in from another
+  network (switch the phone from Wi-Fi to mobile data). Other networks are not affected,
+  and a successful sign-in clears the count.

@@ -439,6 +439,23 @@ Netlify, and both are now handled:
   warning; on Netlify (`REQUIRE_S3_STORAGE=true`) the build fails instead.
 - `/api/catalog` and `/api/delivery-cities` share a best-effort in-memory throttle; the
   free hosting plan has no platform rate limiting.
+- **Sign-in is throttled per network, not per account** (2026-11-19). Payload's lockout
+  counted failures per account, so anyone who knew the owner's email could keep her locked
+  out. Now every sign-in attempt is counted per network: a keyed hash of the client IP
+  (`x-nf-client-connection-ip` on Netlify), never the raw address, in the hidden
+  `login-throttle` table so every serverless instance sees the same count. After 10
+  attempts in 15 minutes that network gets "Too many sign-in attempts from this network.
+  Please wait N minutes" (HTTP 429). A successful sign-in clears its network's count.
+  Payload's account lockout stays as a backstop at 100 attempts / 15 minutes. It cannot be
+  set to 0: Payload would then drop the `login_attempts`/`lock_until` columns, and the
+  deployed code reads them until the new version is live. The counter is written outside
+  the sign-in transaction, so a failed attempt still counts.
+- **Enquire copies the product link** (2026-11-19). "Enquire on Instagram" on the product
+  page and in the phone bar copies the canonical product URL in the same tap, then opens the
+  profile as before. The copy is synchronous (`execCommand('copy')`), because the
+  asynchronous Clipboard API is often refused once the Instagram app or tab takes focus. A
+  short translated confirmation follows. There is still no message prefilling and no
+  Instagram API (spec section 8).
 - The embedded development database is created with the user, password and database name
   found in `.env`'s `DATABASE_URI`, so a developer's existing `.env` keeps working.
 

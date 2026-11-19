@@ -34,20 +34,42 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## P1 — High (real users are affected now)
 
-- [ ] **P1-1 Anyone can lock the owner out of the admin.** `src/collections/Users.ts:19-20` locks
+- [x] **P1-1 Anyone can lock the owner out of the admin.** _Done 2026-11-19:_ sign-in attempts
+      are now limited per network (hashed IP, 10 per 15 min, shared across server instances in
+      the new `login-throttle` table; `src/lib/login-throttle.ts`); a successful sign-in clears
+      its network's count. Payload's per-account lockout raised from 5 to 100 attempts as a
+      backstop (it cannot be switched off without dropping columns the deployed code reads).
+      Needs migration `20261119_063610_login_throttle` (run `pnpm migrate:live` before pushing).
+      Residual risk: a guessing attack from 10+ networks can still trip the 100-attempt
+      backstop for 15 minutes; the second owner account covers that.
+      Original finding: `src/collections/Users.ts:19-20` locks
       the account after 5 failures for 15 minutes, and `/api/users/login` has no per-IP limit
       (`src/endpoints/throttle.ts` only covers the catalogue endpoints). Someone who knows the
       email can keep the only account locked indefinitely. Add a per-IP login throttle (a
       `beforeOperation` check for `login`, reusing `throttled()`) and consider a second owner
       account. **Effort: S**
-- [ ] **P1-2 Edits can stay invisible for up to 24 h.** `src/hooks/revalidate.ts:39-44`
-      revalidates in `afterChange`, which runs _before_ the transaction commits. A visitor
-      arriving in that window re-caches the old page (`revalidate = 86400`). Revalidate after
-      commit (`after()` from `next/server`) and lower the fallback revalidate time. **Effort: S**
+- [-] **P1-2 Edits can stay invisible for up to 24 h.** _Won't do — not a bug (verified
+  2026-11-19):_ `revalidatePath` in a Next.js 16.4 route handler only queues the
+  invalidation; it is applied after the handler returns
+  (`resolvePendingRevalidations` in `next/dist/server/route-modules/app-route/module.js`),
+  i.e. after Payload has committed the save. The window described below cannot occur for
+  admin saves. A comment in `src/hooks/revalidate.ts` records this. Scripts that change
+  content outside Next.js (e.g. `media:previews:live`) do not refresh cached pages; the
+  next admin save, a deploy or the day-long revalidate does.
+  Original finding: `src/hooks/revalidate.ts:39-44`
+  revalidates in `afterChange`, which runs _before_ the transaction commits. A visitor
+  arriving in that window re-caches the old page (`revalidate = 86400`). Revalidate after
+  commit (`after()` from `next/server`) and lower the fallback revalidate time. **Effort: S**
 - [ ] **P1-3 No automatic backups.** `docs/operations.md:116`; `scripts/backup.sh` is manual
       only. Add a scheduled GitHub Action (`pg_dump` + `backup:storage`, encrypted, stored
       off-site) and test a restore. **Effort: M**
-- [ ] **P1-4 Mobile enquiry bar doesn't send the product.** `src/components/site/ProductView.tsx:137-150`:
+- [x] **P1-4 Mobile enquiry bar doesn't send the product.** _Done 2026-11-19:_ both "Enquire on
+      Instagram" buttons (page and sticky bar) now copy the product's canonical link in the
+      same tap (`src/components/site/EnquireLink.tsx`, synchronous copy so it works before the
+      Instagram app takes over) and show "Product link copied. Paste it into your Instagram
+      message." in all three languages. Still a plain link to the profile: no prefilling.
+      Covered by a browser test on desktop, phone and iPad.
+      Original finding: `src/components/site/ProductView.tsx:137-150`:
       the sticky bar only opens the Instagram profile, though the page asks visitors to
       "send us this product link". Copy the canonical link (with a "Link copied" toast) before
       opening Instagram, or add a share/copy button to the bar. This is the main conversion
@@ -173,8 +195,9 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## Change log
 
-| Date       | Item        | Commit        | Notes                                                                                                                                                                                       |
-| ---------- | ----------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-18 | P2-4, P3-12 | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                      |
-| 2026-11-19 | P0-1        | (this commit) | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                            |
-| 2026-11-19 | P1-3 (part) | (this commit) | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open |
+| Date       | Item             | Commit        | Notes                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | ---------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-18 | P2-4, P3-12      | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                                                                                                                                                                                                                          |
+| 2026-11-19 | P0-1             | dc0447d       | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                                                                                                                                                                                                                                |
+| 2026-11-19 | P1-3 (part)      | 668c7ce       | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open                                                                                                                                                                                                     |
+| 2026-11-19 | P1-1, P1-2, P1-4 | (this commit) | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
