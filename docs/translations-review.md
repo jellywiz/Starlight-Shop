@@ -16,6 +16,7 @@ must be kept; plural entries list one line per form.
 | `meta.contactTitle` | Contact | پەیوەندی | اتصل بنا | ☐ |
 | `meta.notFoundTitle` | Page not found | لاپەڕەکە نەدۆزرایەوە | الصفحة غير موجودة | ☐ |
 | `meta.productDescriptionFallback` | {name} — handmade by Starlight Jewellery. Enquire on Instagram. | {name} — دەستکردی ستارلایت جوێلەری. لە ئینستاگرام پرسیار بکە. | {name} — صناعة يدوية من ستارلايت جوليري. استفسر عبر إنستغرام. | ☐ |
+| `meta.categoryDescription` | {category} from Starlight Jewellery: handmade, with prices in Iraqi dinars. Enquire on Instagram. | بەرهەمەکانی پۆلی {category} لە ستارلایت جوێلەری، دەستکرد و بە نرخی دیناری عێراقی. لە ئینستاگرام پرسیار بکە. | منتجات فئة {category} من ستارلايت جوليري، مصنوعة يدويًا وبأسعار بالدينار العراقي. استفسر عبر إنستغرام. | ☐ |
 | `nav.home` | Home | سەرەکی | الرئيسية | ☐ |
 | `nav.products` | Products | بەرهەمەکان | المنتجات | ☐ |
 | `nav.delivery` | Delivery fees | کرێی گەیاندن | أجور التوصيل | ☐ |
@@ -95,6 +96,9 @@ must be kept; plural entries list one line per form.
 | `catalog.sortPriceDesc` | Price: high to low | نرخ: لە زۆر بۆ کەم | السعر: من الأعلى إلى الأقل | ☐ |
 | `catalog.activeFilters` | Active filters | فلتەرە چالاکەکان | التصفية المفعّلة | ☐ |
 | `catalog.removeFilter` | Remove filter: {filter} | لابردنی فلتەر: {filter} | إزالة التصفية: {filter} | ☐ |
+| `catalog.showResults.zero` | No products to show | هیچ بەرهەمێک بۆ پیشاندان نییە | لا توجد منتجات للعرض | ☐ |
+| `catalog.showResults.one` | Show {count} product | پیشاندانی {count} بەرهەم | عرض منتج واحد | ☐ |
+| `catalog.showResults.other` | Show {count} products | پیشاندانی {count} بەرهەم | عرض {count} منتج | ☐ |
 | `catalog.resultsCount.zero` | No products | هیچ بەرهەمێک نییە | لا توجد منتجات | ☐ |
 | `catalog.resultsCount.one` | {count} product | {count} بەرهەم | منتج واحد | ☐ |
 | `catalog.resultsCount.other` | {count} products | {count} بەرهەم | {count} منتج | ☐ |
@@ -187,4 +191,4 @@ must be kept; plural entries list one line per form.
 | `footer.tagline` | Handmade jewellery and accessories. | خشڵ و ئەکسسواری دەستکرد. | مجوهرات وإكسسوارات مصنوعة يدويًا. | ☐ |
 | `footer.rights` | © {year} Starlight Jewellery. All rights reserved. | © {year} ستارلایت جوێلەری. هەموو مافەکان پارێزراون. | © {year} ستارلايت جوليري. جميع الحقوق محفوظة. | ☐ |
 
-179 strings.
+183 strings.

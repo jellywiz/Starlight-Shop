@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
-import { LOCALES, LOCALE_META } from '@/i18n/config'
-import { listPublishedProductSlugs } from '@/lib/catalog/queries'
+import { DEFAULT_LOCALE, LOCALES, LOCALE_META } from '@/i18n/config'
+import { getCatalogFilters, listPublishedProductSlugs } from '@/lib/catalog/queries'
 import { siteUrl } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +34,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     products = await listPublishedProductSlugs()
   } catch {
     products = []
+  }
+  // Category landing pages: listed categories only (active, with published products).
+  let categories: string[] = []
+  try {
+    categories = (await getCatalogFilters(DEFAULT_LOCALE)).categories.map((c) => c.slug)
+  } catch {
+    categories = []
+  }
+  for (const slug of categories) {
+    const path = `/products?category=${encodeURIComponent(slug)}`
+    for (const code of LOCALES) {
+      entries.push({
+        url: `${base}/${code}${path}`,
+        changeFrequency: 'daily',
+        priority: 0.8,
+        alternates: { languages: languagesFor(path) },
+      })
+    }
   }
   for (const product of products) {
     const path = `/products/${product.slug}`

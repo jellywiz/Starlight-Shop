@@ -7,8 +7,8 @@ import { CatalogUnavailable } from '@/components/site/CatalogUnavailable'
 import { FilterChips } from '@/components/site/FilterChips'
 import { Pagination } from '@/components/site/Pagination'
 import { ProductGrid } from '@/components/site/ProductGrid'
-import { isLocale } from '@/i18n/config'
-import { getDictionary, tp } from '@/i18n/dictionary'
+import { isLocale, type Locale } from '@/i18n/config'
+import { getDictionary, t, tp } from '@/i18n/dictionary'
 import { catalogPath, parseCatalogParams } from '@/lib/catalog/params'
 import { getCatalogFilters, getShopSettings, listProducts } from '@/lib/catalog/queries'
 import { settle } from '@/lib/settle'
@@ -34,6 +34,17 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   }
   const dict = getDictionary(locale)
   const sp = await searchParams
+  // A category on its own (`?category=necklaces`, first page) is a landing page that
+  // search engines may index under its own title (docs/decisions.md "Category pages").
+  const category = await indexableCategory(locale, sp)
+  if (category) {
+    return pageMetadata({
+      locale,
+      title: category.name,
+      description: t(dict.meta.categoryDescription, { category: category.name }, locale),
+      path: `products?category=${encodeURIComponent(category.slug)}`,
+    })
+  }
   const filtered = Object.keys(sp).length > 0
   return {
     ...pageMetadata({
@@ -42,9 +53,26 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       description: dict.meta.productsDescription,
       path: 'products',
     }),
-    // Filtered/search URLs stay shareable but out of the index (spec section 15).
+    // Searches and other filtered URLs stay shareable but out of the index (spec section 15).
     robots: filtered ? { index: false, follow: true } : undefined,
   }
+}
+
+/**
+ * The category when the URL is exactly `?category=<slug>` and that category is listed
+ * (active with published products); null otherwise, or when the catalogue is unreachable.
+ */
+async function indexableCategory(
+  locale: Locale,
+  sp: Record<string, string | string[] | undefined>,
+): Promise<{ slug: string; name: string } | null> {
+  const keys = Object.keys(sp)
+  const slug = sp.category
+  if (keys.length !== 1 || keys[0] !== 'category' || typeof slug !== 'string') {
+    return null
+  }
+  const filters = await settle(getCatalogFilters(locale))
+  return filters.ok ? (filters.value.categories.find((c) => c.slug === slug) ?? null) : null
 }
 
 export default async function ProductsPage({ params, searchParams }: Props) {
@@ -92,10 +120,19 @@ export default async function ProductsPage({ params, searchParams }: Props) {
         ? tp(dict.catalog.resultsCountFor, result.total, locale, { query: parsed.query.q })
         : tp(dict.catalog.resultsCount, result.total, locale)
       : ''
+  const showResultsLabel =
+    result && parsed.ok ? tp(dict.catalog.showResults, result.total, locale) : null
+  // A category page is titled with the category itself (also what search engines show).
+  const currentCategory =
+    parsed.ok && parsed.query.category
+      ? options.categories.find((c) => c.slug === parsed.query.category)
+      : undefined
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-heading sm:text-3xl">{dict.catalog.heading}</h1>
+      <h1 className="text-2xl font-bold text-heading sm:text-3xl">
+        {currentCategory?.name ?? dict.catalog.heading}
+      </h1>
       <div className="grid gap-8 md:grid-cols-[16rem_1fr]">
         <CatalogFilters
           locale={locale}
@@ -103,6 +140,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
           options={options}
           raw={parsed.raw}
           errors={parsed.ok ? [] : parsed.errors}
+          showResultsLabel={showResultsLabel}
         />
         <section aria-label={dict.catalog.resultsRegion} className="flex min-w-0 flex-col gap-4">
           {unavailable && settings ? <CatalogUnavailable dict={dict} settings={settings} /> : null}

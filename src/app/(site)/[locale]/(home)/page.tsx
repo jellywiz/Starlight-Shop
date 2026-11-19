@@ -45,7 +45,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const dict = getDictionary(locale)
   return pageMetadata({
     locale,
+    // Already contains the shop name, so the layout's "· Starlight Jewellery" is skipped.
     title: `${SITE_NAME} — ${dict.meta.homeTitle}`,
+    absoluteTitle: true,
     description: dict.meta.homeDescription,
   })
 }

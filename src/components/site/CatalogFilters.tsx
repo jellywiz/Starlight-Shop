@@ -14,6 +14,7 @@ import {
 
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionary'
+import { parseIqd } from '@/lib/catalog/dinar'
 import { MAX_QUERY_LENGTH, type CatalogError, type RawCatalogParams } from '@/lib/catalog/params'
 import type { CatalogFilters as FilterOptions } from '@/lib/catalog/types'
 
@@ -23,6 +24,8 @@ type Props = {
   options: FilterOptions
   raw: RawCatalogParams
   errors: CatalogError[]
+  /** "Show 12 products" for the phone filter screen; null when there are no results to count. */
+  showResultsLabel: string | null
 }
 
 const DEBOUNCE_MS = 300
@@ -65,6 +68,27 @@ function effectiveSort(values: FieldValues): string {
   return values.sort || (values.q.trim() ? 'relevance' : 'newest')
 }
 
+/**
+ * The price fields are checked in the browser before anything is applied, with the same
+ * rules as the server (parseIqd). While a value is unfinished or the range is reversed
+ * (typing a maximum one digit at a time passes through "1", "10", …), the results on screen
+ * stay as they are and a hint explains what to fix, instead of the grid disappearing.
+ */
+function priceProblem(values: FieldValues): CatalogError | null {
+  const min = values.min.trim() ? parseIqd(values.min, { allowZero: true }) : null
+  const max = values.max.trim() ? parseIqd(values.max, { allowZero: true }) : null
+  if (min && !min.ok) {
+    return { code: 'INVALID_PRICE_MIN', field: 'min' }
+  }
+  if (max && !max.ok) {
+    return { code: 'INVALID_PRICE_MAX', field: 'max' }
+  }
+  if (min?.ok && max?.ok && min.amount > max.amount) {
+    return { code: 'INVALID_PRICE_RANGE', field: 'range' }
+  }
+  return null
+}
+
 /** Builds the canonical catalog URL, dropping empty values, defaults and the page. */
 function catalogUrl(values: FieldValues, locale: Locale): string {
   const params = new URLSearchParams()
@@ -103,9 +127,22 @@ function FilterForm({
   idPrefix,
   onApplied,
   showSearch,
-}: Props & { idPrefix: string; onApplied?: () => void; showSearch: boolean }) {
+  showResultsLabel,
+  flushOnUnmount = false,
+}: Omit<Props, 'showResultsLabel'> & {
+  idPrefix: string
+  onApplied?: () => void
+  showSearch: boolean
+  /** Set for the phone screen: its main button reads "Show 12 products". */
+  showResultsLabel?: string | null
+  /** Apply a change that is still waiting for the debounce when the form goes away. */
+  flushOnUnmount?: boolean
+}) {
   const router = useRouter()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The change waiting for the debounce, so closing the phone screen can apply it at once.
+  const pendingValues = useRef<FieldValues | null>(null)
+  const [waiting, setWaiting] = useState(false)
   const [pending, startTransition] = useTransition()
   const errorFor = (field: string) => errors.find((e) => e.field === field)
   const id = (name: string) => `${idPrefix}-${name}`
@@ -131,6 +168,11 @@ function FilterForm({
     }
   }
 
+  // Price problems are judged on what the visitor typed, not on the URL (see priceProblem).
+  const price = priceProblem(values)
+  const minInvalid = price?.field === 'min' || price?.field === 'range'
+  const maxInvalid = price?.field === 'max' || price?.field === 'range'
+
   const navigate = useCallback(
     (next: FieldValues, replace: boolean) => {
       const url = catalogUrl(next, locale)
@@ -146,14 +188,32 @@ function FilterForm({
     [locale, router],
   )
 
-  /** Applies a field change and navigates after the debounce. */
+  const cancelPending = () => {
+    if (timer.current) {
+      clearTimeout(timer.current)
+      timer.current = null
+    }
+    pendingValues.current = null
+    setWaiting(false)
+  }
+
+  /** Applies a field change and navigates after the debounce (never with a bad price). */
   const update = (patch: Partial<FieldValues>) => {
     const next = { ...values, ...patch }
     setValues(next)
-    if (timer.current) {
-      clearTimeout(timer.current)
+    cancelPending()
+    if (priceProblem(next)) {
+      // Keep the current results on screen until the price makes sense.
+      return
     }
-    timer.current = setTimeout(() => navigate(next, true), DEBOUNCE_MS)
+    pendingValues.current = next
+    setWaiting(true)
+    timer.current = setTimeout(() => {
+      timer.current = null
+      pendingValues.current = null
+      setWaiting(false)
+      navigate(next, true)
+    }, DEBOUNCE_MS)
   }
 
   useEffect(
@@ -161,32 +221,42 @@ function FilterForm({
       if (timer.current) {
         clearTimeout(timer.current)
       }
+      // Closing the phone screen right after a change must not lose it.
+      if (flushOnUnmount && pendingValues.current) {
+        router.replace(catalogUrl(pendingValues.current, locale), { scroll: false })
+      }
     },
-    [],
+    [flushOnUnmount, locale, router],
   )
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (timer.current) {
-      clearTimeout(timer.current)
+    cancelPending()
+    if (price) {
+      document.getElementById(id(price.field === 'max' ? 'max' : 'min'))?.focus()
+      return
     }
-    navigate(values, false)
+    if (catalogUrl(values, locale) !== resultsUrl) {
+      navigate(values, false)
+    }
     onApplied?.()
   }
+
+  const busy = waiting || pending
 
   return (
     <form
       method="get"
       action={`/${locale}/products`}
       onSubmit={onSubmit}
-      aria-busy={pending}
-      className="flex flex-col gap-5"
+      aria-busy={busy}
+      className={`flex flex-col gap-5${showResultsLabel !== undefined ? ' flex-1' : ''}`}
       aria-describedby={errors.length ? id('errors') : undefined}
     >
       {errors.length > 0 ? (
+        // Not an alert: the results area announces the same problem once.
         <div
           id={id('errors')}
-          role="alert"
           className="rounded-xl bg-danger-100 p-3 text-sm text-danger-700 ring-1 ring-danger-700/20 ring-inset"
         >
           <p className="font-semibold">{dict.errors.formHasErrors}</p>
@@ -246,7 +316,7 @@ function FilterForm({
         </select>
       </div>
 
-      <fieldset>
+      <fieldset aria-describedby={price ? id('price-error') : undefined}>
         <legend className="text-sm font-semibold">{dict.catalog.priceLabel}</legend>
         <div className="mt-1 grid grid-cols-2 gap-2">
           <div>
@@ -262,14 +332,9 @@ function FilterForm({
               value={values.min}
               className="input mt-1"
               onChange={(event) => update({ min: event.target.value })}
-              aria-invalid={Boolean(errorFor('min'))}
-              aria-describedby={errorFor('min') ? id('min-error') : undefined}
+              aria-invalid={minInvalid}
+              aria-describedby={price ? id('price-error') : undefined}
             />
-            {errorFor('min') ? (
-              <p id={id('min-error')} className="mt-1 text-xs text-danger-700">
-                {dict.errors[errorFor('min')!.code]}
-              </p>
-            ) : null}
           </div>
           <div>
             <label htmlFor={id('max')} className="block text-xs text-ink-soft">
@@ -284,16 +349,20 @@ function FilterForm({
               value={values.max}
               className="input mt-1"
               onChange={(event) => update({ max: event.target.value })}
-              aria-invalid={Boolean(errorFor('max'))}
-              aria-describedby={errorFor('max') ? id('max-error') : undefined}
+              aria-invalid={maxInvalid}
+              aria-describedby={price ? id('price-error') : undefined}
             />
-            {errorFor('max') ? (
-              <p id={id('max-error')} className="mt-1 text-xs text-danger-700">
-                {dict.errors[errorFor('max')!.code]}
-              </p>
-            ) : null}
           </div>
         </div>
+        {/* Polite, not an alert: it appears while the visitor is still typing. */}
+        <p
+          id={id('price-error')}
+          aria-live="polite"
+          data-testid="price-hint"
+          className={price ? 'mt-1 text-xs text-danger-700' : 'sr-only'}
+        >
+          {price ? dict.errors[price.code] : ''}
+        </p>
       </fieldset>
 
       <fieldset>
@@ -337,28 +406,46 @@ function FilterForm({
         </select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn-primary">
-          {dict.catalog.applyFilters}
-        </button>
+      <div
+        className={
+          showResultsLabel !== undefined
+            ? // Phone screen: always in reach at the bottom, however long the form is.
+              'sticky bottom-0 -mx-4 -mb-4 mt-auto flex items-center gap-3 border-t border-line bg-surface px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]'
+            : 'flex flex-wrap items-center gap-3'
+        }
+      >
         {/* A link, so it also works without JavaScript; with it, the fields clear at once
             and the results follow through a client-side navigation instead of a reload. */}
         <Link
           href={`/${locale}/products`}
           className="btn-secondary"
           onClick={() => {
-            if (timer.current) {
-              clearTimeout(timer.current)
-            }
+            cancelPending()
             setValues(EMPTY_FIELDS)
             onApplied?.()
           }}
         >
           {dict.catalog.clearFilters}
         </Link>
-        <span className="text-sm text-ink-soft" aria-live="polite">
-          {pending ? dict.common.updating : ''}
-        </span>
+        {showResultsLabel !== undefined ? (
+          <button
+            type="submit"
+            className="btn-primary flex-1"
+            data-testid="show-results"
+            aria-live="polite"
+          >
+            {busy ? dict.common.updating : (showResultsLabel ?? dict.catalog.applyFilters)}
+          </button>
+        ) : (
+          <>
+            <button type="submit" className="btn-primary order-first">
+              {dict.catalog.applyFilters}
+            </button>
+            <span className="text-sm text-ink-soft" aria-live="polite">
+              {busy ? dict.common.updating : ''}
+            </span>
+          </>
+        )}
       </div>
     </form>
   )
@@ -386,6 +473,8 @@ export function CatalogFilters(props: Props) {
     dialog.addEventListener('close', onClose)
     return () => dialog.removeEventListener('close', onClose)
   }, [])
+
+  const { showResultsLabel, ...formProps } = props
 
   return (
     <>
@@ -429,8 +518,18 @@ export function CatalogFilters(props: Props) {
               </svg>
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            {open ? <FilterForm {...props} idPrefix="mobile" onApplied={close} showSearch /> : null}
+          {/* overscroll-contain: scrolling the filters never scrolls the page behind. */}
+          <div className="flex flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4">
+            {open ? (
+              <FilterForm
+                {...formProps}
+                idPrefix="mobile"
+                onApplied={close}
+                showSearch
+                showResultsLabel={showResultsLabel}
+                flushOnUnmount
+              />
+            ) : null}
           </div>
         </dialog>
       </div>
@@ -441,7 +540,7 @@ export function CatalogFilters(props: Props) {
         <h2 id="desktop-filters-heading" className="mb-4 text-lg font-semibold">
           {props.dict.catalog.filtersHeading}
         </h2>
-        <FilterForm {...props} idPrefix="desktop" showSearch />
+        <FilterForm {...formProps} idPrefix="desktop" showSearch />
       </aside>
     </>
   )

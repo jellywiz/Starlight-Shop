@@ -346,6 +346,107 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByText('No products for “zzzz”')).toBeVisible()
   })
 
+  test('Enter searches for the new text even if an older suggestion was highlighted (P1-5)', async ({
+    page,
+  }) => {
+    await page.goto('/en/about')
+    const header = page.getByRole('banner')
+    const input = header.getByRole('combobox', { name: 'Search products' })
+    if (width(page) < 640) {
+      await header.getByRole('link', { name: 'Search products' }).click()
+    } else {
+      await input.click()
+    }
+    const list = header.getByRole('listbox', { name: 'Suggestions' })
+    await input.pressSequentially('moon', { delay: 30 })
+    await expect(list.getByRole('option', { name: /Sample moon necklace/ })).toBeVisible()
+    await input.press('ArrowDown')
+    await expect(input).toHaveAttribute('aria-activedescendant', /option-0$/)
+    // Typing more forgets the highlighted piece; Enter right away runs the new search.
+    await input.pressSequentially(' ring')
+    await expect(input).not.toHaveAttribute('aria-activedescendant', /option-/)
+    await input.press('Enter')
+    await expect(page).toHaveURL(/\/en\/products\?q=moon(\+|%20)ring$/)
+  })
+
+  test('typing a price range never wipes the results; the hint says what to fix (P1-6)', async ({
+    page,
+  }) => {
+    await page.goto('/en/products?min=10000')
+    const scope = filtersInDialog(page) ? page.getByRole('dialog') : page.locator('aside form')
+    if (filtersInDialog(page)) {
+      await page.getByRole('button', { name: 'Filters' }).click()
+    }
+    const grid = page.getByRole('link', { name: 'Sample star necklace' })
+    await expect(grid).toBeAttached()
+    // Typing a maximum digit by digit passes through "1", "15", …: below the minimum.
+    await scope.getByLabel('Maximum price').pressSequentially('15', { delay: 50 })
+    await expect(scope.getByTestId('price-hint')).toHaveText(
+      'The minimum price must not be greater than the maximum price.',
+    )
+    await page.waitForTimeout(600)
+    await expect(page).toHaveURL(/\/en\/products\?min=10000$/)
+    await expect(grid).toBeAttached()
+    // (Next.js's own route announcer is an alert too, so look inside the page content.)
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0)
+    // Finishing the number applies it.
+    await scope.getByLabel('Maximum price').pressSequentially('000', { delay: 30 })
+    await expect(scope.getByTestId('price-hint')).toHaveText('')
+    await expect(page).toHaveURL(/min=10000&max=15000/)
+  })
+
+  test('the phone filter screen shows the result count and keeps a last-moment change (P1-7)', async ({
+    page,
+  }) => {
+    test.skip(!filtersInDialog(page), 'The filter screen is a phone layout')
+    await page.goto('/en/products')
+    await page.getByRole('button', { name: 'Filters' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByTestId('show-results')).toHaveText('Show 6 products')
+    await dialog.getByLabel('Category').selectOption('rings')
+    await expect(dialog.getByTestId('show-results')).toHaveText('Show 1 product')
+    await expect(page).toHaveURL(/category=rings/)
+    // The page behind does not scroll while the screen is open.
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe(
+      'hidden',
+    )
+    // A change made just before closing is applied, not dropped.
+    await dialog.getByLabel('Category').selectOption('bracelets')
+    await dialog.getByRole('button', { name: 'Close filters' }).click()
+    await expect(page).toHaveURL(/category=bracelets/)
+    await expect(page.getByRole('link', { name: 'Sample beaded bracelet' })).toBeVisible()
+  })
+
+  test('titles and category landing pages are ready for search engines (P1-8, P1-9)', async ({
+    page,
+    request,
+  }) => {
+    await page.goto('/en')
+    await expect(page).toHaveTitle('Starlight Jewellery — Handmade jewellery and accessories')
+
+    await page.goto('/en/products?category=necklaces')
+    await expect(page).toHaveTitle('Necklaces · Starlight Jewellery')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Necklaces')
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'http://localhost:3000/en/products?category=necklaces',
+    )
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /^Necklaces from Starlight Jewellery/,
+    )
+
+    // Any other filter keeps the page out of the index.
+    await page.goto('/en/products?category=necklaces&sort=price-asc')
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+
+    const robots = await (await request.get('/robots.txt')).text()
+    expect(robots).toContain('Allow: /*/products?category=')
+    const sitemap = await (await request.get('/sitemap.xml')).text()
+    expect(sitemap).toContain('/en/products?category=necklaces')
+  })
+
   test('a product page keeps the price and the Instagram action in reach, and photos never pop in', async ({
     page,
   }) => {
@@ -405,6 +506,8 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(show).toHaveAttribute('data-index', '0')
     await expect(show).toHaveAttribute('data-rotating', 'true')
     const dots = show.getByRole('button', { name: /^Show piece \d of \d$/ })
+    // The dots are drawn once the slideshow has started; count them after that.
+    await expect(dots.first()).toBeVisible()
     const total = await dots.count()
     expect(total).toBeGreaterThan(1)
     const name = show.locator('a.font-semibold')

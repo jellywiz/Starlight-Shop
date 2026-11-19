@@ -74,21 +74,43 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
       "send us this product link". Copy the canonical link (with a "Link copied" toast) before
       opening Instagram, or add a share/copy button to the bar. This is the main conversion
       path on phones. **Effort: S–M**
-- [ ] **P1-5 Search Enter can open the wrong product.** `src/components/site/SiteSearch.tsx:253-256`
+- [x] **P1-5 Search Enter can open the wrong product.** _Done 2026-11-19:_ typing clears the
+      highlighted suggestion, and Enter only opens a highlighted piece when the suggestions
+      belong to the current text; otherwise it runs the search. Browser test added.
+      Original finding: `src/components/site/SiteSearch.tsx:253-256`
       keeps the highlighted suggestion while the visitor keeps typing; `:162` then opens it.
       Reset `active` to -1 on change, or ignore it while loading. **Effort: S**
-- [ ] **P1-6 Price-range typing wipes the results.** `src/components/site/CatalogFilters.tsx:156`
+- [x] **P1-6 Price-range typing wipes the results.** _Done 2026-11-19:_ the price fields are
+      checked in the browser with the server's rules (`parseIqd`) before anything is applied.
+      An unfinished or reversed range keeps the current results and shows one polite hint
+      under the price fields; the form's error box is no longer a second `role="alert"`.
+      Browser test added.
+      Original finding: `src/components/site/CatalogFilters.tsx:156`
       navigates 300 ms after each keystroke; a temporary min > max shows an error and hides
       the grid (`products/page.tsx:127-141`), and the alert appears twice. Validate in the form,
       keep the last good results, and announce the error once. **Effort: M**
-- [ ] **P1-7 Phone filter dialog.** `CatalogFilters.tsx:382-433`: closing within 300 ms drops the
+- [x] **P1-7 Phone filter dialog.** _Done 2026-11-19:_ a sticky "Show N products" button
+      (translated plural, "Updating…" while results load) replaces Apply on the phone screen;
+      a change still waiting for the debounce is applied when the screen closes; the page
+      behind no longer scrolls (`html:has(dialog[open])`, `overscroll-contain`). Browser test
+      added.
+      Original finding: `CatalogFilters.tsx:382-433`: closing within 300 ms drops the
       last change; there's no "Show N results" button; the page behind can scroll on iOS.
       Flush the pending change on close, add a results-count button, and lock scrolling
       (`html:has(dialog[open]){overflow:hidden}`). **Effort: M**
-- [ ] **P1-8 Home page title repeats the brand.** `(home)/page.tsx:48` plus the layout template
+- [x] **P1-8 Home page title repeats the brand.** _Done 2026-11-19:_ the home page uses an
+      absolute title ("Starlight Jewellery — Handmade jewellery and accessories"); checked by a
+      browser test on the rendered `<title>`.
+      Original finding: `(home)/page.tsx:48` plus the layout template
       `layout.tsx:33` → "Starlight Jewellery — … · Starlight Jewellery". Use
       `title: { absolute: … }`. Verify the rendered `<title>`. **Effort: S**
-- [ ] **P1-9 Category pages can't rank in Google.** `src/app/robots.ts:13` disallows
+- [x] **P1-9 Category pages can't rank in Google.** _Done 2026-11-19:_ `?category=<slug>` on
+      its own is now an indexable landing page: the category name as `<title>` and `<h1>`, a
+      translated description, a canonical URL and hreflang alternates, listed in the sitemap
+      and allowed in robots.txt. Any other filter or a second page stays `noindex`. Kept the
+      query-string URL instead of a new `/products/category/<slug>` route so existing links
+      (breadcrumbs, chips, shared URLs) stay canonical. Browser test added.
+      Original finding: `src/app/robots.ts:13` disallows
       `/*/products?*`, and every filtered URL is `noindex` with a generic "Products" title. Make
       single-category pages indexable with their own title/h1/canonical (ideally
       `/products/category/<slug>`) and add them to the sitemap. **Effort: M**
@@ -200,4 +222,5 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 | 2026-11-18 | P2-4, P3-12      | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                                                                                                                                                                                                                          |
 | 2026-11-19 | P0-1             | dc0447d       | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                                                                                                                                                                                                                                |
 | 2026-11-19 | P1-3 (part)      | 668c7ce       | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open                                                                                                                                                                                                     |
-| 2026-11-19 | P1-1, P1-2, P1-4 | (this commit) | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
+| 2026-11-19 | P1-1, P1-2, P1-4 | 4b9853d       | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
+| 2026-11-19 | P1-5 – P1-9      | (this commit) | Search Enter fix; price-range check in the browser; phone filter screen with "Show N products", flush on close, scroll lock; absolute home title; indexable category landing pages (title, h1, description, canonical, sitemap, robots); steadier home-slideshow browser test. 88 browser journeys pass on desktop, phone and iPad                                                              |

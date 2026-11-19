@@ -18,6 +18,8 @@ export const en = {
     contactTitle: 'Contact',
     notFoundTitle: 'Page not found',
     productDescriptionFallback: '{name} — handmade by Starlight Jewellery. Enquire on Instagram.',
+    categoryDescription:
+      '{category} from Starlight Jewellery: handmade, with prices in Iraqi dinars. Enquire on Instagram.',
   },
   nav: {
     home: 'Home',
@@ -112,6 +114,11 @@ export const en = {
     sortPriceDesc: 'Price: high to low',
     activeFilters: 'Active filters',
     removeFilter: 'Remove filter: {filter}',
+    showResults: p({
+      zero: 'No products to show',
+      one: 'Show {count} product',
+      other: 'Show {count} products',
+    }),
     resultsCount: p({ zero: 'No products', one: '{count} product', other: '{count} products' }),
     resultsCountFor: p({
       zero: 'No products for “{query}”',

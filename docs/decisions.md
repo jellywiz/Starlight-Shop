@@ -78,6 +78,30 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   for the form's own navigations never reset it, so a visitor typing faster than the
   results arrive is never interrupted (the form remembers which navigations are its own).
   The relevance sort option now appears as soon as something is typed.
+- **Price filters are checked before they are applied** (2026-11-19). Typing a maximum one
+  digit at a time passes through values below the minimum; each of those used to navigate,
+  show an error and hide the grid. The form now runs the server's rules (`parseIqd`, min ≤
+  max) in the browser: while a price is unfinished or the range is reversed, nothing is
+  applied, the current results stay, and one polite hint under the price fields says what to
+  fix. The server still validates every URL (typed or shared links); its error box in the
+  form is no longer a second `role="alert"`.
+- **Phone filter screen** (2026-11-19). It ends in a sticky "Show N products" button (the
+  count of the results currently behind it, "Updating…" while new ones load) next to Clear
+  filters. A change still waiting for the 300 ms debounce is applied when the screen is
+  closed (✕, Escape or the button), never dropped. While any full-screen dialog is open, the
+  page behind does not scroll (`html:has(dialog[open])`).
+- **Category landing pages** (2026-11-19). `/<locale>/products?category=<slug>`, with no
+  other parameter, is indexable when the category is listed (active, with published
+  products). It has the category name as `<title>` and `<h1>`, the translated
+  `meta.categoryDescription`, its own canonical URL and hreflang alternates. It is listed in
+  the sitemap, and robots.txt allows it with `Allow: /*/products?category=`, which as the
+  longer rule wins over `Disallow: /*/products?*`. Searches, other filters and page 2+ stay
+  `noindex, follow`. The query-string address was kept instead of a new
+  `/products/category/<slug>` route, so breadcrumbs, filter chips and links already shared
+  stay canonical.
+- **Search Enter** (2026-11-19). Typing clears the highlighted suggestion; Enter opens a
+  highlighted piece only when the suggestions belong to the text in the box, otherwise it
+  searches for what was typed.
 - **Photos that fail to load show a Starlight placeholder with "Try again"** (2026-09-22).
   `src/components/site/ResponsiveImage.tsx` is a client component: on error (and for images
   the browser already gave up on before hydration) the same frame shows the sparkle mark,

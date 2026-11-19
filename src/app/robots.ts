@@ -8,8 +8,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: ['/', '/*/products?category='],
         // Robots rules complement authorization; they never replace it (spec section 15).
+        // Filtered catalogue URLs are not crawled, except single-category landing pages:
+        // the longer `allow` rule wins over `/*/products?*` (docs/decisions.md).
         disallow: ['/admin', '/api/', '/*/products/*/preview', '/*/products?*'],
       },
     ],

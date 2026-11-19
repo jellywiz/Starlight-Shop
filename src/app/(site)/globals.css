@@ -153,6 +153,11 @@
   dialog::backdrop {
     background: rgb(31 11 33 / 0.75);
   }
+  /* While a full-screen dialog (phone filters, enlarged photo) is open, the page behind
+     must not scroll; iOS otherwise scrolls it when the dialog's own content runs out. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
 }
 
 /* Button base as a utility so component classes below can @apply it (Tailwind v4). */

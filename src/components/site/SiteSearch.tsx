@@ -159,7 +159,9 @@ export function SiteSearch({ locale, labels }: { locale: Locale; labels: SearchL
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (active >= 0 && active < items.length) {
+    // Only a highlighted suggestion that belongs to the text in the box may be opened; while
+    // newer suggestions are loading, Enter searches for what was typed.
+    if (suggestions.state === 'ready' && active >= 0 && active < items.length) {
       go(`/${locale}/products/${items[active].slug}`)
       return
     }
@@ -252,6 +254,8 @@ export function SiteSearch({ locale, labels }: { locale: Locale; labels: SearchL
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
+              // The highlighted suggestion belonged to the previous text.
+              setActive(-1)
               setListOpen(true)
             }}
             onFocus={() => setListOpen(true)}

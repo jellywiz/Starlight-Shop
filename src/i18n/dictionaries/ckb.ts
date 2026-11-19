@@ -20,6 +20,8 @@ export const ckb: Dictionary = {
     contactTitle: 'پەیوەندی',
     notFoundTitle: 'لاپەڕەکە نەدۆزرایەوە',
     productDescriptionFallback: '{name} — دەستکردی ستارلایت جوێلەری. لە ئینستاگرام پرسیار بکە.',
+    categoryDescription:
+      'بەرهەمەکانی پۆلی {category} لە ستارلایت جوێلەری، دەستکرد و بە نرخی دیناری عێراقی. لە ئینستاگرام پرسیار بکە.',
   },
   nav: {
     home: 'سەرەکی',
@@ -114,6 +116,11 @@ export const ckb: Dictionary = {
     sortPriceDesc: 'نرخ: لە زۆر بۆ کەم',
     activeFilters: 'فلتەرە چالاکەکان',
     removeFilter: 'لابردنی فلتەر: {filter}',
+    showResults: p({
+      zero: 'هیچ بەرهەمێک بۆ پیشاندان نییە',
+      one: 'پیشاندانی {count} بەرهەم',
+      other: 'پیشاندانی {count} بەرهەم',
+    }),
     resultsCount: p({ zero: 'هیچ بەرهەمێک نییە', one: '{count} بەرهەم', other: '{count} بەرهەم' }),
     resultsCountFor: p({
       zero: 'هیچ بەرهەمێک بۆ «{query}» نییە',

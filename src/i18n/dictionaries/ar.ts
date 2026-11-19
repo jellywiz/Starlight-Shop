@@ -20,6 +20,8 @@ export const ar: Dictionary = {
     contactTitle: 'اتصل بنا',
     notFoundTitle: 'الصفحة غير موجودة',
     productDescriptionFallback: '{name} — صناعة يدوية من ستارلايت جوليري. استفسر عبر إنستغرام.',
+    categoryDescription:
+      'منتجات فئة {category} من ستارلايت جوليري، مصنوعة يدويًا وبأسعار بالدينار العراقي. استفسر عبر إنستغرام.',
   },
   nav: {
     home: 'الرئيسية',
@@ -112,6 +114,14 @@ export const ar: Dictionary = {
     sortPriceDesc: 'السعر: من الأعلى إلى الأقل',
     activeFilters: 'التصفية المفعّلة',
     removeFilter: 'إزالة التصفية: {filter}',
+    showResults: p({
+      zero: 'لا توجد منتجات للعرض',
+      one: 'عرض منتج واحد',
+      two: 'عرض منتجين',
+      few: 'عرض {count} منتجات',
+      many: 'عرض {count} منتجًا',
+      other: 'عرض {count} منتج',
+    }),
     resultsCount: p({
       zero: 'لا توجد منتجات',
       one: 'منتج واحد',

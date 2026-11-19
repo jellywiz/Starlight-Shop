@@ -33,6 +33,8 @@ export function pageMetadata(args: {
   path?: string
   image?: { url: string; width: number; height: number; alt: string } | null
   noindex?: boolean
+  /** Use the title as is, without the layout's "· Starlight Jewellery" suffix. */
+  absoluteTitle?: boolean
 }): Metadata {
   const base = siteUrl()
   const image = args.image ?? {
@@ -42,7 +44,7 @@ export function pageMetadata(args: {
     alt: SITE_NAME,
   }
   return {
-    title: args.title,
+    title: args.absoluteTitle ? { absolute: args.title } : args.title,
     description: args.description,
     alternates: localizedAlternates(args.locale, args.path),
     openGraph: {
