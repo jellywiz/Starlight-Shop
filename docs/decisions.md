@@ -6,9 +6,26 @@ else follows the spec as written.
 
 ## Versions pinned
 
-Payload 3.89.0, Next.js 16.3.5 (Payload's peer range), React 19.3.0, Node 22 LTS or newer
+Payload 3.93.0, Next.js 16.4.6 (Payload's peer range), React 19.3.1, Node 22 LTS or newer
 (the owner's Mac runs Node 26), pnpm 10, Tailwind CSS 4.3, PostgreSQL 17 (embedded locally;
 Supabase runs 17). Exact versions are in `package.json` and `pnpm-lock.yaml`.
+
+- **Security upgrade (2026-11-19).** Upgraded from Payload 3.89.0 / Next 16.3.5 because of
+  published critical advisories (see `docs/improvements.md` P0-1).
+  - **Why 3.93 and not 3.94:** Payload 3.94 requires Node `^22.23.5 || ^24.22.3 ||
+    > =26.13.1`, and the maintainer's Mac runs Node 26.3. Move to 3.94 or later after
+updating Node (`brew upgrade node`).
+  - **Transitive packages:** three vulnerable packages that other packages depend on are
+    forced to patched versions through `pnpm.overrides` (dompurify, fast-uri,
+    source-map-js). Remove the overrides once the parent packages ship fixed versions.
+  - **Remaining advisory:** one moderate advisory remains, in an old esbuild (≤0.24) inside
+    drizzle-kit. It only affects the migration tool on the developer's machine, never
+    the deployed site.
+  - **Storage folder field:** the new `media._objectKey` column is only filled for
+    browser-to-bucket ("client") uploads, which this project doesn't use, so server
+    uploads keep the `products/<filename>` key that `generateFileURL` and
+    `src/hooks/mediaCache.ts` assume. If client uploads are ever enabled, both must
+    include `_objectKey` in the path.
 
 ## Converted from the Dler Camera build
 

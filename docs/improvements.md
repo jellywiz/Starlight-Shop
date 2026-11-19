@@ -15,7 +15,15 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## P0 — Critical (fix before anything else)
 
-- [ ] **P0-1 Upgrade Next.js and Payload: published security flaws.** `pnpm audit --prod`
+- [x] **P0-1 Upgrade Next.js and Payload: published security flaws.** _Done 2026-11-19:_
+      upgraded to `next 16.4.6`, `payload`/`@payloadcms/* 3.93.0`, `sharp 0.35.5`,
+      `react 19.3.1`. `pnpm.overrides` added for `dompurify`, `fast-uri` and `source-map-js`.
+      `pnpm audit --prod` went from 7 critical / 24 high to 0 / 0 (one moderate, dev-only
+      esbuild in drizzle-kit). Added migration `20261119_053647_payload_3_93`, which **must be
+      run on production before deploying** (docs/deployment.md §5). Stayed on 3.93 because
+      3.94 needs Node ≥26.13.1 (docs/decisions.md). Follow-up: update Node, then move to the
+      latest Payload.
+      Original finding: `pnpm audit --prod`
       reports 7 critical and 24 high advisories, mainly in `next@16.3.5` (unauthenticated remote code
       execution in image optimisation and `use cache`, RCE in `next/og`, SSRF) and
       `payload@3.89.0` (unauthorised document updates, field-access bypass on auth
@@ -165,6 +173,7 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## Change log
 
-| Date       | Item          | Commit    | Notes                                                                                  |
-| ---------- | ------------- | --------- | -------------------------------------------------------------------------------------- |
-| 2026-11-18 | P2-4, P3-12   | uncommitted | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types |
+| Date       | Item        | Commit        | Notes                                                                                                                                            |
+| ---------- | ----------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-18 | P2-4, P3-12 | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                           |
+| 2026-11-19 | P0-1        | (this commit) | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass |

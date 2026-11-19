@@ -219,6 +219,14 @@ Only those two values are needed (no storage keys): the photos are read from the
 bucket address. Without them the script works on the local development database and the
 `media/` folder. Photos uploaded from then on get their stand-in automatically.
 
+**Release of 19 November 2026 (Payload 3.93 / Next.js 16.4.6 security upgrade): migrate
+first.** Migration `20261119_053647_payload_3_93` adds two empty columns
+(`users.reset_password_requested_at`, `media._objectkey`). The new code reads the first one
+on every login, so **the owner cannot sign in to the admin until the migration has run**.
+The columns are additive and nullable, so running the migration before the deploy is safe
+for the code that is live now. Order: `./scripts/backup.sh` → `pnpm migrate:status` →
+`pnpm migrate` (production `DATABASE_MIGRATION_URI`) → push to `main`.
+
 ## 6. Custom domain later
 
 Buy the domain, add it in Netlify (Domain management), then update `SITE_URL` and redeploy.
