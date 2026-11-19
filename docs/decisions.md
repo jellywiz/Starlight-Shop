@@ -273,6 +273,18 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   blurred copy of the photo instead of plain white (`ResponsiveImage` `backdrop`, a CSS
   background made from the upload-time preview), and cards and the product gallery use
   upright 4:5 frames to match phone photos. Only the 64 px gallery thumbnails crop.
+- **Phone home screen** (2026-11-19). Below 768 px the hero shows the slideshow first, then the
+  title and one full-width "Browse products" button. The tagline, lead paragraph and second
+  Instagram button appear from 640 px up; on phones Instagram is reached from the product
+  pages and the contact block. Categories are one sideways-swiping row on phones.
+- **Language on phones and tablets** (2026-11-19). A globe button in the header (below
+  1024 px) opens the three languages, so visitors who land on the Kurdish default can switch
+  in one tap. The languages are no longer inside the hamburger menu. The button's name is
+  "Language: <current>" in the page's language.
+- **Remembered delivery city** (2026-11-19). The last city a visitor picks is stored in their
+  browser only (`localStorage` `sl-city`, the city id; no cookie, nothing sent to the server)
+  and preselected in every delivery selector. A city in the URL (`?city=`) wins, an id that
+  is no longer listed is ignored, and choosing the empty option forgets it.
 - **Quieter buy area** (2026-11-19). Next to the price there is one main action (Enquire, which
   copies the product link), a small copy-link icon button (accessible name and tooltip "Copy
   product link") and one short hint. The note "prices are in dinars, delivery not included"

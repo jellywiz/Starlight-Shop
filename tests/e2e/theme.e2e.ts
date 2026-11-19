@@ -34,7 +34,7 @@ for (const theme of ['dark', 'light'] as const) {
     // Click real language links: page.goto would miss client-side layout remounts.
     for (const locale of ['ar', 'ckb', 'en']) {
       if ((page.viewportSize()?.width ?? 1280) < 1024) {
-        await page.locator('header button[aria-expanded]').click()
+        await page.locator('header [data-language-menu] button').click()
       }
       await page.locator(`a[hreflang="${locale}"]:visible`).click()
       await expect(page).toHaveURL(new RegExp(`/${locale}/products$`))

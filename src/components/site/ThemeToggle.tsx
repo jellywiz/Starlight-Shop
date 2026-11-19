@@ -92,7 +92,7 @@ export function ThemeToggle({ labels }: { labels: { toDark: string; toLight: str
     <button
       type="button"
       onClick={toggle}
-      className="rounded-full p-2 text-emphasis hover:bg-surface-2"
+      className="rounded-full p-1.5 text-emphasis hover:bg-surface-2 sm:p-2"
       aria-label={label}
       title={label}
       data-theme-toggle

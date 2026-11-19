@@ -206,7 +206,7 @@ export function SiteSearch({ locale, labels }: { locale: Locale; labels: SearchL
       <Link
         ref={triggerRef}
         href={`/${locale}/products`}
-        className="rounded-full p-2 text-emphasis hover:bg-surface-2 sm:hidden"
+        className="shrink-0 rounded-full p-1.5 text-emphasis hover:bg-surface-2 sm:hidden"
         aria-label={labels.search}
         aria-expanded={open}
         aria-controls={`${id}-form`}

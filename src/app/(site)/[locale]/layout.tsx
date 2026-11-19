@@ -90,7 +90,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <SiteHeader locale={locale} dict={dict} settings={settings} />
         <main
           id="main-content"
-          className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10"
+          className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-10"
           tabIndex={-1}
         >
           {/* Route changes cross-fade the page and a tapped product photo glides into its

@@ -6,6 +6,7 @@ import type { Dictionary } from '@/i18n/dictionary'
 import { deliveryFeesPath } from '@/lib/catalog/links'
 import type { PublicShopSettings } from '@/lib/shop'
 
+import { LanguageMenu } from './LanguageMenu'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { LinkDot } from './LinkPending'
 import { MobileMenu } from './MobileMenu'
@@ -35,10 +36,10 @@ export function SiteHeader({
   ]
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 text-ink backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
         <Link
           href={`/${locale}`}
-          className="flex shrink-0 items-center gap-2.5"
+          className="flex shrink-0 items-center gap-2 sm:gap-2.5"
           aria-label={dict.nav.logoLinkLabel}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -49,7 +50,7 @@ export function SiteHeader({
             height={44}
             className="h-11 w-11 rounded-xl"
           />
-          <span className="text-lg font-semibold text-heading max-[360px]:sr-only">
+          <span className="text-base font-semibold text-heading max-[360px]:sr-only sm:text-lg">
             {settings.publicName}
           </span>
         </Link>
@@ -82,12 +83,20 @@ export function SiteHeader({
             currencyFormat: dict.common.currencyFormat,
           }}
         />
-        <div className="flex items-center gap-1 sm:ms-2">
+        <div className="flex items-center gap-0.5 sm:ms-2 sm:gap-1">
           <div className="hidden lg:block">
             <Suspense fallback={<span className="text-sm text-ink-soft">{dict.nav.language}</span>}>
               <LanguageSwitcher current={locale} label={dict.nav.language} />
             </Suspense>
           </div>
+          {/* Phones and tablets: the languages behind a globe, always in the header. */}
+          <Suspense
+            fallback={
+              <span aria-hidden="true" className="block h-9 w-9 sm:h-10 sm:w-10 lg:hidden" />
+            }
+          >
+            <LanguageMenu current={locale} label={dict.nav.language} />
+          </Suspense>
           <ThemeToggle
             labels={{ toDark: dict.nav.switchToDark, toLight: dict.nav.switchToLight }}
           />
@@ -96,11 +105,7 @@ export function SiteHeader({
             openLabel={dict.nav.openMenu}
             closeLabel={dict.nav.closeMenu}
             navLabel={dict.nav.mainNavigation}
-          >
-            <Suspense fallback={<span className="text-sm text-ink-soft">{dict.nav.language}</span>}>
-              <LanguageSwitcher current={locale} label={dict.nav.language} />
-            </Suspense>
-          </MobileMenu>
+          />
         </div>
       </div>
     </header>

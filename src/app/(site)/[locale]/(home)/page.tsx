@@ -107,9 +107,11 @@ export default async function HomePage({ params, searchParams }: Props) {
   const pieces = heroPieces(featured)
 
   return (
-    <div className="flex flex-col gap-12 sm:gap-14">
-      {/* The featured pieces, one at a time, give the first screen a shoppable focal point. */}
-      <section className="home-hero relative overflow-hidden rounded-[2rem] px-6 py-8 text-heading sm:px-10 sm:py-12">
+    <div className="flex flex-col gap-10 sm:gap-14">
+      {/* The featured pieces, one at a time, give the first screen a shoppable focal point.
+          On phones the slideshow comes first and the text is cut to a title and one button,
+          so the visitor sees jewellery straight away and products are a short scroll down. */}
+      <section className="home-hero relative overflow-hidden rounded-[2rem] px-4 py-5 text-heading sm:px-10 sm:py-12">
         <Sparkles
           count={10}
           seed={11}
@@ -122,38 +124,45 @@ export default async function HomePage({ params, searchParams }: Props) {
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -end-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"
         />
-        <div className="relative grid items-center gap-8 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_300px]">
-          <div className="max-w-2xl">
-            <p className="mb-4 flex items-center gap-2 text-sm font-medium text-accent">
+        <div className="relative grid items-center gap-5 sm:gap-8 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_300px]">
+          <div className="max-w-2xl text-center sm:text-start">
+            <p className="mb-4 hidden items-center gap-2 text-sm font-medium text-accent sm:flex">
               <SparkleIcon className="h-4 w-4" />
               {dict.footer.tagline}
             </p>
-            <h1 className="max-w-xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+            <h1 className="mx-auto max-w-xl text-2xl font-bold leading-tight sm:mx-0 sm:text-4xl lg:text-5xl">
               {dict.home.heroTitle}
             </h1>
-            <p className="mt-4 max-w-prose text-base leading-relaxed text-ink-soft sm:text-lg">
+            <p className="mt-4 hidden max-w-prose text-base leading-relaxed text-ink-soft sm:block sm:text-lg">
               {dict.home.heroLead}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/${locale}/products`} className="btn-primary px-6 py-3 text-base">
+            <div className="mt-5 flex flex-wrap gap-3 sm:mt-8">
+              <Link
+                href={`/${locale}/products`}
+                className="btn-primary w-full px-6 py-3 text-base sm:w-auto"
+              >
                 {dict.home.browseProducts}
                 <LinkDot />
               </Link>
+              {/* On phones Instagram is reached from every product page and the contact
+                  block further down; the first screen keeps a single button. */}
               <InstagramLink
                 href={settings.instagramUrl}
                 label={dict.home.instagramAction}
                 dict={dict}
-                className="btn-secondary px-6 py-3 text-base"
+                className="btn-secondary hidden px-6 py-3 text-base sm:inline-flex"
               />
             </div>
           </div>
           {pieces.length ? (
-            <HeroSlideshow
-              pieces={pieces}
-              locale={locale}
-              dict={dict}
-              sizes="(min-width: 1024px) 276px, (min-width: 768px) 236px, (min-width: 380px) 276px, calc(100vw - 104px)"
-            />
+            <div className="order-first md:order-none">
+              <HeroSlideshow
+                pieces={pieces}
+                locale={locale}
+                dict={dict}
+                sizes="(min-width: 1024px) 276px, (min-width: 768px) 236px, (min-width: 380px) 276px, calc(100vw - 104px)"
+              />
+            </div>
           ) : null}
         </div>
       </section>
@@ -165,12 +174,16 @@ export default async function HomePage({ params, searchParams }: Props) {
           <h2 id="home-categories" className="section-title">
             {dict.home.categoriesHeading}
           </h2>
-          <ul className="category-list mt-5 flex flex-wrap gap-3" role="list">
+          {/* One swipeable row on phones (no extra height per category), wrapping above. */}
+          <ul
+            className="category-list -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mt-5 sm:flex-wrap sm:overflow-visible sm:px-0"
+            role="list"
+          >
             {filters.categories.map((category) => (
-              <li key={category.slug}>
+              <li key={category.slug} className="shrink-0">
                 <Link
                   href={catalogPath(locale, { category: category.slug })}
-                  className="category-tile inline-flex items-center gap-3 rounded-2xl px-5 py-4 text-sm font-semibold text-heading ring-1 ring-line-soft transition-shadow hover:shadow-card-hover"
+                  className="category-tile inline-flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-heading ring-1 ring-line-soft transition-shadow hover:shadow-card-hover sm:px-5 sm:py-4"
                 >
                   <SparkleIcon className="h-3 w-3 text-accent-muted" />
                   {category.name}

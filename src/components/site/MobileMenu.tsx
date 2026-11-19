@@ -9,8 +9,9 @@ import { LinkDot } from './LinkPending'
 type Item = { href: string; label: string }
 
 /**
- * Accessible disclosure menu for narrow screens: button + navigation list. The language
- * switcher is passed as `children` so it stays reachable without crowding the header.
+ * Accessible disclosure menu for narrow screens: button + navigation list. Optional
+ * `children` are shown under the links (the languages have their own header button, see
+ * LanguageMenu).
  */
 export function MobileMenu({
   items,
@@ -49,7 +50,7 @@ export function MobileMenu({
       <button
         ref={buttonRef}
         type="button"
-        className="rounded-full p-2 text-emphasis hover:bg-surface-2"
+        className="rounded-full p-1.5 text-emphasis hover:bg-surface-2 sm:p-2"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}

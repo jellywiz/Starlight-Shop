@@ -4,21 +4,21 @@ import { Bar, GridSkeleton, LoadingRegion } from '@/components/site/Skeleton'
 export default function HomeLoading() {
   return (
     <LoadingRegion testId="home-skeleton">
-      <div className="flex flex-col gap-12 sm:gap-14">
-        <section className="home-hero relative overflow-hidden rounded-[2rem] px-6 py-8 sm:px-10 sm:py-12">
-          <div className="grid items-center gap-8 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_300px]">
-            <div className="flex max-w-2xl flex-col gap-4">
-              <Bar className="h-4 w-48" />
+      <div className="flex flex-col gap-10 sm:gap-14">
+        <section className="home-hero relative overflow-hidden rounded-[2rem] px-4 py-5 sm:px-10 sm:py-12">
+          <div className="grid items-center gap-5 sm:gap-8 md:grid-cols-[1fr_260px] lg:grid-cols-[1fr_300px]">
+            <div className="flex max-w-2xl flex-col items-center gap-4 sm:items-start">
+              <Bar className="hidden h-4 w-48 sm:block" />
               <Bar className="h-9 w-4/5 sm:h-11" />
               <Bar className="h-9 w-3/5 sm:h-11" />
-              <Bar className="mt-2 h-5 w-full max-w-prose" />
-              <Bar className="h-5 w-2/3" />
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Bar className="h-12 w-40 rounded-full" />
-                <Bar className="h-12 w-56 rounded-full" />
+              <Bar className="mt-2 hidden h-5 w-full max-w-prose sm:block" />
+              <Bar className="hidden h-5 w-2/3 sm:block" />
+              <div className="mt-1 flex w-full flex-wrap gap-3 sm:mt-4 sm:w-auto">
+                <Bar className="h-12 w-full rounded-full sm:w-40" />
+                <Bar className="hidden h-12 w-56 rounded-full sm:block" />
               </div>
             </div>
-            <div className="hero-piece mx-auto w-full max-w-[300px] rounded-[1.75rem] bg-surface p-3 shadow-card-hover">
+            <div className="hero-piece order-first mx-auto w-full max-w-[300px] rounded-[1.75rem] bg-surface p-3 shadow-card-hover md:order-none">
               <div className="aspect-[4/3] rounded-[1.25rem] bg-white md:aspect-square" />
               <div className="flex flex-col gap-2 px-2 pb-2 pt-4">
                 <Bar className="h-3 w-24" />

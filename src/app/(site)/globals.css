@@ -330,6 +330,13 @@
   .category-tile {
     background: var(--color-pastel-lilac);
   }
+  /* The phone row of categories scrolls sideways without a visible scrollbar. */
+  .category-list {
+    scrollbar-width: none;
+  }
+  .category-list::-webkit-scrollbar {
+    display: none;
+  }
   .category-list li:nth-child(4n + 2) .category-tile {
     background: var(--color-pastel-peach);
   }

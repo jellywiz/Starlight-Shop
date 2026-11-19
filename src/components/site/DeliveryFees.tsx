@@ -1,12 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useId, useState } from 'react'
+import { useId, useState, useSyncExternalStore } from 'react'
 
 import type { Locale } from '@/i18n/config'
 import { type Dictionary, t } from '@/i18n/dictionary'
 import { formatIqd } from '@/lib/catalog/dinar'
 import type { DeliveryCity } from '@/lib/catalog/types'
+import { readStoredCity, storeCity, subscribeStoredCity } from '@/lib/site/city-preference'
 
 import { InstagramLink } from './InstagramLink'
 
@@ -32,8 +33,10 @@ type Props = {
  * Delivery-fee selector (spec section 8), used on the home page and inline on product
  * pages. A labelled select shows one city's saved fee beneath it; on the home page the
  * choice is kept in the URL (?city=<id>) so it survives a language switch, and without
- * JavaScript the form submits to `/<locale>#delivery`. No fee is ever added to a product
- * price; no zero is shown unless the owner saved a confirmed 0.
+ * JavaScript the form submits to `/<locale>#delivery`. The last city picked is also
+ * remembered in this browser (lib/site/city-preference.ts) and preselected everywhere,
+ * unless the URL names a city. No fee is ever added to a product price; no zero is shown
+ * unless the owner saved a confirmed 0.
  */
 export function DeliveryFees({
   locale,
@@ -49,17 +52,24 @@ export function DeliveryFees({
   const router = useRouter()
   const selectId = useId()
   const resultId = useId()
-  const [selectedId, setSelectedId] = useState<number | null>(initialCityId)
+  // `undefined`: the visitor has not chosen on this page and the URL named no city, so the
+  // remembered city (if it is still listed) is shown. The server never knows it (null).
+  const [choice, setChoice] = useState<number | null | undefined>(
+    initialCityId ?? (initialNotListed ? null : undefined),
+  )
+  const remembered = useSyncExternalStore(subscribeStoredCity, readStoredCity, () => null)
   const [notListed, setNotListed] = useState(initialNotListed)
   const spacing = compact ? 'mt-3' : 'mt-5'
 
+  const selectedId = choice !== undefined ? choice : remembered
   const selected = cities.find((c) => c.id === selectedId) ?? null
 
   const onChange = (value: string) => {
     const id = /^\d+$/.test(value) ? Number.parseInt(value, 10) : null
     const city = cities.find((c) => c.id === id) ?? null
-    setSelectedId(city ? city.id : null)
+    setChoice(city ? city.id : null)
     setNotListed(false)
+    storeCity(city ? city.id : null)
     if (!syncUrl) {
       return
     }

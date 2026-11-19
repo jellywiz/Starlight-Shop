@@ -83,7 +83,8 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
   }) => {
     await page.goto(`/en/products/${SAMPLE_SLUG}`)
     if (menuCollapsed(page)) {
-      await page.getByRole('button', { name: 'Open menu' }).click()
+      // Phones and tablets: the globe button in the header, never hidden in the menu.
+      await page.getByRole('button', { name: 'Language: English' }).click()
     }
     await page.getByRole('link', { name: 'العربية' }).click()
     await expect(page).toHaveURL(new RegExp(`/ar/products/${SAMPLE_SLUG}$`))
@@ -447,6 +448,58 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     expect(sitemap).toContain('/en/products?category=necklaces')
   })
 
+  test('phones see jewellery first, switch language from the header, and a chosen city is remembered (U3, U10, U9)', async ({
+    page,
+  }) => {
+    await page.goto('/en')
+    const show = page.getByTestId('hero-slideshow')
+    const title = page.getByRole('heading', { level: 1 })
+    if (width(page) < 768) {
+      // The slideshow sits above the title, and the first products are a short scroll away.
+      const showBox = (await show.boundingBox())!
+      const titleBox = (await title.boundingBox())!
+      expect(showBox.y).toBeLessThan(titleBox.y)
+      const firstCard = (await page.locator('article.product-card').first().boundingBox())!
+      expect(firstCard.y).toBeLessThan((page.viewportSize()?.height ?? 844) * 1.6)
+      await expect(page.getByRole('main').getByText(/^Necklaces, bracelets, rings/)).toBeHidden()
+    }
+
+    // The language is one tap away in the header on phones and tablets.
+    const globe = page.getByRole('button', { name: 'Language: English' })
+    if (menuCollapsed(page)) {
+      await expect(globe).toBeVisible()
+      await globe.click()
+      const list = page.getByRole('navigation', { name: 'Language' })
+      await expect(list.getByRole('link', { name: 'English' })).toHaveAttribute(
+        'aria-current',
+        'true',
+      )
+      // Escape closes it; picking a language goes to the same page in that language.
+      await page.keyboard.press('Escape')
+      await expect(list).toBeHidden()
+      await globe.click()
+      await list.getByRole('link', { name: 'العربية' }).click()
+      await expect(page).toHaveURL(/\/ar$/)
+      await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+      await expect(page.getByRole('button', { name: 'اللغة: العربية' })).toBeVisible()
+    } else {
+      await expect(globe).toBeHidden()
+    }
+
+    // A city picked once is shown on every product page, in any language.
+    await page.goto('/en')
+    await page.getByLabel('Your city').selectOption({ label: 'Sample city 1' })
+    await page.goto(`/en/products/${SAMPLE_SLUG}`)
+    await expect(page.getByText('Delivery to Sample city 1: IQD 5,000').first()).toBeVisible()
+    await page.goto(`/ckb/products/${SAMPLE_SLUG}`)
+    await expect(page.getByText('گەیاندن بۆ شاری نموونە ١:').first()).toBeVisible()
+    // Clearing the choice forgets it.
+    await page.goto(`/en/products/${SAMPLE_SLUG}`)
+    await page.getByLabel('Your city').selectOption({ value: '' })
+    await page.reload()
+    await expect(page.getByLabel('Your city')).toHaveValue('')
+  })
+
   test('a product page keeps the price and the Instagram action in reach, and photos never pop in', async ({
     page,
   }) => {
@@ -649,7 +702,7 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByText(/total/i)).toHaveCount(0)
 
     if (menuCollapsed(page)) {
-      await page.getByRole('button', { name: 'Open menu' }).click()
+      await page.getByRole('button', { name: 'Language: English' }).click()
     }
     await page.getByRole('link', { name: 'کوردی' }).click()
     await expect(page).toHaveURL(/\/ckb\?city=\d+/)

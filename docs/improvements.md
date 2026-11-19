@@ -119,7 +119,7 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ### Visitors
 
-- [ ] **P2-1 Language switcher hidden on phones/iPad.** `SiteHeader.tsx:86-103`: Arabic and English
+- [x] **P2-1 Language switcher hidden on phones/iPad.** _Done 2026-11-19 as U10._ `SiteHeader.tsx:86-103`: Arabic and English
       visitors land on Kurdish with no visible switch. Show a compact language button in the
       mobile header. **Effort: S**
 - [ ] **P2-2 Bare paths 404.** `src/proxy.ts:15-18`: `/about`, `/products/x` without a locale show 404. Redirect known routes to `/{default}/…` with a 308. **Effort: S**
@@ -213,11 +213,13 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 - [x] **U2 Bigger product photo on desktop.** _Done 2026-11-19:_ the gallery takes the larger
       column (1.3 : 1), is 4:5 up to the viewport height, and stays in view (sticky) while
       the details scroll.
-- [ ] **U3 Shorter phone home screen.** Slideshow first, one line, one button; categories and
-      pieces higher. **Effort: M**
-- [ ] **U4 "Powered by Netlify" badge.** Not in the code: Netlify injects it on free projects
-      created after 19 Aug 2026. Owner action: Netlify → Project configuration → General →
-      Powered by Netlify badge → Off (if the plan allows; otherwise it stays). **Effort: S**
+- [x] **U3 Shorter phone home screen.** _Done 2026-11-19:_ on phones (< 768 px) the slideshow
+      comes first, then the title and one full-width "Browse products" button (tagline,
+      lead paragraph and the second Instagram button show from 640 px up); categories are one
+      swipeable row; tighter page and section spacing. The first product card now starts at
+      the bottom of the first screen on a 390 × 844 phone (it was about two screens down).
+- [x] **U4 "Powered by Netlify" badge.** _Done 2026-11-19 by the owner:_ turned off in Netlify →
+      Project configuration → General → Powered by Netlify badge (not in the code).
 - [x] **U5 Less text around the buy button.** _Done 2026-11-19:_ the currency note moved into
       the delivery card (where it belongs); "Copy product link" became an icon button next to
       Enquire (same accessible name); the enquiry hint is one short line that says Enquire
@@ -226,8 +228,15 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 - [ ] **U7 "How ordering works" strip** (pick → message → delivery). **Effort: S**
 - [ ] **U8 Product details fields** (material, length, colour, made to order). Needs a
       migration. **Effort: M**
-- [ ] **U9 Remember the chosen delivery city** across product pages. **Effort: S**
-- [ ] **U10 Language button in the phone header** (same as P2-1). **Effort: S**
+- [x] **U9 Remember the chosen delivery city.** _Done 2026-11-19:_ the last city picked (home
+      or any product page) is kept in this browser (`localStorage` key `sl-city`, id only,
+      `src/lib/site/city-preference.ts`) and preselected on every page in every language,
+      unless the URL names a city; choosing "Select your city" forgets it.
+- [x] **U10 Language button in the phone header.** _Done 2026-11-19:_ a globe button in the
+      header below 1024 px (`src/components/site/LanguageMenu.tsx`) opens the three
+      languages (current one ticked; Escape / outside tap closes); the languages left the
+      hamburger menu. Header icon buttons are 36 px on phones so everything fits at 390 px.
+      Also closes P2-1.
 - [ ] **U11 Category tiles with a photo; plural category names** (names are owner content).
       **Effort: S**
 - [ ] **U12 "New" badge, sold-out last and faded, stock badge only when unavailable.**
@@ -252,11 +261,12 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## Change log
 
-| Date       | Item             | Commit        | Notes                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------- | ---------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-18 | P2-4, P3-12      | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                                                                                                                                                                                                                          |
-| 2026-11-19 | P0-1             | dc0447d       | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                                                                                                                                                                                                                                |
-| 2026-11-19 | P1-3 (part)      | 668c7ce       | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open                                                                                                                                                                                                     |
-| 2026-11-19 | P1-1, P1-2, P1-4 | 4b9853d       | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
-| 2026-11-19 | P1-5 – P1-9      | 023de34       | Search Enter fix; price-range check in the browser; phone filter screen with "Show N products", flush on close, scroll lock; absolute home title; indexable category landing pages (title, h1, description, canonical, sitemap, robots); steadier home-slideshow browser test. 88 browser journeys pass on desktop, phone and iPad                                                              |
-| 2026-11-19 | U1, U2, U5       | (this commit) | Photos whole over a blurred copy of themselves in 4:5 frames (cards, gallery, slideshow); larger sticky desktop gallery; quieter buy area (icon copy button, one-line hint, currency note in the delivery card). U4 is a Netlify setting (owner action)                                                                                                                                         |
+| Date       | Item               | Commit        | Notes                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | ------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-18 | P2-4, P3-12        | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                                                                                                                                                                                                                          |
+| 2026-11-19 | P0-1               | dc0447d       | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                                                                                                                                                                                                                                |
+| 2026-11-19 | P1-3 (part)        | 668c7ce       | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open                                                                                                                                                                                                     |
+| 2026-11-19 | P1-1, P1-2, P1-4   | 4b9853d       | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
+| 2026-11-19 | P1-5 – P1-9        | 023de34       | Search Enter fix; price-range check in the browser; phone filter screen with "Show N products", flush on close, scroll lock; absolute home title; indexable category landing pages (title, h1, description, canonical, sitemap, robots); steadier home-slideshow browser test. 88 browser journeys pass on desktop, phone and iPad                                                              |
+| 2026-11-19 | U1, U2, U5         | 2b946ee       | Photos whole over a blurred copy of themselves in 4:5 frames (cards, gallery, slideshow); larger sticky desktop gallery; quieter buy area (icon copy button, one-line hint, currency note in the delivery card). U4 is a Netlify setting (owner action)                                                                                                                                         |
+| 2026-11-19 | U3, U10 (P2-1), U9 | (this commit) | Phone home: slideshow first, one button, swipeable categories; header globe language menu; delivery city remembered per browser and shown on every product page                                                                                                                                                                                                                                 |
