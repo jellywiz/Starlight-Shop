@@ -12,9 +12,9 @@ import { Price } from './Price'
 import { ResponsiveImage } from './ResponsiveImage'
 
 /**
- * Catalogue card: photo on white with contain sizing (jewellery edges stay visible),
- * category, name, dinar price and the availability label. No delivery fee or total is
- * ever shown inside a card (spec section 2).
+ * Catalogue card: an upright 4:5 photo frame, the photo shown whole (contain) over a soft
+ * blurred copy of itself, then category, name, dinar price and the availability label. No
+ * delivery fee or total is ever shown inside a card (spec section 2).
  */
 export function ProductCard({
   item,
@@ -42,14 +42,15 @@ export function ProductCard({
           exit="none"
           update="none"
         >
-          <div className="aspect-square w-full">
+          <div className="aspect-[4/5] w-full">
             {item.cover ? (
               <ResponsiveImage
                 image={item.cover}
                 sizes={sizes}
                 labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
                 priority={priority}
-                className="h-full w-full object-contain p-3 transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
+                backdrop
+                className="h-full w-full object-contain transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-surface-2 text-sm text-ink-muted">

@@ -16,6 +16,11 @@ type Props = {
   className?: string
   /** Only the Starlight mark when the photo fails (for thumbnails and other small frames). */
   compact?: boolean
+  /**
+   * Fill the frame around the photo with a soft, blurred copy of it, so a tall or wide photo
+   * never sits between empty white bars. The photo itself is never cropped.
+   */
+  backdrop?: boolean
 }
 
 /** Adds a retry marker so the browser fetches the image again instead of reusing a failure. */
@@ -43,6 +48,7 @@ function ImageFrame({
   priority = false,
   className = '',
   compact = false,
+  backdrop = false,
 }: Props) {
   const [attempt, setAttempt] = useState(0)
   const [failed, setFailed] = useState(false)
@@ -111,13 +117,33 @@ function ImageFrame({
       onError={() => setFailed(true)}
     />
   )
+  // The blurred copy behind the photo: the tiny upload-time preview (inline, free), or the
+  // smallest variant for photos uploaded before previews existed. A CSS background, not an
+  // <img>, so it is never announced or counted as a second picture.
+  const backdropSrc = backdrop ? (image.placeholder ?? image.sources[0]?.url ?? image.src) : null
+  const backdropLayer = backdropSrc ? (
+    <span
+      aria-hidden="true"
+      className="photo-backdrop"
+      style={{ backgroundImage: `url("${backdropSrc}")` }}
+    />
+  ) : null
+
   if (!image.placeholder) {
-    return photo
+    return backdropLayer ? (
+      <span className="photo-frame">
+        {backdropLayer}
+        {photo}
+      </span>
+    ) : (
+      photo
+    )
   }
   // The blurred stand-in (made at upload, ~300 bytes inline) paints the frame at once and
   // fades once the photo has arrived; the real <img> keeps its own layout and sizes.
   return (
-    <span className="relative block h-full w-full">
+    <span className={backdropLayer ? 'photo-frame' : 'relative block h-full w-full'}>
+      {backdropLayer}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={image.placeholder}

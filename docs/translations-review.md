@@ -155,7 +155,7 @@ must be kept; plural entries list one line per form.
 | `product.linkCopied` | Link copied | لینک کۆپی کرا | تم نسخ الرابط | ☐ |
 | `product.enquireCopied` | Product link copied. Paste it into your Instagram message. | لینکی بەرهەمەکە کۆپی کرا. لە نامەکەتدا لە ئینستاگرام دایبنێ. | تم نسخ رابط المنتج. ألصقه في رسالتك على إنستغرام. | ☐ |
 | `product.copyFailed` | Copying is not available here. Select and copy the link below: | کۆپیکردن لێرە بەردەست نییە. لینکی خوارەوە دیاری بکە و کۆپی بکە: | النسخ غير متاح هنا. حدّد الرابط أدناه وانسخه: | ☐ |
-| `product.enquiryHint` | Send us this product link in an Instagram message so we know which piece you mean. We reply from the shop account. | ئەم لینکی بەرهەمە لە نامەی ئینستاگرامدا بۆمان بنێرە تا بزانین مەبەستت کام پارچەیە. لە هەژماری دوکانەکەوە وەڵامت دەدەینەوە. | أرسل لنا رابط هذا المنتج في رسالة عبر إنستغرام لنعرف القطعة التي تقصدها. نرد من حساب المتجر. | ☐ |
+| `product.enquiryHint` | Tapping Enquire copies this piece’s link: paste it into your message so we know which one you mean. | دوگمەی پرسیارکردن لینکی ئەم پارچەیە کۆپی دەکات؛ لە نامەکەتدا دایبنێ تا بزانین مەبەستت کامەیە. | زر الاستفسار ينسخ رابط هذه القطعة؛ ألصقه في رسالتك لنعرف القطعة التي تقصدها. | ☐ |
 | `product.related` | More from this category | زیاتر لەم پۆلە | المزيد من هذه الفئة | ☐ |
 | `product.noPhoto` | No photo available | وێنە بەردەست نییە | لا توجد صورة | ☐ |
 | `product.photoFailed` | The photo could not be loaded | وێنەکە بار نەکرا | تعذّر تحميل الصورة | ☐ |

@@ -185,7 +185,8 @@ export function HeroSlideshow({
                   sizes={sizes}
                   labels={{ failed: dict.product.photoFailed, retry: dict.product.retryPhoto }}
                   priority={i === 0 || active}
-                  className="h-full w-full object-contain p-4"
+                  backdrop
+                  className="h-full w-full object-contain"
                 />
               </div>
             )

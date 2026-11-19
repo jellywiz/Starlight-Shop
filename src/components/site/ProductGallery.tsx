@@ -293,7 +293,7 @@ export function ProductGallery({
 
   if (!current) {
     return (
-      <div className="card flex aspect-square items-center justify-center bg-white text-ink-muted">
+      <div className="card flex aspect-[4/5] items-center justify-center bg-white text-ink-muted">
         {dict.product.noPhoto}
       </div>
     )
@@ -312,8 +312,10 @@ export function ProductGallery({
           exit="none"
           update="none"
         >
+          {/* Upright like the photos themselves, as large as the screen allows: on a laptop
+              the frame stops short of the viewport height so the whole piece is in view. */}
           <div
-            className="aspect-square w-full touch-pan-y select-none sm:aspect-[4/3]"
+            className="aspect-[4/5] max-h-[calc(100dvh-7rem)] w-full touch-pan-y select-none"
             onPointerDown={onMainPointerDown}
             onPointerUp={onMainPointerUp}
             onPointerCancel={() => {
@@ -322,10 +324,11 @@ export function ProductGallery({
           >
             <ResponsiveImage
               image={current}
-              sizes="(min-width: 1024px) 50vw, 100vw"
+              sizes="(min-width: 1024px) 55vw, 100vw"
               labels={labels}
               priority
-              className="pointer-events-none h-full w-full object-contain p-6"
+              backdrop
+              className="pointer-events-none h-full w-full object-contain"
             />
           </div>
         </ViewTransition>
@@ -369,7 +372,7 @@ export function ProductGallery({
                   sizes="64px"
                   labels={labels}
                   compact
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
               </button>
             </li>

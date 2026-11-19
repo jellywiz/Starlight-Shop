@@ -268,8 +268,15 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   lilac panels, a plum gradient hero and a deep-plum footer, and decorative four-point
   "sparkle" stars that twinkle gently. Sparkles are `aria-hidden`, positioned with logical
   insets (so they mirror in RTL), kept away from headings and buttons, and completely
-  still under `prefers-reduced-motion`. Product photos always sit on white with contain
-  sizing.
+  still under `prefers-reduced-motion`. Product photos are always shown whole (contain
+  sizing, never cropped). Since 2026-11-19 the space around a photo is filled with a soft
+  blurred copy of the photo instead of plain white (`ResponsiveImage` `backdrop`, a CSS
+  background made from the upload-time preview), and cards and the product gallery use
+  upright 4:5 frames to match phone photos. Only the 64 px gallery thumbnails crop.
+- **Quieter buy area** (2026-11-19). Next to the price there is one main action (Enquire, which
+  copies the product link), a small copy-link icon button (accessible name and tooltip "Copy
+  product link") and one short hint. The note "prices are in dinars, delivery not included"
+  sits at the bottom of the delivery card on product pages.
 - **Logo**: the supplied raster (light, non-transparent background) is used as-is on light
   surfaces; on purple it sits in a white rounded tile. `scripts/brand-assets.ts` produces
   the website derivatives — crops and downscales only, never upscaled or recoloured. The

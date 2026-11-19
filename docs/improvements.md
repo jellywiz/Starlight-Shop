@@ -203,6 +203,41 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ---
 
+## UI — visual and buying experience (review of 19 November 2026, live site)
+
+- [x] **U1 Photos fill their frames.** _Done 2026-11-19:_ cards, the product gallery and the
+      home slideshow show the photo whole (`object-contain`, no padding) over a soft blurred
+      copy of itself (`ResponsiveImage` `backdrop`, a CSS background from the upload-time
+      preview), so tall phone photos no longer sit between white bars. Cards and the gallery
+      are upright 4:5 frames; gallery thumbnails crop to fill. Photos are never cropped.
+- [x] **U2 Bigger product photo on desktop.** _Done 2026-11-19:_ the gallery takes the larger
+      column (1.3 : 1), is 4:5 up to the viewport height, and stays in view (sticky) while
+      the details scroll.
+- [ ] **U3 Shorter phone home screen.** Slideshow first, one line, one button; categories and
+      pieces higher. **Effort: M**
+- [ ] **U4 "Powered by Netlify" badge.** Not in the code: Netlify injects it on free projects
+      created after 19 Aug 2026. Owner action: Netlify → Project configuration → General →
+      Powered by Netlify badge → Off (if the plan allows; otherwise it stays). **Effort: S**
+- [x] **U5 Less text around the buy button.** _Done 2026-11-19:_ the currency note moved into
+      the delivery card (where it belongs); "Copy product link" became an icon button next to
+      Enquire (same accessible name); the enquiry hint is one short line that says Enquire
+      copies the link.
+- [ ] **U6 Share button on phones** (native share sheet). **Effort: S**
+- [ ] **U7 "How ordering works" strip** (pick → message → delivery). **Effort: S**
+- [ ] **U8 Product details fields** (material, length, colour, made to order). Needs a
+      migration. **Effort: M**
+- [ ] **U9 Remember the chosen delivery city** across product pages. **Effort: S**
+- [ ] **U10 Language button in the phone header** (same as P2-1). **Effort: S**
+- [ ] **U11 Category tiles with a photo; plural category names** (names are owner content).
+      **Effort: S**
+- [ ] **U12 "New" badge, sold-out last and faded, stock badge only when unavailable.**
+      **Effort: S**
+- [ ] **U13 Second photo on hover** for desktop cards. **Effort: S**
+- [ ] **U14 Favourites list** with "send my list on Instagram". **Effort: M**
+- [ ] **U15 Polish:** one closing block instead of About + Enquire + footer repeats on the home
+      page; shorter desktop search placeholder; bigger cards when there are few products.
+      **Effort: S**
+
 ## Already done well (keep it this way)
 
 - RTL handled carefully (logical insets, mirrored swipes, LTR-isolated prices), and reduced
@@ -223,4 +258,5 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 | 2026-11-19 | P0-1             | dc0447d       | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                                                                                                                                                                                                                                |
 | 2026-11-19 | P1-3 (part)      | 668c7ce       | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open                                                                                                                                                                                                     |
 | 2026-11-19 | P1-1, P1-2, P1-4 | 4b9853d       | Per-network sign-in throttle + migration `login_throttle`; P1-2 verified not a bug (documented); Enquire buttons copy the product link with a translated confirmation. Also fixed the browser suite (failing in CI since 5848174): the pricing-block check now targets the pricing block only, not the inline delivery section. All 78 browser journeys pass locally on desktop, phone and iPad |
-| 2026-11-19 | P1-5 – P1-9      | (this commit) | Search Enter fix; price-range check in the browser; phone filter screen with "Show N products", flush on close, scroll lock; absolute home title; indexable category landing pages (title, h1, description, canonical, sitemap, robots); steadier home-slideshow browser test. 88 browser journeys pass on desktop, phone and iPad                                                              |
+| 2026-11-19 | P1-5 – P1-9      | 023de34       | Search Enter fix; price-range check in the browser; phone filter screen with "Show N products", flush on close, scroll lock; absolute home title; indexable category landing pages (title, h1, description, canonical, sitemap, robots); steadier home-slideshow browser test. 88 browser journeys pass on desktop, phone and iPad                                                              |
+| 2026-11-19 | U1, U2, U5       | (this commit) | Photos whole over a blurred copy of themselves in 4:5 frames (cards, gallery, slideshow); larger sticky desktop gallery; quieter buy area (icon copy button, one-line hint, currency note in the delivery card). U4 is a Netlify setting (owner action)                                                                                                                                         |

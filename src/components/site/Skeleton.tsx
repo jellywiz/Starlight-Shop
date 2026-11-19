@@ -20,7 +20,7 @@ export function Bar({ className = '' }: { className?: string }) {
 export function CardSkeleton() {
   return (
     <div className="card flex h-full flex-col overflow-hidden">
-      <div className="aspect-square w-full bg-white" />
+      <div className="aspect-[4/5] w-full bg-white" />
       <div className="flex flex-col gap-2 border-t border-line-soft p-3 sm:p-4">
         <Bar className="h-3 w-16" />
         <Bar className="h-4 w-3/4" />

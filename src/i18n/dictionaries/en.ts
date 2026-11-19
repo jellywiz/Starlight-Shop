@@ -182,7 +182,7 @@ export const en = {
     enquireCopied: 'Product link copied. Paste it into your Instagram message.',
     copyFailed: 'Copying is not available here. Select and copy the link below:',
     enquiryHint:
-      'Send us this product link in an Instagram message so we know which piece you mean. We reply from the shop account.',
+      'Tapping Enquire copies this piece’s link: paste it into your message so we know which one you mean.',
     related: 'More from this category',
     noPhoto: 'No photo available',
     photoFailed: 'The photo could not be loaded',

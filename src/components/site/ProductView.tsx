@@ -91,12 +91,16 @@ export function ProductView({
         </ol>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
-        <ProductGallery
-          photos={product.photos}
-          dict={dict}
-          transitionName={photoTransitionName(product.slug)}
-        />
+      {/* The photo gets the larger share on a laptop, and stays in view while the visitor
+          reads the details beside it. */}
+      <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:gap-12">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <ProductGallery
+            photos={product.photos}
+            dict={dict}
+            transitionName={photoTransitionName(product.slug)}
+          />
+        </div>
         <div className="flex flex-col gap-5">
           <p className="text-sm font-medium tracking-wide text-accent-soft uppercase">
             <Link
@@ -117,9 +121,10 @@ export function ProductView({
             <Price amount={product.priceIqd} dict={dict} className="text-3xl text-heading" />
             <AvailabilityBadge available={product.isAvailable} dict={dict} />
           </div>
-          <p className="text-sm text-ink-soft">{dict.common.currencyNote}</p>
-          <div id="product-actions" className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-3">
+          {/* One action, one short line: the main button copies the link itself, so copying
+              by hand is a small secondary icon. */}
+          <div id="product-actions" className="flex flex-col gap-2">
+            <div className="flex items-start gap-3">
               <EnquireLink
                 href={settings.instagramUrl}
                 label={dict.product.enquire}
@@ -134,9 +139,11 @@ export function ProductView({
                 label={dict.product.copyLink}
                 copiedLabel={dict.product.linkCopied}
                 failedLabel={dict.product.copyFailed}
+                className="btn-secondary h-12 w-12 p-0"
+                iconOnly
               />
             </div>
-            <p className="text-sm text-ink-soft">{dict.product.enquiryHint}</p>
+            <p className="text-xs text-ink-soft">{dict.product.enquiryHint}</p>
           </div>
           {/* Delivery fees: separate from the product pricing block and checked inline so a
               visitor never has to leave the piece they are looking at. */}
@@ -157,6 +164,8 @@ export function ProductView({
               syncUrl={false}
               compact
             />
+            {/* "Prices are in dinars; delivery is not included" belongs with the fees. */}
+            <p className="mt-3 text-xs text-ink-muted">{dict.common.currencyNote}</p>
           </section>
         </div>
       </div>

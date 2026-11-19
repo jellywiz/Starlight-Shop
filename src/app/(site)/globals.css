@@ -276,6 +276,18 @@
   .blur-preview--done {
     opacity: 0;
   }
+  /* Photo frames filled with a soft blurred copy of the photo (ResponsiveImage `backdrop`):
+     the jewellery is shown whole (contain) and the bars around it take its own colours
+     instead of empty white. */
+  .photo-frame {
+    @apply relative block h-full w-full overflow-hidden;
+  }
+  .photo-backdrop {
+    @apply pointer-events-none absolute inset-0 bg-cover bg-center;
+    filter: blur(22px) saturate(1.15);
+    transform: scale(1.25);
+    opacity: 0.55;
+  }
   /* Placeholders shown while a page is being built (see components/site/Skeleton.tsx). */
   .skeleton-bar {
     @apply block rounded-lg bg-line;
