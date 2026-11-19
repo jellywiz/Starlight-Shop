@@ -13,6 +13,7 @@
 .env
 .env.*
 !.env.example
+!.env.live.example
 
 # testing
 /coverage

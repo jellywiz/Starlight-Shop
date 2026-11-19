@@ -116,12 +116,15 @@ destination.
 ## Backups (no automatic backups on the free plans)
 
 Requirements on the maintainer's Mac: `brew install libpq` (adds `pg_dump`/`pg_restore`;
-add `/opt/homebrew/opt/libpq/bin` to `PATH`) and a `.env` containing
-`DATABASE_MIGRATION_URI` and the `S3_*` values.
+add `/opt/homebrew/opt/libpq/bin` to `PATH`) and a filled-in `.env.live` (setup steps:
+docs/deployment.md, "Maintainer commands against the live site").
 
 ```bash
-./scripts/backup.sh
+pnpm backup:live
 ```
+
+Plain `./scripts/backup.sh` backs up the local development database and `media/` folder
+instead.
 
 Creates `backups/<timestamp>/db.dump` (schema `starlight`, custom format: products,
 categories, delivery cities, settings and administrator records) and
@@ -153,12 +156,12 @@ Email delivery is not configured, so "Forgot password" is hidden and disabled. T
 maintainer resets a password with database access:
 
 ```bash
-OWNER_EMAIL=owner@example.com pnpm owner:reset-password
+OWNER_EMAIL=owner@example.com pnpm owner:reset-password:live
 ```
 
 Never edit password hashes by hand. Before changing the administrator email or rotating
-credentials, make sure this recovery path (a maintainer with `DATABASE_MIGRATION_URI`)
-still works.
+credentials, make sure this recovery path (a maintainer with a working `.env.live`) still
+works.
 
 ## Incident notes
 

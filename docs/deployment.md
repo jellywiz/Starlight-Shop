@@ -8,7 +8,7 @@ rechecked on 15 September 2026 and must be rechecked at launch.
 | Variable                                   | Where it lives                      | Purpose                                                                                |
 | ------------------------------------------ | ----------------------------------- | -------------------------------------------------------------------------------------- |
 | `DATABASE_URI`                             | Netlify site env, maintainer `.env` | Runtime PostgreSQL connection (Supabase **transaction pooler**, port 6543)             |
-| `DATABASE_MIGRATION_URI`                   | maintainer `.env` only              | Migration connection (Supabase **session pooler**, port 5432). Never stored in Netlify |
+| `DATABASE_MIGRATION_URI`                   | maintainer `.env.live` only         | Migration connection (Supabase **session pooler**, port 5432). Never stored in Netlify |
 | `PAYLOAD_SECRET`                           | Netlify, maintainer `.env`          | 32+ character random secret for admin authentication                                   |
 | `SITE_URL`                                 | Netlify, maintainer `.env`          | Canonical HTTPS origin, e.g. `https://starlight-jewellery.netlify.app`                 |
 | `S3_ENDPOINT`                              | Netlify, maintainer `.env`          | Supabase S3 endpoint `https://<ref>.storage.supabase.co/storage/v1/s3`                 |
@@ -28,6 +28,69 @@ Netlify is the only place the production values are stored (the maintainer's `.e
 local-development values). Keep a copy of every production value in the owner's password
 manager: if the Netlify account or site is deleted, the values go with it (see "If the
 Netlify site is lost" below).
+
+## Maintainer commands against the live site
+
+Migrations, backups, owner accounts and photo previews run from the maintainer's Mac
+against the live Supabase project. The live credentials live in one git-ignored file,
+`.env.live`, and the `:live` commands read it. Connection strings are never typed into the
+terminal, where zsh would keep them in `~/.zsh_history`.
+
+| Command                                                              | What it does                                              | Asks "yes"? |
+| -------------------------------------------------------------------- | --------------------------------------------------------- | ----------- |
+| `pnpm migrate:status:live`                                           | Lists which migrations the live database has run          | no          |
+| `pnpm backup:live`                                                   | Live database dump + every photo → `backups/<timestamp>/` | no          |
+| `pnpm migrate:live`                                                  | Backs up first, then applies new migrations               | yes         |
+| `OWNER_EMAIL=… pnpm owner:create:live` (add `-- --allow-additional`) | Creates an owner account (prompts for the password)       | yes         |
+| `OWNER_EMAIL=… pnpm owner:reset-password:live`                       | Sets a new password for an owner                          | yes         |
+| `pnpm media:previews:live` (add `-- --force` to redo all)            | Blurred stand-ins for photos that have none               | yes         |
+
+Every `:live` command prints the database host and bucket it is about to use, never the
+password. It stops if `.env.live` is missing a value or points at this Mac's own database.
+`scripts/live.sh` is the wrapper.
+
+### One-time setup of `.env.live`
+
+The file is called `.env.live`, not `.env.production`, on purpose: Next.js loads
+`.env.production` automatically for `next build`/`next start`, which would quietly point
+local builds at the live database.
+
+1. Create the file from the template. It is git-ignored, so it can never be committed:
+
+   ```bash
+   cp .env.live.example .env.live
+   chmod 600 .env.live          # readable by your user only
+   open -e .env.live            # opens in TextEdit
+   ```
+
+2. **`DATABASE_MIGRATION_URI`**: Supabase dashboard → your project → **Connect** (top bar)
+   → **Session pooler** (port **5432**, not 6543). Copy the URI and replace
+   `[YOUR-PASSWORD]` with the database password from your password manager. If you no
+   longer have the password, reset it in Project Settings → Database → **Reset database
+   password**. Then update `DATABASE_URI` in Netlify too (same password, port 6543) and
+   redeploy, or the live site loses its database.
+3. **`S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `MEDIA_PUBLIC_BASE_URL`**: Netlify → Site
+   configuration → Environment variables. These four are not marked secret, so click each
+   one and copy its value. They are also shown in Supabase → Storage → S3 connection.
+4. **`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`**: in Netlify these are secret (padlock)
+   and cannot be read back. Create a **new** key pair instead: Supabase → Storage → **S3
+   connection** → Access keys → **New access key**, description `maintainer-mac`. Copy both
+   values right away, because the secret is shown only once. A separate pair can be
+   revoked at any time without touching the live site's own key.
+5. Optional `SITE_URL`: the live address, so messages like "Sign in at …" show it instead
+   of localhost.
+6. Save the file and check it:
+
+   ```bash
+   pnpm migrate:status:live
+   ```
+
+   It should print `LIVE site: database aws-0-<region>.pooler.supabase.com:5432, bucket
+product-images` and a table where every migration shows **Ran: Yes**.
+
+Never paste `.env.live` into chats, tickets or screenshots, and don't keep it in a synced
+or shared folder. If the Mac is lost, revoke the `maintainer-mac` key in Supabase and reset
+the database password.
 
 ## 1. GitHub
 
@@ -71,19 +134,20 @@ Netlify site is lost" below).
 
 ### Apply the schema
 
-From the maintainer's machine. Pass the session-pooler connection string only for these
-commands (an inline variable is safer than keeping it in `.env`; `pnpm dev` ignores it
-either way, so local development can never touch production):
+From the maintainer's Mac, after setting up `.env.live` (see "Maintainer commands against
+the live site" above). `pnpm dev` never reads `.env.live`, so local development can never
+touch production:
 
 ```bash
-DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' pnpm migrate:status
-DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' pnpm migrate
+pnpm migrate:status:live
+pnpm migrate:live          # backs up first, asks for "yes"
 ```
 
 ### Create the owner
 
 ```bash
-DATABASE_MIGRATION_URI='postgresql://...same string...' OWNER_EMAIL=owner@example.com pnpm owner:create     # prompts for the password
+OWNER_EMAIL=owner@example.com pnpm owner:create:live                           # first owner; prompts for the password
+OWNER_EMAIL=second@example.com pnpm owner:create:live -- --allow-additional    # another owner
 ```
 
 The password must be long and unique (12+ characters, a passphrase is ideal). Public
@@ -200,23 +264,22 @@ Supabase project and a preview deploy:
 
 ## 5. Release procedure
 
-1. `./scripts/backup.sh` (database + storage) before any migration.
-2. `pnpm migrate` against production (`DATABASE_MIGRATION_URI`). Migrations must stay
-   backward compatible with the currently deployed code, because a code rollback does not
-   undo a migration.
+1. `pnpm migrate:status:live`: see which migrations are new.
+2. `pnpm migrate:live`: backs up the live database and photos, asks for "yes", then
+   migrates. Do this **before** pushing whenever the release adds a migration. Migrations
+   must stay backward compatible with the code that is live, because a code rollback does
+   not undo a migration.
 3. Merge to `main` → Netlify builds a production deploy (15 credits). Verify the live site.
 4. Roll back with "Publish deploy" on a previous known-good deploy in Netlify if needed.
 
-One-off after the release of 4 October 2026 (blurred photo stand-ins), after `pnpm migrate`:
+One-off after the release of 4 October 2026 (blurred photo stand-ins), after the migration:
 
 ```bash
-DATABASE_MIGRATION_URI='postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres' \
-MEDIA_PUBLIC_BASE_URL='https://<project-ref>.supabase.co/storage/v1/object/public/product-images' \
-pnpm media:previews
+pnpm media:previews:live
 ```
 
-Only those two values are needed (no storage keys): the photos are read from the public
-bucket address. Without them the script works on the local development database and the
+The photos are read from the public bucket address (`MEDIA_PUBLIC_BASE_URL` in
+`.env.live`). Plain `pnpm media:previews` works on the local development database and the
 `media/` folder. Photos uploaded from then on get their stand-in automatically.
 
 **Release of 19 November 2026 (Payload 3.93 / Next.js 16.4.6 security upgrade): migrate
@@ -224,8 +287,7 @@ first.** Migration `20261119_053647_payload_3_93` adds two empty columns
 (`users.reset_password_requested_at`, `media._objectkey`). The new code reads the first one
 on every login, so **the owner cannot sign in to the admin until the migration has run**.
 The columns are additive and nullable, so running the migration before the deploy is safe
-for the code that is live now. Order: `./scripts/backup.sh` → `pnpm migrate:status` →
-`pnpm migrate` (production `DATABASE_MIGRATION_URI`) → push to `main`.
+for the code that is live now. Applied to production on 19 November 2026.
 
 ## 6. Custom domain later
 

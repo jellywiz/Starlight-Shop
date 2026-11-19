@@ -173,7 +173,8 @@ Status legend: `[ ]` open · `[x]` done · `[-]` won't do
 
 ## Change log
 
-| Date       | Item        | Commit        | Notes                                                                                                                                            |
-| ---------- | ----------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-11-18 | P2-4, P3-12 | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                           |
-| 2026-11-19 | P0-1        | (this commit) | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass |
+| Date       | Item        | Commit        | Notes                                                                                                                                                                                       |
+| ---------- | ----------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-18 | P2-4, P3-12 | 2a3b739       | Inline `DeliveryFees` on product pages with city revalidation hooks; regenerated types                                                                                                      |
+| 2026-11-19 | P0-1        | (this commit) | Payload 3.93 / Next 16.4.6 security upgrade, overrides, migration `payload_3_93`; typecheck, lint, 50 unit + 29 integration tests and build pass                                            |
+| 2026-11-19 | P1-3 (part) | (this commit) | `.env.live` + `pnpm *:live` commands (`scripts/live.sh`): live migrate/backup/owner commands without typing connection strings; `migrate:live` backs up first. Scheduled backups still open |

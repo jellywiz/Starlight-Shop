@@ -11,7 +11,9 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-if [ -f .env ]; then
+# Under scripts/live.sh (pnpm backup:live) the live values are already loaded; re-reading
+# .env here would put the local, empty S3_* values back on top of them.
+if [ -z "${STARLIGHT_LIVE:-}" ] && [ -f .env ]; then
   # shellcheck disable=SC1091
   set -a; . ./.env; set +a
 fi
