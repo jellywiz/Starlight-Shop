@@ -65,6 +65,14 @@ test.describe('public catalogue journeys (A01, A07, A10, A11, A22, A24)', () => 
     await expect(page.getByRole('button', { name: 'Link copied' })).toBeVisible()
     const copied = await page.evaluate(() => navigator.clipboard.readText())
     expect(copied).toBe(`http://localhost:3000/en/products/${SAMPLE_SLUG}`)
+
+    // Delivery fees can be checked inline without leaving the product page, and never
+    // alter the product price or compute an order total.
+    await page.getByLabel('Your city').selectOption({ label: 'Sample city 1' })
+    await expect(page.getByText('Delivery to Sample city 1: IQD 5,000')).toBeVisible()
+    await expect(page).toHaveURL(new RegExp(`/en/products/${SAMPLE_SLUG}$`))
+    await expect(page.getByText('IQD 25,000').first()).toBeVisible()
+    await expect(page.getByText(/total/i)).toHaveCount(0)
   })
 
   test('switching language keeps the same product and translates the page (A10)', async ({

@@ -18,32 +18,40 @@ type Props = {
   /** True when the city list could not be loaded (never shown as "free"). */
   loadFailed: boolean
   /** City id from the URL when it names an active city. */
-  initialCityId: number | null
+  initialCityId?: number | null
   /** True when the URL named a city that is no longer active. */
-  initialNotListed: boolean
+  initialNotListed?: boolean
   instagramUrl: string
+  /** Keep the chosen city in `/${locale}?city=<id>#delivery` (home page only). */
+  syncUrl?: boolean
+  /** Tighter spacing when embedded on a product page. */
+  compact?: boolean
 }
 
 /**
- * Homepage delivery-fee selector (spec section 8). A labelled select shows one city's
- * saved fee beneath it; the choice is kept in the URL (?city=<id>) so it survives a
- * language switch and works without JavaScript through a plain GET form. No fee is ever
- * added to a product price; no zero is shown unless the owner saved a confirmed 0.
+ * Delivery-fee selector (spec section 8), used on the home page and inline on product
+ * pages. A labelled select shows one city's saved fee beneath it; on the home page the
+ * choice is kept in the URL (?city=<id>) so it survives a language switch, and without
+ * JavaScript the form submits to `/<locale>#delivery`. No fee is ever added to a product
+ * price; no zero is shown unless the owner saved a confirmed 0.
  */
 export function DeliveryFees({
   locale,
   dict,
   cities,
   loadFailed,
-  initialCityId,
-  initialNotListed,
+  initialCityId = null,
+  initialNotListed = false,
   instagramUrl,
+  syncUrl = true,
+  compact = false,
 }: Props) {
   const router = useRouter()
   const selectId = useId()
   const resultId = useId()
   const [selectedId, setSelectedId] = useState<number | null>(initialCityId)
   const [notListed, setNotListed] = useState(initialNotListed)
+  const spacing = compact ? 'mt-3' : 'mt-5'
 
   const selected = cities.find((c) => c.id === selectedId) ?? null
 
@@ -52,6 +60,9 @@ export function DeliveryFees({
     const city = cities.find((c) => c.id === id) ?? null
     setSelectedId(city ? city.id : null)
     setNotListed(false)
+    if (!syncUrl) {
+      return
+    }
     try {
       // A null state lets Next.js sync useSearchParams (its own internal state objects are
       // skipped), so the language switcher immediately carries the selected city.
@@ -69,7 +80,7 @@ export function DeliveryFees({
 
   if (loadFailed) {
     return (
-      <div role="alert" className="mt-5 flex flex-col gap-3">
+      <div role="alert" className={`${spacing} flex flex-col gap-3`}>
         <p className="font-medium text-heading">{dict.delivery.loadFailed}</p>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
@@ -83,7 +94,7 @@ export function DeliveryFees({
 
   if (cities.length === 0) {
     return (
-      <div className="mt-5 flex flex-col gap-3">
+      <div className={`${spacing} flex flex-col gap-3`}>
         <p className="font-medium text-heading">{dict.delivery.none}</p>
         <div>
           <InstagramLink href={instagramUrl} label={dict.home.instagramAction} dict={dict} />
@@ -96,7 +107,7 @@ export function DeliveryFees({
     <form
       method="get"
       action={`/${locale}#delivery`}
-      className="mt-5 flex flex-col gap-3"
+      className={`${spacing} flex flex-col gap-3`}
       onSubmit={(event) => event.preventDefault()}
     >
       <label htmlFor={selectId} className="text-sm font-semibold text-heading">

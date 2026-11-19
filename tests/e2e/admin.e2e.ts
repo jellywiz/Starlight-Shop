@@ -118,6 +118,9 @@ test.describe('admin journeys (A02, A05, A15, A21)', () => {
     await publicPage.goto('/en')
     await publicPage.getByLabel('Your city').selectOption({ label: 'Sample city 1' })
     await expect(publicPage.getByText('Delivery to Sample city 1: IQD 5,500')).toBeVisible()
+    await publicPage.goto(`/en/products/${SAMPLE_SLUG}`)
+    await publicPage.getByLabel('Your city').selectOption({ label: 'Sample city 1' })
+    await expect(publicPage.getByText('Delivery to Sample city 1: IQD 5,500')).toBeVisible()
     await publicPage.close()
 
     // Restore the sample fee for repeatable runs.

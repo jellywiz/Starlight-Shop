@@ -9,7 +9,12 @@ import { ProductView } from '@/components/site/ProductView'
 import { isOwnerUser } from '@/access'
 import { isLocale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/dictionary'
-import { getProductPreview, getRelatedProducts, getShopSettings } from '@/lib/catalog/queries'
+import {
+  getProductPreview,
+  getRelatedProducts,
+  getShopSettings,
+  listDeliveryCities,
+} from '@/lib/catalog/queries'
 import { CatalogUnavailableError } from '@/lib/catalog/types'
 import { settle } from '@/lib/settle'
 import { SLUG_RE, productMetadata } from '@/lib/site/product'
@@ -59,8 +64,11 @@ export default async function ProductPreviewPage({ params }: Props) {
     // Not the owner: the public page is the only version there is.
     redirect(`/${locale}/products/${slug}`)
   }
-  const { settings } = await getShopSettings(locale)
-  const loaded = await settle(getProductPreview(slug, locale, user))
+  const [{ settings }, loaded, delivery] = await Promise.all([
+    getShopSettings(locale),
+    settle(getProductPreview(slug, locale, user)),
+    settle(listDeliveryCities(locale)),
+  ])
   if (!loaded.ok) {
     if (loaded.error instanceof CatalogUnavailableError) {
       return <CatalogUnavailable dict={dict} settings={settings} />
@@ -76,6 +84,8 @@ export default async function ProductPreviewPage({ params }: Props) {
     <ProductView
       product={product}
       related={related.ok ? related.value : []}
+      cities={delivery.ok ? delivery.value : []}
+      citiesFailed={!delivery.ok}
       settings={settings}
       locale={locale}
       dict={dict}

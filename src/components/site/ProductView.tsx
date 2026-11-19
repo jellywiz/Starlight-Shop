@@ -2,17 +2,19 @@ import Link from 'next/link'
 
 import { AvailabilityBadge } from '@/components/site/AvailabilityBadge'
 import { CopyButton } from '@/components/site/CopyButton'
+import { DeliveryFees } from '@/components/site/DeliveryFees'
 import { InstagramLink } from '@/components/site/InstagramLink'
 import { Price } from '@/components/site/Price'
 import { ProductGallery } from '@/components/site/ProductGallery'
+import { SparkleIcon } from '@/components/site/Sparkles'
 import { StickyEnquire } from '@/components/site/StickyEnquire'
 import { ProductGrid } from '@/components/site/ProductGrid'
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionary'
-import { canonicalProductUrl, deliveryFeesPath } from '@/lib/catalog/links'
+import { canonicalProductUrl } from '@/lib/catalog/links'
 import { photoTransitionName } from '@/lib/site/transitions'
 import { catalogPath } from '@/lib/catalog/params'
-import type { CatalogItem, ProductDetail } from '@/lib/catalog/types'
+import type { CatalogItem, DeliveryCity, ProductDetail } from '@/lib/catalog/types'
 import { jsonLdScript } from '@/lib/site/metadata'
 import type { PublicShopSettings } from '@/lib/shop'
 
@@ -36,6 +38,8 @@ function productJsonLd(product: ProductDetail, locale: Locale) {
 export function ProductView({
   product,
   related,
+  cities,
+  citiesFailed = false,
   settings,
   locale,
   dict,
@@ -43,6 +47,8 @@ export function ProductView({
 }: {
   product: ProductDetail
   related: CatalogItem[]
+  cities: DeliveryCity[]
+  citiesFailed?: boolean
   settings: PublicShopSettings
   locale: Locale
   dict: Dictionary
@@ -125,12 +131,27 @@ export function ProductView({
               />
             </div>
             <p className="text-sm text-ink-soft">{dict.product.enquiryHint}</p>
-            <p className="text-sm">
-              <Link href={deliveryFeesPath(locale)} className="link-plum">
-                {dict.nav.delivery}
-              </Link>
-            </p>
           </div>
+          {/* Delivery fees: separate from the product pricing block and checked inline so a
+              visitor never has to leave the piece they are looking at. */}
+          <section aria-labelledby="product-delivery-heading" className="card p-4 sm:p-5">
+            <h2
+              id="product-delivery-heading"
+              className="flex items-center gap-2 text-base font-semibold text-heading"
+            >
+              <SparkleIcon className="h-4 w-4 text-accent-soft" />
+              {dict.delivery.heading}
+            </h2>
+            <DeliveryFees
+              locale={locale}
+              dict={dict}
+              cities={cities}
+              loadFailed={citiesFailed}
+              instagramUrl={settings.instagramUrl}
+              syncUrl={false}
+              compact
+            />
+          </section>
         </div>
       </div>
 

@@ -77,6 +77,7 @@ docs/                        setup, deployment, operations, acceptance, decision
 - [docs/acceptance.md](docs/acceptance.md) — acceptance test matrix A01–A25 with evidence
 - [docs/decisions.md](docs/decisions.md) — implementation decisions and where they refine the spec
 - [docs/translations-review.md](docs/translations-review.md) — every interface string for native review
+- [docs/improvements.md](docs/improvements.md) — prioritised improvement backlog from code review, with status and change log
 
 ## Status
 

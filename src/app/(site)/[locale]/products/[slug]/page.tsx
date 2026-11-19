@@ -9,9 +9,16 @@ import {
   getProductBySlug,
   getRelatedProducts,
   getShopSettings,
+  listDeliveryCities,
   resolveRedirect,
 } from '@/lib/catalog/queries'
-import { type CatalogItem, CatalogUnavailableError, type ProductDetail } from '@/lib/catalog/types'
+import {
+  type CatalogItem,
+  CatalogUnavailableError,
+  type DeliveryCity,
+  type ProductDetail,
+} from '@/lib/catalog/types'
+import { settle } from '@/lib/settle'
 import { dropFromCacheAfterResponse } from '@/lib/site/outage'
 import { SLUG_RE, productMetadata } from '@/lib/site/product'
 
@@ -69,11 +76,12 @@ export default async function ProductPage({ params }: Props) {
     notFound()
   }
   const dict: Dictionary = getDictionary(locale)
-  // The product and the settings are independent (and the settings are shared with the
-  // layout), so they load together.
-  const [loaded, { settings, fromFallback }] = await Promise.all([
+  // The product, the settings and the delivery cities are independent (and the settings
+  // are shared with the layout), so they load together.
+  const [loaded, { settings, fromFallback }, delivery] = await Promise.all([
     load(locale, slug),
     getShopSettings(locale),
+    settle(listDeliveryCities(locale)),
   ])
   if (loaded === null) {
     notFound()
@@ -83,8 +91,8 @@ export default async function ProductPage({ params }: Props) {
   }
   // A database outage must never be frozen into the cache. This route is cached (ISR)
   // and cannot opt out per request, so any render touched by the outage — the outage
-  // state itself, fallback settings, missing neighbours — is dropped from the cache as
-  // soon as it has been sent (src/lib/site/outage.ts).
+  // state itself, fallback settings, missing neighbours or missing delivery cities — is
+  // dropped from the cache as soon as it has been sent (src/lib/site/outage.ts).
   const path = `/${locale}/products/${slug}`
   if (fromFallback) {
     dropFromCacheAfterResponse(path)
@@ -94,6 +102,17 @@ export default async function ProductPage({ params }: Props) {
     return <CatalogUnavailable dict={dict} settings={settings} />
   }
   const { product } = loaded
+
+  let cities: DeliveryCity[] = []
+  let citiesFailed = false
+  if (delivery.ok) {
+    cities = delivery.value
+  } else if (delivery.error instanceof CatalogUnavailableError) {
+    citiesFailed = true
+    dropFromCacheAfterResponse(path)
+  } else {
+    throw delivery.error
+  }
 
   let related: CatalogItem[] = []
   try {
@@ -106,6 +125,8 @@ export default async function ProductPage({ params }: Props) {
     <ProductView
       product={product}
       related={related}
+      cities={cities}
+      citiesFailed={citiesFailed}
       settings={settings}
       locale={locale}
       dict={dict}

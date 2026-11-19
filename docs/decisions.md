@@ -211,6 +211,15 @@ schema; the old `dler` schema, if present in a local database, is simply left un
   preserves the selection by internal id. Only an id of a currently active city is
   accepted; anything else clears the selection with the "no longer listed" message.
   Without JavaScript the same form submits as a GET to `/<locale>#delivery`.
+- **Inline delivery fee lookup on product pages** (2026-11-18). The product page used to
+  link "Delivery fees" to `/<locale>#delivery`, bouncing the visitor away from the piece
+  they were considering. `ProductView` now embeds `DeliveryFees` (`syncUrl={false}`,
+  `compact`) in a separate card beneath `#product-actions` (never inside the product
+  pricing block, and never computing a total). Active cities are loaded in `Promise.all`
+  alongside the product and settings, keeping the page statically cacheable; `DeliveryCities`
+  runs `revalidateAfterChange`/`revalidateAfterDelete` so city or fee edits in the admin
+  immediately invalidate cached product pages, and a city-query outage triggers
+  `dropFromCacheAfterResponse` so a failed city lookup is never cached.
 
 ## Visual design (agreed with the owner)
 

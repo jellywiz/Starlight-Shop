@@ -11,6 +11,7 @@ import {
   trimTranslations,
 } from '@/hooks/localized'
 import { LOCALE_LABELS } from '@/hooks/products'
+import { revalidateAfterChange, revalidateAfterDelete } from '@/hooks/revalidate'
 import { LOCALES } from '@/i18n/config'
 import { SIMPLE_DOCUMENT_VIEW } from '@/lib/admin'
 import { MAX_IQD, isValidIqd } from '@/lib/catalog/dinar'
@@ -143,6 +144,8 @@ export const DeliveryCities: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [revalidateAfterChange],
+    afterDelete: [revalidateAfterDelete],
   },
   fields: [
     translatedField({
